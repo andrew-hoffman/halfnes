@@ -1,0 +1,134 @@
+Todo List For HalfNES:
+
+-Add FDS support
+
+-Add rest of the expansion sound for MMC5 (PCM out is missing)
+
+-Work on audio filtering (Yes it's better now, but could still use some work.)
+ Need a FIR or IIR filter of some sort but also have to decimate by a non
+ integer amount WITHOUT upsampling, because 2 million samples a second is too hard
+ to process as is. Not sure how to write one of those.
+ Best solution is probably FFT based somehow.
+ Real NES uses very simple RC lowpass and highpass filters, that's mostly
+ what I do now but the amt of filtering is sample rate dependent/other problems etc.
+
+-Fix all of the single scanline errors, random horizontal
+ glitches in Slalom, Rad Racer etc.
+ Probably should move to a pixel based renderer for the very few games with mid 
+ scanline effects - is this going to require too much synchronization overhead?
+ Could at least update the PPU counters at correct times during scanline.
+
+-Fix the frame limiter so that it won't underrun the audio buffer every time
+ there's a lag spike - also deal with audio popping in fullscreen mode (I think
+ this is caused by the framerate being fixed by the buffer waiting at 60.0 so
+ not enough audio samples are generated but I'm not sure)
+ This is dealt with by increasing the audio buffer size for now.
+
+-Add more graphics filters (HQ2x), develop an OpenGL rendering path, rewrite the
+ NTSC shader in shader language for speed. Also try incl. scanline and CRT
+ phosphor effects.
+
+-Add Savestates, someday (once class structure is pretty much settled).
+
+-Need some better class segregation! Current structure does not represent how
+ things are actually connected, and the NES class is the one that actually
+ manipulates PPU regs on and off.
+
+-Also stuff with controller wiring and interrupts, and if there's a Zapper in use
+ the controller ports need to have access to the display as it's being drawn,
+ and all of this needs to support catch up operation in some way.
+
+-Some games freeze when reset with Ctrl+R (missing mapper reset function)
+ Action 52 needed this. What else?
+
+-Use better synchronization with less method calls (options?), and fix the fact 
+ that frames are 1/3 of a cpu cycle too short.
+
+-Add a different key listener for some of the menu options (like Pause and Fast 
+ Forward) and also the toggles so they don't toggle on and off really quickly
+ when I hold the key down. (why did you think fast forward was control-space?)
+ Also fix inability to pause/single step in fullscreen nowadays
+
+-Fix whatever is wrong with frame interrupts not happening at the right time or
+ at all that breaks a lot of games in the B's. (I think it's when the program is
+ spinning waiting for the APU frame IRQ during the frame, because if nothing tries
+ to write to the APU currently, it won't "catch up" to where the interrupt is 
+ until the end of the frame.
+ e: That's not actually it... most of the broken games are waiting on the DMC 
+ interrupt, which does actually fire but not always at the correct time.
+ Find out if the StarsSE demo ever worked on real hardware or not.
+ e2: It's definitely the DMC interrupt... even when I force a sync with the APU
+ before every CPU cycle it's still not happening at the right time. 
+ e3: Now fixed DMC interrupt and a CPU bug, some still broken.
+ I think there's problems with sprite 0 hits running ahead of the CPU
+ and happening/not happening when the bank isn't switched by CPU in time.
+
+-Improve scanline counter accuracy on several mappers, especially MMC5 and FME-7
+
+-Check that APU is correct pitch. I don't trust the timer code any more
+
+-Make the NTSC filter usably fast!
+
+Things that will have to wait for pixel-at-a-time PPU:
+
+-Zapper support
+
+-fix the last of the timing problems (including prev.mentioned sprite 0)
+
+-allow for proper per-scanline scroll changing (Rad Racer etc.) where some
+ of the counters are only updated at certain points on the line.
+ some scrolling registers have to be updated @ specific points in frame.
+
+-Finish MMC5 emulation to allow for proper detection of background/sprite fetches
+
+-Make the MMC3 scanline counter work the way it really does
+ (will break Mario Adventure)
+
+Things I can't do without adding a CRC database:
+
+-implement the WRAM disable bit for Mapper 4 (three different implementations!)
+ (fixed for now: Low G Man is special cased to have no PRG RAM on the board,
+ since it never did anyway. Everything else is probably fine since the main reason
+ for WRAM write protection, which is the CPU overwriting SRAM when jumping off
+ somewhere strange due to a bad connection on the cartridge slot, can't happen
+ on the emulator.)
+
+-Same for Mapper 1. Making SOROM work was hard enough.
+
+
+-Sorting out the mappers that are really multiple mappers in one number
+ (codemasters one especially!)
+
+-UNIF
+
+Things I probably can't fix at all:
+
+-DMC samples shouldn't always steal 4 cycles (depending on the current instruction
+ being executed), and should only take 2 cycles during sprite DMA. (The belief
+ used to be that it would read wrong data during sprite DMA, but it doesn't.)
+ This is what's breaking The Guardian Legend when there are too many enemies on
+ screen.
+ (THINK I fixed the broken bit there when changing things to pass DMC test.)
+
+
+Broken Games To Fix:
+-Don Doko Don 2 (actually header was incorrect, this should use mapper 48 not 33)
+*Battle Chess (fixed in 055, who knows why)
+-Laser Invasion (graphics corruption)
+-Metal Slader Glory
+-Batman:ROTJ title screen (and other weirdness with the FME-7)
+-Caltron 6 in 1 (Very slow text scroll in Cosmo Cop)
+this has to do with reading $2002 in a loop and the NMI.
+it's high time i wrote a pixel accurate ppu to pass blargg's tests.
+Codemasters games broken by DMC IRQ:
+-Bee 52
+-MIG-29 Soviet Fighter (needs better dmc timing!)
+-Fire Hawk (maybe this is freezing on Sprite 0 now.)
+-Big Nose Freaks Out (glitchy in 035, completely broken in 036, back to glitchy in 049.)
+-Lion King (only works on PAL)
+-Tepples rgb121.nes only shows the 1st frame (also broken in Nestopia, OK in Nintendulator)
+-Huge Insect depends on obscure behavior of modifying OAM address during rendering
+-figure out why chopped.nsf.nes works but zanzan-pull-over(chiptune)nes doesn't.
+(they're the same NSF made into a ROM w/ different drivers, but one goes all over and does illegal things
+before it starts in on the song.)
+

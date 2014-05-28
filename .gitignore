@@ -10,3 +10,19 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+nesdebug*.txt
+
+
+#unnecessary javadocs
+/lib/javadoc/**
+/lib/src/**
+/proguard4.7/examples/**
+/proguard4.7/src/**
+/build/**
+
+#include necessary jars for building
+!jarsplice-0.40-CLI-CUSTPATCH.jar
+!proguard*.jar
+!retrace.jar
+
+
