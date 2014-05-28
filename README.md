@@ -3,6 +3,12 @@ halfnes
 
 An accurate NES/Famicom emulator
 
+Building instructions:
+
+at this point you might as well just create a new netbeans project, import all
+the src files, and delete anything referring to a library that isn't installed.
+(the libraries are for the ntsc filter and XInput controllers, and so don't really matter.)
+
 Current Features:
  -Joystick support through both DirectInput and xInput (thanks Zlika) 
  -Cross-Platform

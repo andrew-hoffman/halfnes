@@ -1,0 +1,438 @@
+HalfNES Version Notes:
+
+055(9/7/2013)
+-Added support for NSF music files.
+-Added mapper for Super Spike V'Ball/Nintendo World Cup combo cartridge
+-Changed sprite DMA timings (fixes Battle Chess again)
+
+054 (8/13/2013)
+-Changed NES color palette to match NTSC filter colors
+-Fixed VRC 7 Vibrato, no longer crackles
+-Improved speed of NTSC filter some more
+-General code cleanups (more are still necessary)
+-Provided a more helpful error on stdout when the jInput lirary is missing
+
+053 (2/10/2013)
+
+-Added Action Replay and Game Genie code support
+-Now turning on sound filtering by default
+
+0.052 (10/14/2012)
+
+-Changed the APU timer code to run more efficiently 
+(filtering now has very little performance penalty)
+-Fixed GI Joe, Burai Fighter
+-Fixed title screen of Brush Roller
+-Fixed intro of Lagrange Point
+
+0.051 (9/17/2012)
+
+Many more mappers added for this release.
+
+Added Mappers:
+
+15 (100 in 1 Contra Function 16)
+33 and 48 (Taito TC0190FMC)
+41 (Caltron/Myriad 6 in 1)
+58 (Game Star multicart)
+60 (reset based 4 in 1)
+61 (super 42-in 1)
+62 (700 in 1 Multicart)
+65 (Irem H-3001)
+67 (Sunsoft-3)
+72 (Jaleco JF-17)
+73 (VRC3)
+75 (VRC1)
+76 and 206 (Tengen MIMIC-1)
+79 (NINA-3)
+86 (Jaleco JF-13)
+88 (NAMCOT-3433/3443)
+92 (Jaleco JF-19)
+112 (Chinese MIMIC-1 clone)
+113 (NINA-6)
+154 (NAMCOT-3453)
+182 (Chinese MMC3 clone)
+201 (8-in-1, 21-in-1 multicarts)
+212 and 213 (9999999-in-1)
+214 (Super Gun 20-in-1)
+225 (58/64/72-in-1 multicarts)
+226 (20-1n-1)
+229 (31-in-1)
+231 (20 in 1 multicart)
+241 (Fan Kong Jing Ying)
+242 (Wai Xing Zhan Shi / Dragon Quest VIII board)
+244 (Decathlon)
+255 (110/115 in 1 multicarts)
+
+Other Changes:
+
+-Changed decay after key off on VRC7 sound chip
+-Changed color settings on NTSC renderer and rewrote encoding portion for better 
+ speed (64 bit JVM also makes this faster) and no more horizontal bars.
+-Passes sprite overflow basics test
+-Fixed reset code to reset mapper before CPU
+-Rom loader handles games with unusual/incorrect headers more gracefully
+-APU square wave frequency is now correct 
+ (would go out of tune at higher frequencies before)
+-Full screen mode with maintain aspect ratio on now stretches to fill screen
+-Added .exe and .sh versions of HalfNES to the standard JAR file to
+work around systems where JAR files are difficult to make executable.
+
+0.050 (8/9/2012)
+Lots of minor improvements for this release, and new mapper support as well.
+Thanks to Nawrot Kryzystof for many of these fixes.
+
+Added Mappers:
+Mapper 10 (Fire Emblem, Famicom Wars)
+Mapper 19 (Megami Tensei II, Rolling Thunder (J), etc.) with expansion sound
+Mapper 34 (Impossible Mission II)
+Mapper 38 (Crime Busters)
+Mapper 64 (Klax, Rolling Thunder (U))
+Mapper 70 (Kamen Rider Club)
+Mapper 89 (Mito Koumon)
+Mapper 93 (Fantasy Zone (J))
+Mapper 94 (Senjou no Ookami)
+Mapper 97 (Kaiketsu Yanchamaru)
+Mapper 107 (Magic Dragon)
+Mapper 140 (Bio Senshi Dan)
+Mapper 152 (Arkanoid 2)
+Mapper 180 (Crazy Climber)
+Mapper 185 (Spy Vs Spy (J) but NOT Banana)
+Mapper 200 (36-in-1 Multicart)
+Mapper 203 (35-in-1 Multicart)
+Mapper 240, 246 (More Chinese original games)
+
+Fixed:
+-Fixed DMC timing (passes DMC basics test and makes Bee 52 work better)
+-CPU interrupt is delayed so CLI+SEI only causes 1 interrupt after SEI
+ (fixes Break Time, Hebereke)
+-Fixed APU frame counter reset to within 1 CPU opcode of correct timing
+-Fixed APU sweep behavior when clocked then immediately reset
+ (Super Mario Bros. sound effects, Driar wrong notes in music)
+-Updated VRC7 sound to use new patch set from nesdev, 
+ changed the way modulator feedback works, increased envelope attack rate
+-Added CRC to options menu to make verifying dumps easier
+-Fixed Uchuusen - Cosmo Carrier mirroring
+-Fixed bug with file dialog where it wasn't clearing the old name when loading
+ a ROM by double clicking
+
+Broke:
+- Lagrange Point intro was broken by the CPU interrupt change. Game is still playable.
+
+0.049 (7/9/2012)
+-CPU core is much improved. All undocumented opcodes should now be implemented
+ and cycle timing is more correct.
+-Fixed Low G Man crashing after the first boss
+-APU is now synchronized exactly with CPU (lowers performance, but fixes 
+ Dreamworld Pogie)
+-Made DMC sample channel timing more accurate, which fixed Bee 52 and several 
+ DPCM letterbox demos and made Fire Hawk at least show the titlescreen/intro. 
+ (Still crashes in game.)
+-Made the audio high pass filter more aggressive to eliminate clipping and noise
+-Fixed VRC7 audio envelopes (Rate was right but notes couldn't be turned off
+ while in the decay phase. Now that works.)
+-Fixed PPU OAM reading to pass oam_stress test and used blargg's NES power up 
+ palette
+
+0.048 (6/5/2012)
+
+You can now change all options without having to restart the emulator. Also
+changed the set of values used for the VRC7 registers and did some code cleanups
+ in various places. Significant rewrite is needed to improve basic timing 
+accuracy some time soon.
+
+0.047 (5/12/2012)
+
+VRC7 channel volumes and modulation are correct now. Still not quite like the 
+real thing because envelopes are based off info from the data sheet and not the
+actual implementation. (Plus, no one has ever read the presets for the built in
+instruments from the VRC7; I've tested several sets of approximations.)
+
+Releases will probably be coming much slower in the future.
+
+0.046 (4/7/2012)
+
+-VRC7 audio (Lagrange Point) sounds much closer to the real thing
+-Fixed several UI bugs:
+    -menu bar is no longer visible in fullscreen on some systems
+    -no longer possible to load a ROM or open the preferences window in 
+     fullscreen as this could sometimes cause hangs
+    -Full screen now defaults to maintain aspect ratio
+     (doesn't stretch and look terrible on widescreen displays)
+-Now handles mising JInput library more gracefully
+-NTSC filter is somewhat faster (still not really real time) and disables
+ dot crawl in Battletoads as it should.
+-Changed audio core so it shouldn't clip with sound filtering on any more
+-Found a solution to the packaging problem! Library folder is no longer necessary.
+
+Next version I will be switching to LWJGL for the interface as it should add
+a decent speed improvement and the NTSC filter will be MUCH faster if written
+as a shader.
+
+0.045 (3/8/2012)
+
+-Fixed some undocumented opcodes to allow homebrew game Driar to run
+-Fixed bug with special characters in ROM filenames causing a crash
+-Added gamma correction to NTSC filter and changed filter parameters yet again.
+still not sure what looks best, and there are a few artifacts here that don't
+show up on the real thing unless you're using a cheap capture card.
+If you want to experiment, the brightness, contrast, and gamma correction is at
+the top of the NTSCFilter file in the code.
+Please use it with smoothing on or it'll look bad no matter what.
+-now change the aspect ratio when ntsc filter is used.
+-Added mapper 85 (VRC7) (Lagrange Point and Japanese Tiny Toons 2)
+-Partially implemented VRC7 sound (envelopes and vibrato are still missing)
+-Small speed improvements (except in the ntsc filter, that's just as slow).
+
+0.044 joystick test (1/9/2012)
+
+ - Added preliminary joystick support (thanks to Zlika) To use this, the 
+lib folder must be extracted in the same location as halfnes, and also the 
+program must be run from the "run.bat" file. The first detected gamepad 
+will be used as Controller 1, and the second will be Controller 2. 
+Currently the buttons used are not configurable.
+
+ - Also improved the NTSC filter, color is perfect now and it looks 
+better than Blargg's. (Sadly, the speed has taken another hit; I think 
+the problem is cache churn due to the order I operate in?) 
+
+0.043 (12/27/2011)
+Last version for the year.
+-Fixed many more bugs and edge cases with the file loading, including a crash
+that only seemed to happen on Linux when loading a ROM from the command line
+-Made some changes to the sprite rendering code, now pass more of blargg's sprite
+hit tests and the Snake Pit level in Battletoads shouldn't flicker any more.
+(I haven't actually tested this since I can't get back there now.)
+0.042 (12/12/2011)
+-Added "smooth video" option
+-Improved the NTSC filter (run it full screen with the video smoothing option on
+and it looks very nice. sadly it is still jut as slow as it was.)
+-Fixed bug in VRC6 audio that muted both expansion sound channels instead of just one
+-Fixed crash on loading a .nes file with a bad header
+0.041(11/6/2011)
+-Added experimental NTSC graphics filter. Wriiten from scratch, not a port of
+ Blargg's NTSC code. This looks quite a bit more like a real old terrible 80's TV.
+ Unfortunately, it's still very slow.
+-Fixed Punch-Out, which was broken since version 0.039
+0.040(10/17/2011)
+Added Mapper 68 (Afterburner and Afterburner II)
+Monkeyed around with the audio code, MMC5 sound channels had the wrong pitch
+and audio was clipping at full volume. Both of those should be fixed. Also fixed
+sound popping when pausing and unpausing. And in the time it took me to do that
+byuu made in a week what took me a year. eh.
+0.039 (9/24/2011)
+Added mappers 5 and 119. Castlevania III works now and so do all other MMC5 games
+except for Laser Invasion and two Japanese exclusive ones. Also fixed one tiny
+almost unnoticeable bug with drum sounds cutting off a tiny bit early that
+has been there for months unnoticed.
+0.038 (8/12/2011)
+-Added Action 52 mapper (228)
+-Improved audio quality some more
+-Made the screen repaint even when paused
+-Behind the scenes changes to make things easier to port
+-Some speed improvements as well
+If there is a game that you want to play that's broken or mapper unsupported, let me know!
+Otherwise I think I'm just going to port this to Android next.
+0.037 (7/7/2011)
+-Fixed Guardian Legend, Dizzy's Adventure, others (APU interrupt bugs again)
+-Improved performance of sprite rendering code
+-Fixed broken Reset option in menu
+Current known broken games: Break Time, Big Nose Freaks Out, Bigfoot
+0.036 (6/20/2011)
+-Added Mapper 9 (Punch-Out!!)
+-Fixed Teenage Mutant Ninja Turtles (leftover bug from last PPU rewrite)
+-Fixed Jurassic Park (same problem as Twin Cobra, changed the code so both worked)
+-Increased audio volume
+-Added greyscale and color emphasis to PPU 
+ (Noah's Ark is maybe the only game this is visible in)
+-Fixed off-by-one error causing scanline 261 to be run twice
+ (fixed some timing issues, maybe caused a few more)
+-Completely changed the way the PPU renders sprites - broke some games (Guardian Legend and
+some Codemasters games that never looked right anyway) but fixed screen shaking and
+single scanline glitches in a LOT of games.
+-Also, sprite flicker is back from the old days.
+0.035 (6/9/2011)
+-Now cropping off the top and bottom 8 pixels of the video output, since these are
+not visible on most TVs and a lot of games render garbage on those lines.
+-Added volume slider to options dialog (and rewrote the sound output code as well.)
+-Fixed a lot of sound bugs. Crystalis, Zombie Nation, A Boy And His Blob etc. all sound right now.
+-Fixed Twin Cobra
+0.034 (5/22/11)
+-Fixed full screen code for people who still had flicker at bottom
+-Fixed Bill and Ted's Excellent Adventure
+-Rewrote some code to enable putting ROM @ $6000-7fff
+-Implemented Mapper 69 (Sunsoft FME-7) and the extra sound hardware for the Japanese version of Gimmick.
+(If you haven't ever played Gimmick, find the ROM and give it a go sometime. Great game.)
+-Also added mappers 78 (Holy Diver) and 87 (Twinbee).
+0.033 (5/10/2011)
+-Improved MMC3 mapper (Fixed Teenage Mutant Ninja Turtles 3, Smash TV)
+-Improved audio code more, added an option to enable audio filtering so a separate compile isn't required
+-Tied expansion audio into the regular audio code
+-Made full screen support more robust (let me know if it's still broken on your XP machine, but it works on mine)
+0.032 (4/26/2011)
+The most notable improvement is the audio. I'm compiling 2 versions this 
+time - one uses a linear audio filter and the other uses point samples. 
+The linear audio filter makes the whole code run about twice as slow 
+(Java is really not very good at doing anything 2 million times a 
+second), but it sounds SO much better I couldn't throw it out for 
+performance reasons. However, it's still a bit buggy and completely 
+breaks VRC6 audio for some reason. Also, added option for changing audio 
+sample rate to the options dialog, tweaked the volumes of all the audio 
+channels to be more balanced with each other, and probably cleaned up 
+some things since last release that I've forgotten about now. 
+0.031 (4/3/2011)
+-Rewrote PPU to draw only 1 scanline at a time, instead of 8 scanlines like before.
+(should fix various glitchy raster effects and status bars in various games)
+Performance should actually be increased for most games.
+-removed the old tile caching system as it is no longer necessary.
+-Fixed the sprite priorities
+-improved VRC6 audio
+-made the VRC6 expansion audio work for the games other than Castlevania 3
+0.030 (3/27/2011)
+-Rewrote the audio system to eliminate more unnecessary method calls
+-Added Mapper 24 and 26 (Japanese Castlevania III) including the expansion sound chips!
+-Added a full screen mode
+(still a bit buggy; fast forward doesn't work when in fullscreen for some reason.)
+-added ability to drag and drop ROM files into the window to load them
+-rearranged a couple of the keyboard shortcuts
+-added a frame advance key.
+0.029 (3/8/2011)
+-Rewrote the CPU timing system, so the NES's timing is a lot more accurate
+(and faster as well; eliminated about 2 million unnecessary method calls per
+frame, which means that I get about 40 extra FPS.)
+-Added support for Mapper 11 (Color Dreams)
+-Mapper fixes to Mappers 1 and 4 (Fixed Dragon Warrior 3 + 4, Kickle Cubicle)
+-Added a proper error message for trying to load a UNIF file.
+0.028 (3/2/2011)
+Rewrote/refactored a bunch of code to make things more object oriented. Also
+changed the display code to use Java's double buffering scheme instead of my own
+hackish method, which MAY have made things a bit faster but definitely fixed that
+occasional flicker that was there before. (Simplified the code, too!)
+Also made some changes to the sound engine, so Contra and a few other things
+sound closer to how they should.
+Next update will hopefully bring more visible improvements.
+0.027.2 (2/12/2011)
+perhaps THIS will solve the problems with Windows XP. (Last version worked ok on
+the first XP machine I tried, but not the second.)
+0.027.1 (2/11/2011)
+Switched back to the old frame limiter code, now things should hopefully
+work right on Windows XP again. Also fixed the crash when audio was disabled.
+0.027 (2/4/2011)
+Since I'm trapped at home in a snowstorm with nothing else to do, might as well release.
+-Modified MMC3 scanline counter, which fixed Super Mario 3 and Silver Surfer
+-Made the APU counter count 4x a frame instead of 5 (off by one error)
+which makes music in a lot of older games sound closer to how it should be.
+0.026.1 (2/1/2011)
+-Added support for Sunsoft-01 and Konami VRC2 and VRC4 mappers.
+VRC4 is still not quite correct... status bar flickers in Parodius, but Gradius II,
+the Japanese version of Contra, and Bio Miracle Bokutte Opa all work fine.
+-Made sound keep playing while fast forwarding
+-Rewrote all the frame limiter code again (need to test on a slower machine with XP)
+-Improved speed by making sure that I wasn't regenerating the entire tile cache every
+time the game wrote to the mapper, even if the tiles didn't change.
+
+0.025 (1/25/2011)
+-Fixed the stupid stupid bug that would probably make the file dialog impossible to
+open on any system that hasn't had HalfNES on it before!
+(remember: if you haven't tested it, it does not work.)
+-Changed the file dialog to one that doesn't look terrible on a Mac
+(but now I can't filter files by extension on Windows. oh well.)
+-Added keyboard shortcuts to the menus and rearranged them a bit
+-Added a fast forward toggle
+-Fixed mapper 66
+-Fixed controller reading for Paperboy and Captain Planet
+-the palette mirroring code passes blargg's test now
+-Background of Kirby's Adventure fixed... that one was because the first byte of
+expansion RAM was always write protected. Oops.
+-SMB3 has stopped working completely. I'll figure out why soon.
+0.024 (1/16/2011)
+-Added proper options dialog for changing screen size and keymappings
+(but you need to restart the emulator to apply the new settings - will fix that
+sooner or later but I need to write code to completely rebuild the window first.)
+-Removed the old INI file - now settings are saved in your home folder
+-Now remembers the position of the window and the last folder you loaded a ROM from
+-Fixed a few more bugs in the graphics code so now the intros of Solstice and
+Ninja Gaiden look the way they should.
+0.023 (1/4/2011)
+Bugfixes:
+-The Reset command didn't do anything, now it does.
+-Gradius and Devil World work properly again and Back to the Future works better
+(I used && when what I meant was ||).
+-I now realize that file loading doesn't work very well on a Mac
+(and the file dialog is terrible too!), so I'll work on that.
+0.022 (1/3/2011)
+Wow, it's been a while.
+Added Player 2 controller support, can remap the buttons in the settings.txt file.
+Improved rendering: Gauntlet runs full speed on my computer when it didn't before,
+the status bars of Zelda II and Ninja Gaiden now look right,
+in general performance is about 20 percent better because the drawing code is more efficient.
+Back to the Future works but has random unexplained glitches.
+Made a few additional tweaks to the MMC3 code, now Might and Magic works but SMB3 is unchanged.
+Also eliminated a potential crash after attempting to load a game with an unsupported mapper.
+Changes to the audio code: Excitebike and a lot of other early games that
+used the sweep feature on the square wave channels should be correct now,
+Super Mario Brothers finally sounds right.
+Also, this works. http://kkfos.aspekt.fi/2010/11/14/4-bit-pcm-on-nes-using-the-pulse-channel/
+0.021 (12/15/2010)
+Added mappers 66 and 71 (SMB/Duck Hunt and Codemasters, respectively).
+Also made background sprites actually render behind the background, and fixed
+sprite priorities for 8x16 sprites (They were reversed before).
+If you're having trouble with SMB3, make sure that you have the PRG1 version of the ROM.
+Even then, it still freezes on the title screen half the time when you press Start...
+if it does this, reload the ROM and try it again. Once you start the game successfully though it
+should be playable. There's just something the title screen does that throws timing off.
+0.020 (12/8/2010)
+Fixed the missing sprites bug and games with a status bar on the bottom.
+Super Mario 3, Tiny Toon Adventures, Marble Madness, Kirby's Adventure and Battletoads are playable.
+(Tiny Toons doesn't quite put the status bar in the right place, but it's not too far off.)
+Fixed 4-screen mirroring (Gauntlet)
+Also added mapper 34 support (Deadly Towers)
+Dragon Warrior 3 + 4 still won't start, Zelda II and Crystalis still have problems.
+0.019 (12/1/2010)
+Fixed the worst of the scrolling bugs. Contra, Castlevania 2, Blaster Master,
+and many other games are now actually playable.
+Also, it seems that Yo Noid! crashed the emulator
+(because bitwise and is NOT the same thing as modulus
+when you don't have a power of 2!)
+so I very reluctantly fixed that as well.
+Known Issues:
+-Jump sound doesn't cut off in world 1-2 of SMB
+-Zelda II won't scroll correctly until real sprite 0 hit is implemented
+-Most games with a status bar on the bottom won't display that bar
+-Sprites missing in Tiny Toon Adventures, Little Nemo
+-DuckTales status bar uses wrong graphics
+-Mario's eyes are missing in SMB2
+-Basically every racing game uses the same scrolling trick that won't look right
+-SMB3 and Marble Madness both crash and Silver Surfer resets itself
+0.018 (11/24/2010)
+Timing fixes - Kid Icarus, Solomon's Key, Adventures of Lolo 2, Jackal are now playable.
+Fixed a couple issues with the audio as well.
+(Periodic noise works, and channels don't buzz when the periods are set to zero.)
+Mega Man 2 is where this improvement is most noticeable.
+The OS default look and feel is used instead of the Java default now, which
+means the Open dialog is improved.
+Saved games should always save on close now, no matter how the window is closed.
+0.017 (11/21/2010)
+Mapper 7 (ANROM) and Mapper 4 (MMC3) are now supported. Unfortunately, most
+of those now supported games have graphical glitches because they change the scrolling
+in the middle of a frame and that isn't handled properly yet.
+Also made remapping keys from the INI file ACTUALLY work (sorry!) and prevented
+left and right from registering at the same time because that causes problems
+in some games.
+0.016 (11/16/2010)
+Audio - Sweep and DMC channel supported. Also fixed the frame limiter. 
+Added a way to change keybindings (if you can look up Swing keycodes) - see "settings.txt" file.
+Removed options dialog for the moment since it didn't do anything.
+0.015 (Not Released)
+Fixes to MMC1, addition of battery save support, and some unfortunate frame limiter bugs that it took a while to track down.
+0.014 (11/1)
+Completely rewrote the sound core, it's an order of magnitude better sounding than it was.
+Slower,too, but that was necessary. Now updates sound every time something changes. 
+Envelopes are correct too. Can make it faster by moving the counters forward in larger 
+increments since it doesn't generate samples at 2 Mhz anyway. Also added in frameworks 
+for options dialog, about box, and command line args support. 
+Missing still:
+Sweep unit, noise channel loop flag (MM2 Quickman stage), all of the DMC stuff, vertical scrolling,
+just about everything about the PPU,really. And half of MMC1 roms still don't boot,and if I want to 
+make the options window et cetera work right I'm going to need to re-abstract the interface away 
+from the actual emulation code. Why did I change that in the first place? Plus all the other older stuff.
