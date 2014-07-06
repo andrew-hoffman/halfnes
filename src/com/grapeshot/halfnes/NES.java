@@ -73,45 +73,31 @@ public class NES {
             gui.render();
         }
     };
+    int div = 2;
 
     public synchronized void runframe() {
-        final int scanlinectrfire = 256;
         //the main method sequencing everything that has to happen in the nes each frame
         //loops unrolled a bit to avoid some conditionals every cycle
         //vblank
         //start by setting nmi
         if ((utils.getbit(ppu.ppuregs[0], 7))) {
             cpu.runcycle(241, 9000);
+            ++div;
             cpu.nmi();
             // do the nmi but let cpu run ONE extra instruction first
             // still necessary for Vice - Project Doom
         }
-        for (int scanline = 241; scanline < 261; ++scanline) {
+        for (int scanline = 241; scanline < 262; ++scanline) {
+            //System.err.println(scanline);
             //most of vblank period
             for (int pixel = 0; pixel < 341; ++pixel) {
-                cpu.runcycle(scanline, pixel);
+                if ((++div % 3) == 0) {
+                    cpu.runcycle(scanline, pixel);
+                }
                 ppu.clock();
             }
             mapper.notifyscanline(scanline);
         }
-        //scanline 261 
-        //turn off vblank flag
-        for (int pixel = 0; pixel < 6; ++pixel) {
-            cpu.runcycle(261, pixel);
-            ppu.clock();
-        }
-        ppu.setvblankflag(false);
-        for (int pixel = 6; pixel < 30; ++pixel) {
-            cpu.runcycle(261, pixel);
-            ppu.clock();
-        }
-        // turn off sprite 0, sprite overflow flags
-        ppu.ppuregs[2] &= 0x9F;
-        for (int pixel = 30; pixel < 341; ++pixel) {
-            cpu.runcycle(261, pixel);
-            ppu.clock();
-        }
-        mapper.notifyscanline(261);
         //odd frames are shorter by one PPU pixel if rendering is on.
 
         dontSleep = apu.bufferHasLessThan(1000);
@@ -121,12 +107,17 @@ public class NES {
 
         apu.finishframe();
         cpu.modcycles();
+        
         //active drawing time
-        for (int scanline = 0; scanline < 240; ++scanline) {
+        for (int scanline = 0; scanline <= 240; ++scanline) {
+            //System.err.println(scanline);
             for (int pixel = 0; pixel < 341; ++pixel) {
-                cpu.runcycle(scanline, pixel);
+                if ((++div % 3) == 0) {
+                    cpu.runcycle(scanline, pixel);
+                }
                 ppu.clock();
             }
+            mapper.notifyscanline(scanline);
         }
 
         //set the vblank flag

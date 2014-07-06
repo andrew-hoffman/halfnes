@@ -61,7 +61,7 @@ public class APU {
     }
 
     public final int read(final int addr) {
-        updateto((int) cpu.cycles);
+        updateto((int) cpu.clocks);
         switch (addr) {
             case 0x15:
                 //returns channel status
@@ -119,7 +119,7 @@ public class APU {
     public final void write(final int reg, final int data) {
         //This is how values written to any of the APU's memory
         //mapped registers change the state of the system.
-        updateto((int) cpu.cycles - 1);
+        updateto((int) cpu.clocks - 1);
         //System.err.println("Wrote " + utils.hex(data) + " to " + utils.hex(reg) + " @ cycle " + cpu.cycles);
         switch (reg) {
             case 0x0:
@@ -511,7 +511,7 @@ public class APU {
         if (dmcsamplesleft > 0) {
             dmcbuffer = cpuram.read(dmcaddr++);
             dmcBufferEmpty = false;
-            cpu.cycles += 2;
+            cpu.stealcycles(2);
             //DPCM Does steal cpu cycles - this should actually vary between 1-4
             //can't do this properly without a cycle accurate cpu/ppu
             if (dmcaddr > 0xffff) {

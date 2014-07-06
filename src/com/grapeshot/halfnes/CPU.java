@@ -8,7 +8,8 @@ import java.io.IOException;
 public final class CPU {
 
     private final CPURAM ram;
-    public int cycles;
+    private int cycles; //increment to steal cycles from cpu
+    public int clocks; //use for synchronizing with cpu
     private int A, X, Y, S; // registers
     public int PC;
     private boolean carryFlag = false, zeroFlag = false,
@@ -60,7 +61,7 @@ public final class CPU {
         ram.write(0x4015, 0x00);
         ram.write(0x4017, 0x00);
 
-        cycles = 27394; //correct for position we start vblank in
+        clocks = 27394; //correct for position we start vblank in
         A = 0;
         X = 0;
         Y = 0;
@@ -78,21 +79,32 @@ public final class CPU {
         interruptsDisabled = true;
     }
 
+    public void modcycles() {
+        System.err.println(clocks);
+        //clocks %= ntscframe;
+        clocks = 0;
+    }
+
+    public void stealcycles(int cyclestosteal) {
+        cycles += cyclestosteal;
+    }
 
     public final void runcycle(final int scanline, final int pixel) {
-        //ram.read(0x4000); //attempt to sync the APU every cycle and make dmc irqs work properly, which they still don't. Feh.
-        
-        if(cycles > 0){
-            --cycles;
-            return;
-        }
-        
+        ram.read(0x4000); //attempt to sync the APU every cycle and make dmc irqs work properly, which they still don't. Feh.
+        ++clocks;
+
         if (ram.apu.sprdma_count > 0) {
             ram.apu.sprdma_count--;
             if (ram.apu.sprdma_count == 0) {
                 cycles += 514;
             }
         }
+
+        if (cycles > 0) { //count down cycles until there is work to do again
+            --cycles;
+            return;
+        }
+
         if (interrupt > 0) {
             if (!interruptsDisabled && !interruptDelay) {
                 interrupt();
@@ -1381,8 +1393,6 @@ public final class CPU {
             }
         } else {
             result = A - value - (carryFlag ? 0 : 1);
-
-
         }
         carryFlag = (result >> 8 == 0);
         // set overflow flag
@@ -1633,7 +1643,7 @@ public final class CPU {
         final int readloc = abs();
         return ram.read(readloc)
                 + (ram.read(((readloc & 0xff) == 0xff) ? readloc - 0xff
-                : readloc + 1) << 8);
+                        : readloc + 1) << 8);
         //if reading from the last byte in a page, high bit of address
         //is taken from first byte on the page, not first byte on NEXT page.
     }
@@ -1695,10 +1705,6 @@ public final class CPU {
         return " PC:" + utils.hex(PC) + " A:" + utils.hex(A) + " X:"
                 + utils.hex(X) + " Y:" + utils.hex(Y) + " P:"
                 + utils.hex(flagstobyte()) + " SP:" + utils.hex(S);
-    }
-
-    public void modcycles() {
-        cycles %= ntscframe;
     }
 
     public static String[] opcodes() {
@@ -1964,12 +1970,13 @@ public final class CPU {
         opcodes[0xFF] = "ISC $%2%1,x";
         return opcodes;
     }
-    
+
     //these methods are needed for NSF playing use
-    public void setRegA(int value){
+    public void setRegA(int value) {
         A = value & 0xff;
     }
-    public void setRegX(int value){
+
+    public void setRegX(int value) {
         X = value & 0xff;
     }
 }

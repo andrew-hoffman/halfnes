@@ -8,7 +8,7 @@ import java.util.Arrays;
 public class PPU {
 
     public Mapper mapper;
-    private int scanline, oamaddr, sprite0x, readbuffer = 0;
+    private int oamaddr, sprite0x, readbuffer = 0;
     private int loopyV = 0x0;//ppu memory pointer
     private int loopyT = 0x0;//temp pointer
     private int loopyX = 0;//fine x scroll
@@ -182,40 +182,53 @@ public class PPU {
     }
 
     int cyclecounter = 0;
+    int scanline = 241;
     boolean sprite0 = false;
 
     public final void clock() {
         //this will go away in a bit
         //returns nothing
         //runs for cycles 0-340 inclusive
-        if ((cyclecounter = ++cyclecounter % 341) == 0) {
-            sprite0 = drawLine(scanline);
-            scanline = ++scanline % 262;
+        if (cyclecounter == 70) {
+            //System.err.println("* " + scanline);
+            sprite0 = drawLine();
             if (sprite0) {
                 ppuregs[2] |= 0x40;
             }
         }
+        if (scanline == 241 && cyclecounter == 1) {
+            setvblankflag(true);
+        } else if (scanline == 261 && cyclecounter == 1) {
+            setvblankflag(false);
+        } else if (scanline == 261 && cyclecounter == 30) {
+            // turn off sprite 0, sprite overflow flags
+            ppuregs[2] &= 0x9F;
+        }
+        if (cyclecounter == 340) {
+            scanline = ++scanline % 262;
+        }
+        cyclecounter = ++cyclecounter % 341;
     }
 
     int bgcolor;
     boolean dotcrawl = true;
 
-    public final boolean drawLine(final int scanline) {
-        //System.err.print("SCANLINE " + scanline);
+    public final boolean drawLine() {
+        //System.err.println("SCANLINE " + scanline);
         //this contains probably more magic numbers than the rest of the program combined.
         //TODO: define some static bitmasks to manipulate the address through, instead
-        bgpattern = utils.getbit(ppuregs[0], 4);
-        sprpattern = utils.getbit(ppuregs[0], 3);
-        final int bufferoffset = scanline << 8;
-        //TODO: Simplify Logic
-        bgcolor = pal[0] + 256; //plus 256 is to give indication it IS the bgcolor
-        //because bg color is special
         if (scanline == 0) {
             dotcrawl = ppuison();
         }
         if (scanline >= 240) {
             return false;
         }
+        bgpattern = utils.getbit(ppuregs[0], 4);
+        sprpattern = utils.getbit(ppuregs[0], 3);
+        final int bufferoffset = scanline << 8;
+        //TODO: Simplify Logic
+        bgcolor = pal[0] + 256; //plus 256 is to give indication it IS the bgcolor
+        //because bg color is special
         bgcolors[scanline] = pal[0];
         if (utils.getbit(ppuregs[1], 3)) {
             //System.err.println(" BG ON!");
@@ -287,19 +300,20 @@ public class PPU {
             Arrays.fill(bitmap, bufferoffset, bufferoffset + 256, bgcolor);
         }
         //draw sprites on top of whatever we had
-        drawSprites(scanline);
+        drawSprites();
         //evaluate sprites for NEXT scanline
-        evalSprites(scanline);
+        evalSprites();
         //deal with the grayscale flag
-        if (utils.getbit(ppuregs[1], 0)) {
-            for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
-                bitmap[i] &= 0x30;
-            }
-        }
-        final int emph = (ppuregs[1] & 0xe0) << 1;
-        for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
-            bitmap[i] = bitmap[i] & 0x3f | emph;
-        }
+//        if (utils.getbit(ppuregs[1], 0)) {
+//            for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
+//                bitmap[i] &= 0x30;
+//            }
+//        }
+//        //handle color emphasis
+//        final int emph = (ppuregs[1] & 0xe0) << 1;
+//        for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
+//            bitmap[i] = bitmap[i] & 0x3f | emph;
+//        }
         if (sprite0hit) {
             sprite0hit = false;
             return true;
@@ -310,7 +324,7 @@ public class PPU {
     private int off, y, index, sprpxl, found;
     private boolean sprite0here = false;
 
-    private void evalSprites(final int scanline) {
+    private void evalSprites() {
         if (!utils.getbit(ppuregs[1], 4) && !utils.getbit(ppuregs[1], 3)) {
             //skip eval only if sprite and bg rendering are both off
             return;
@@ -386,10 +400,7 @@ public class PPU {
         }
     }
 
-    private void drawSprites(final int scanline) {
-//        if (!utils.getbit(ppuregs[1], 4)) {
-//            return;
-//        }
+    private void drawSprites() {
         //rendering. this is slow b/c it's iterating through all pixels on line.
         //profiler doesn't see how slow it is though. fix that!
         if (found == 0) {

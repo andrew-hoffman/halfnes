@@ -34,7 +34,7 @@ public class MMC1Mapper extends Mapper {
             super.cartWrite(addr, data);
             return;
         }
-        if (cpu.cycles == cpucycleprev && cpuram.apu.nes.framecount == framecountprev) {
+        if (cpu.clocks == cpucycleprev && cpuram.apu.nes.framecount == framecountprev) {
             return; //bill and ted fix - prevents 2 writes too close together
             //from being acknowledged
             //if I ever go to a cycle based core instead of opcode based this needs to change.
@@ -42,7 +42,7 @@ public class MMC1Mapper extends Mapper {
         framecountprev = cpuram.apu.nes.framecount;
         //and this is extremely ugly/likely to break
         //but is needed to prevent the Bill+Ted fix from breaking Dr Mario intro.
-        cpucycleprev = cpu.cycles;
+        cpucycleprev = cpu.clocks;
         if (utils.getbit(data, 7)) {
             // reset shift register
             mmc1shift = 0;
