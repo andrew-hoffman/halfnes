@@ -82,7 +82,6 @@ public class NES {
         //start by setting nmi
         if ((utils.getbit(ppu.ppuregs[0], 7))) {
             cpu.runcycle(241, 9000);
-            ++div;
             cpu.nmi();
             // do the nmi but let cpu run ONE extra instruction first
             // still necessary for Vice - Project Doom

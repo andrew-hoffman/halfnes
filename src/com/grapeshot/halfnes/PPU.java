@@ -183,18 +183,17 @@ public class PPU {
 
     int cyclecounter = 0;
     int scanline = 241;
-    boolean sprite0 = false;
 
     public final void clock() {
         //this will go away in a bit
         //returns nothing
         //runs for cycles 0-340 inclusive
-        if (cyclecounter == 70) {
-            //System.err.println("* " + scanline);
-            sprite0 = drawLine();
-            if (sprite0) {
-                ppuregs[2] |= 0x40;
-            }
+        if (cyclecounter == 1) {
+            drawLine();
+        }
+        if(sprite0hit && sprite0x == (cyclecounter+1)){
+            sprite0hit = false;
+            ppuregs[2] |= 0x40;
         }
         if (scanline == 241 && cyclecounter == 1) {
             setvblankflag(true);
@@ -213,7 +212,7 @@ public class PPU {
     int bgcolor;
     boolean dotcrawl = true;
 
-    public final boolean drawLine() {
+    public final void drawLine() {
         //System.err.println("SCANLINE " + scanline);
         //this contains probably more magic numbers than the rest of the program combined.
         //TODO: define some static bitmasks to manipulate the address through, instead
@@ -221,7 +220,7 @@ public class PPU {
             dotcrawl = ppuison();
         }
         if (scanline >= 240) {
-            return false;
+            return;
         }
         bgpattern = utils.getbit(ppuregs[0], 4);
         sprpattern = utils.getbit(ppuregs[0], 3);
@@ -304,21 +303,15 @@ public class PPU {
         //evaluate sprites for NEXT scanline
         evalSprites();
         //deal with the grayscale flag
-//        if (utils.getbit(ppuregs[1], 0)) {
-//            for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
-//                bitmap[i] &= 0x30;
-//            }
-//        }
-//        //handle color emphasis
-//        final int emph = (ppuregs[1] & 0xe0) << 1;
-//        for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
-//            bitmap[i] = bitmap[i] & 0x3f | emph;
-//        }
-        if (sprite0hit) {
-            sprite0hit = false;
-            return true;
-        } else {
-            return false;
+        if (utils.getbit(ppuregs[1], 0)) {
+            for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
+                bitmap[i] &= 0x30;
+            }
+        }
+        //handle color emphasis
+        final int emph = (ppuregs[1] & 0xe0) << 1;
+        for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
+            bitmap[i] = bitmap[i] & 0x3f | emph;
         }
     }
     private int off, y, index, sprpxl, found;
