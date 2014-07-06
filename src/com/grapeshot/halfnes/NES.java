@@ -88,20 +88,30 @@ public class NES {
         }
         for (int scanline = 241; scanline < 261; ++scanline) {
             //most of vblank period
-            cpu.cycle(scanline, scanlinectrfire);
+            for (int pixel = 0; pixel < 341; ++pixel) {
+                cpu.runcycle(scanline, pixel);
+                ppu.clock();
+            }
             mapper.notifyscanline(scanline);
-            cpu.cycle(scanline, 341);
         }
         //scanline 261 
         //turn off vblank flag
-        cpu.cycle(261, 6);
+        for (int pixel = 0; pixel < 6; ++pixel) {
+            cpu.runcycle(261, pixel);
+            ppu.clock();
+        }
         ppu.setvblankflag(false);
-        cpu.cycle(261, 30);
+        for (int pixel = 6; pixel < 30; ++pixel) {
+            cpu.runcycle(261, pixel);
+            ppu.clock();
+        }
         // turn off sprite 0, sprite overflow flags
         ppu.ppuregs[2] &= 0x9F;
-        cpu.cycle(261, scanlinectrfire);
+        for (int pixel = 30; pixel < 341; ++pixel) {
+            cpu.runcycle(261, pixel);
+            ppu.clock();
+        }
         mapper.notifyscanline(261);
-        cpu.cycle(261, (((framecount & 1) == 1) && utils.getbit(ppu.ppuregs[1], 3)) ? 340 : 341);
         //odd frames are shorter by one PPU pixel if rendering is on.
 
         dontSleep = apu.bufferHasLessThan(1000);
@@ -113,31 +123,12 @@ public class NES {
         cpu.modcycles();
         //active drawing time
         for (int scanline = 0; scanline < 240; ++scanline) {
-            if (!ppu.drawLine(scanline)) { //returns true if sprite 0 hits
-                cpu.cycle(scanline, scanlinectrfire);
-                mapper.notifyscanline(scanline);
-            } else {
-                //it is de sprite zero line
-                final int sprite0x = ppu.getspritehit();
-                if (sprite0x < scanlinectrfire) {
-                    cpu.cycle(scanline, sprite0x);
-                    ppu.ppuregs[2] |= 0x40; //sprite 0 hit
-                    cpu.cycle(scanline, scanlinectrfire);
-                    mapper.notifyscanline(scanline);
-                } else {
-                    cpu.cycle(scanline, scanlinectrfire);
-                    mapper.notifyscanline(scanline);
-                    cpu.cycle(scanline, sprite0x);
-                    ppu.ppuregs[2] |= 0x40; //sprite 0 hit
-                }
+            for (int pixel = 0; pixel < 341; ++pixel) {
+                cpu.runcycle(scanline, pixel);
+                ppu.clock();
             }
-            //and finish out the scanline
-            cpu.cycle(scanline, 341);
         }
-        //scanline 240: dummy fetches
-        cpu.cycle(240, scanlinectrfire);
-        mapper.notifyscanline(240);
-        cpu.cycle(240, 341);
+
         //set the vblank flag
         ppu.setvblankflag(true);
         //render the frame

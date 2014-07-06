@@ -20,8 +20,8 @@ public class PPU {
     public final int[] ppuregs = new int[0x8];
     public final int[] pal = //power-up pallette verified by Blargg's power_up_palette test 
             {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D, 0x08, 0x10, 0x08, 0x24, 0x00, 0x00, //palette *might* be different on every NES
-        0x04, 0x2C, 0x09, 0x01, 0x34, 0x03, 0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, //but some emulators (nesemu1, BizHawk, RockNES, MyNes)
-        0x00, 0x20, 0x2C, 0x08};    //use it anyway
+                0x04, 0x2C, 0x09, 0x01, 0x34, 0x03, 0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, //but some emulators (nesemu1, BizHawk, RockNES, MyNes)
+                0x00, 0x20, 0x2C, 0x08};    //use it anyway
     private DebugUI debuggui;
     private int vraminc = 1;
     private final static boolean PPUDEBUG = false;
@@ -180,6 +180,23 @@ public class PPU {
                 && (utils.getbit(ppuregs[1], 3) || utils.getbit(ppuregs[1], 4));
 
     }
+
+    int cyclecounter = 0;
+    boolean sprite0 = false;
+
+    public final void clock() {
+        //this will go away in a bit
+        //returns nothing
+        //runs for cycles 0-340 inclusive
+        if ((cyclecounter = ++cyclecounter % 341) == 0) {
+            sprite0 = drawLine(scanline);
+            scanline = ++scanline % 262;
+            if (sprite0) {
+                ppuregs[2] |= 0x40;
+            }
+        }
+    }
+
     int bgcolor;
     boolean dotcrawl = true;
 
@@ -193,10 +210,13 @@ public class PPU {
         //TODO: Simplify Logic
         bgcolor = pal[0] + 256; //plus 256 is to give indication it IS the bgcolor
         //because bg color is special
-        bgcolors[scanline] = pal[0];
         if (scanline == 0) {
             dotcrawl = ppuison();
         }
+        if (scanline >= 240) {
+            return false;
+        }
+        bgcolors[scanline] = pal[0];
         if (utils.getbit(ppuregs[1], 3)) {
             //System.err.println(" BG ON!");
             // if bg is on, draw tiles.

@@ -78,16 +78,14 @@ public final class CPU {
         interruptsDisabled = true;
     }
 
-    public final void cycle(final int scanline, final int endpixel) {
-        while ((cycles * 3) < ((scanline * 341) + endpixel)) {
-            int lastcycle = cycles;
-            runcycle(scanline, (cycles * 3) - (scanline * 341));
-            ram.mapper.cpucycle(cycles - lastcycle);
-        }
-    }
 
     public final void runcycle(final int scanline, final int pixel) {
-        ram.read(0x4000); //attempt to sync the APU every cycle and make dmc irqs work properly, which they still don't. Feh.
+        //ram.read(0x4000); //attempt to sync the APU every cycle and make dmc irqs work properly, which they still don't. Feh.
+        
+        if(cycles > 0){
+            --cycles;
+            return;
+        }
         
         if (ram.apu.sprdma_count > 0) {
             ram.apu.sprdma_count--;
