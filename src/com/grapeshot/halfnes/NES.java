@@ -75,29 +75,18 @@ public class NES {
     };
     int div = 2;
 
-    public synchronized void runframe() {
+    private synchronized void runframe() {
         //the main method sequencing everything that has to happen in the nes each frame
         //loops unrolled a bit to avoid some conditionals every cycle
         //vblank
         //start by setting nmi
         if ((utils.getbit(ppu.ppuregs[0], 7))) {
-            cpu.runcycle(241, 9000);
             cpu.nmi();
-            // do the nmi but let cpu run ONE extra instruction first
-            // still necessary for Vice - Project Doom
         }
+        //run for scanlines of vblank
         for (int scanline = 241; scanline < 262; ++scanline) {
-            //System.err.println(scanline);
-            //most of vblank period
-            for (int pixel = 0; pixel < 341; ++pixel) {
-                if ((++div % 3) == 0) {
-                    cpu.runcycle(scanline, pixel);
-                }
-                ppu.clock();
-            }
-            mapper.notifyscanline(scanline);
+            runLine(scanline);
         }
-        //odd frames are shorter by one PPU pixel if rendering is on.
 
         dontSleep = apu.bufferHasLessThan(1000);
         //if the audio buffer is completely drained, don't sleep for this frame
@@ -109,18 +98,9 @@ public class NES {
         
         //active drawing time
         for (int scanline = 0; scanline <= 240; ++scanline) {
-            //System.err.println(scanline);
-            for (int pixel = 0; pixel < 341; ++pixel) {
-                if ((++div % 3) == 0) {
-                    cpu.runcycle(scanline, pixel);
-                }
-                ppu.clock();
-            }
-            mapper.notifyscanline(scanline);
+            runLine(scanline);
         }
-
-        //set the vblank flag
-        ppu.setvblankflag(true);
+        
         //render the frame
         ppu.renderFrame(gui);
         if ((framecount & 2047) == 0) {
@@ -128,6 +108,18 @@ public class NES {
             saveSRAM(true);
         }
         ++framecount;
+        //System.err.println(framecount);
+    }
+
+    private void runLine(int scanline) {
+        //System.err.println(scanline);
+        for (int pixel = 0; pixel < 341; ++pixel) {
+            if ((++div % 3) == 0) {
+                cpu.runcycle(scanline, pixel);
+            }
+            ppu.clock();
+        }
+        mapper.notifyscanline(scanline);
     }
 
     public void setControllers(ControllerInterface controller1, ControllerInterface controller2) {

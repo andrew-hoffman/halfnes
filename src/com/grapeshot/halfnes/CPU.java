@@ -80,8 +80,7 @@ public final class CPU {
     }
 
     public void modcycles() {
-        System.err.println(clocks);
-        //clocks %= ntscframe;
+        //System.err.println(clocks);
         clocks = 0;
     }
 
@@ -90,7 +89,7 @@ public final class CPU {
     }
 
     public final void runcycle(final int scanline, final int pixel) {
-        //ram.read(0x4000); //attempt to sync the APU every cycle and make dmc irqs work properly, which they still don't. Feh.
+        ram.read(0x4000); //attempt to sync the APU every cycle and make dmc irqs work properly, which they still don't. Feh.
         ++clocks;
 
         if (ram.apu.sprdma_count > 0) {

@@ -181,32 +181,44 @@ public class PPU {
 
     }
 
-    int cyclecounter = 0;
+    int cycles = 0;
     int scanline = 241;
+    int framecount = 0;
 
     public final void clock() {
         //this will go away in a bit
         //returns nothing
         //runs for cycles 0-340 inclusive
-        if (cyclecounter == 1) {
+        if (scanline == 0
+                && cycles == 0
+                && utils.getbit(ppuregs[1], 3)
+                && utils.getbit(framecount, 1)) {
+            ++cycles;
+            //skip a clock on line 0 of odd frames
+        }
+        if (cycles == 1) {
             drawLine();
         }
-        if(sprite0hit && sprite0x == (cyclecounter+1)){
+        if (sprite0hit && sprite0x == (cycles + 1)) {
             sprite0hit = false;
             ppuregs[2] |= 0x40;
         }
-        if (scanline == 241 && cyclecounter == 1) {
+
+        if (scanline == 241 && cycles == 1) {
             setvblankflag(true);
-        } else if (scanline == 261 && cyclecounter == 1) {
+        } else if (scanline == 261 && cycles == 1) {
+            // turn off vblank, sprite 0, sprite overflow flags
             setvblankflag(false);
-        } else if (scanline == 261 && cyclecounter == 30) {
-            // turn off sprite 0, sprite overflow flags
             ppuregs[2] &= 0x9F;
         }
-        if (cyclecounter == 340) {
+        if (cycles == 340) {
             scanline = ++scanline % 262;
+            if (scanline == 0) {
+                ++framecount;
+                //System.err.println(framecount);
+            }
         }
-        cyclecounter = ++cyclecounter % 341;
+        cycles = ++cycles % 341;
     }
 
     int bgcolor;
@@ -506,7 +518,9 @@ public class PPU {
             //per line of tile ( 1 byte)
             for (int j = 0; j < 8; ++j) {
                 //per pixel(1 bit)
-                dat[8 * i + j] = ((utils.getbit(mapper.ppuRead(i + patterntblptr), 7 - j)) ? 0x555555 : 0) + ((utils.getbit(mapper.ppuRead(i + patterntblptr + 8), 7 - j)) ? 0xaaaaaa : 0);
+                dat[8 * i + j]
+                        = ((utils.getbit(mapper.ppuRead(i + patterntblptr), 7 - j)) ? 0x555555 : 0)
+                        + ((utils.getbit(mapper.ppuRead(i + patterntblptr + 8), 7 - j)) ? 0xaaaaaa : 0);
             }
         }
         return dat;
@@ -539,11 +553,7 @@ public class PPU {
         return tiledata;
     }
 
-    public final int getspritehit() {
-        return (sprite0x < 255) ? sprite0x : -1;
-    }
-
-    void setvblankflag(boolean b) {
+    private void setvblankflag(boolean b) {
         //on at the end of scanline 240
         //off at beginning of scanline 261 (or when it's read)
         ppuregs[2] = utils.setbit(ppuregs[2], 7, b);
