@@ -39,6 +39,7 @@ public class PreferencesDialog extends javax.swing.JDialog {
         jCheckSoundFiltering.setSelected(prefs.getBoolean("soundFiltering", true));
         jCheckMaintainAspect.setSelected(prefs.getBoolean("maintainAspect", true));
         jCheckBoxNTSC.setSelected(prefs.getBoolean("TVEmulation", false));
+        jCheckBoxShowScope.setSelected(prefs.getBoolean("showScope", false));
         jCheckBoxSleep.setSelected(prefs.getBoolean("Sleep", true));
         jButtonOK.setActionCommand("OK");
         jButtonCancel.setActionCommand("Cancel");
@@ -78,6 +79,7 @@ public class PreferencesDialog extends javax.swing.JDialog {
         jLabel20 = new javax.swing.JLabel();
         jCheckBoxSmoothVideo = new javax.swing.JCheckBox();
         jCheckBoxSleep = new javax.swing.JCheckBox();
+        jCheckBoxShowScope = new javax.swing.JCheckBox();
 
         setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
         setName("OptionsDialog"); // NOI18N
@@ -160,6 +162,8 @@ public class PreferencesDialog extends javax.swing.JDialog {
             }
         });
 
+        jCheckBoxShowScope.setText("Show Audio Output");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -177,7 +181,8 @@ public class PreferencesDialog extends javax.swing.JDialog {
                     .addComponent(jCheckBoxNTSC)
                     .addComponent(jCheckMaintainAspect)
                     .addComponent(jCheckBoxSmoothVideo)
-                    .addComponent(jCheckBoxSleep))
+                    .addComponent(jCheckBoxSleep)
+                    .addComponent(jCheckBoxShowScope))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
@@ -241,7 +246,9 @@ public class PreferencesDialog extends javax.swing.JDialog {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jCheckBoxNTSC)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jCheckBoxSleep)))
+                        .addComponent(jCheckBoxSleep)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jCheckBoxShowScope)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -265,6 +272,7 @@ public class PreferencesDialog extends javax.swing.JDialog {
         prefs.putBoolean("Sleep", jCheckBoxSleep.isSelected());
         screenScaling = (Integer) (jSpinnerScale.getModel().getValue());
         prefs.putBoolean("smoothScaling", jCheckBoxSmoothVideo.isSelected());
+        prefs.putBoolean("showScope", jCheckBoxShowScope.isSelected());
         prefs.putInt("screenScaling", screenScaling);
         prefs.putInt("sampleRate", Integer.parseInt(jSampleRateBox.getSelectedItem().toString()));
         prefs.putInt("outputvol", volumeSlider.getValue());
@@ -307,6 +315,7 @@ public class PreferencesDialog extends javax.swing.JDialog {
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonOK;
     private javax.swing.JCheckBox jCheckBoxNTSC;
+    private javax.swing.JCheckBox jCheckBoxShowScope;
     private javax.swing.JCheckBox jCheckBoxSleep;
     private javax.swing.JCheckBox jCheckBoxSmoothVideo;
     private javax.swing.JCheckBox jCheckMaintainAspect;

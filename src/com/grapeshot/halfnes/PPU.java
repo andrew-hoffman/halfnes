@@ -17,7 +17,7 @@ public class PPU {
             spritepals = new int[8], bitmap = new int[240 * 256];
     private final boolean[] spritebgflags = new boolean[8];
     private boolean sprite0hit = false, even = true, bgpattern = true, sprpattern = false;
-    public final int[] ppuregs = new int[0x8];
+    private final int[] ppuregs = new int[0x8];
     public final int[] pal = //power-up pallette verified by Blargg's power_up_palette test 
             {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D, 0x08, 0x10, 0x08, 0x24, 0x00, 0x00, //palette *might* be different on every NES
                 0x04, 0x2C, 0x09, 0x01, 0x34, 0x03, 0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, //but some emulators (nesemu1, BizHawk, RockNES, MyNes)
@@ -181,20 +181,23 @@ public class PPU {
 
     }
 
-    int cycles = 0;
     int scanline = 241;
     int framecount = 0;
+    int div = 2;
 
-    public final void clock() {
+    public final void clock(int cycles) {
         //this will go away in a bit
         //returns nothing
         //runs for cycles 0-340 inclusive
         if (scanline == 0
                 && cycles == 0
                 && utils.getbit(ppuregs[1], 3)
-                && utils.getbit(framecount, 1)) {
-            ++cycles;
+                && !utils.getbit(framecount, 1)) {
+            return;
             //skip a clock on line 0 of odd frames
+        }
+        if ((++div % 3) == 0) {
+            mapper.cpu.runcycle(scanline, cycles);
         }
         if (cycles == 1) {
             drawLine();
@@ -206,6 +209,9 @@ public class PPU {
 
         if (scanline == 241 && cycles == 1) {
             setvblankflag(true);
+            if ((utils.getbit(ppuregs[0], 7))) {
+                mapper.cpu.nmi();
+            }
         } else if (scanline == 261 && cycles == 1) {
             // turn off vblank, sprite 0, sprite overflow flags
             setvblankflag(false);
@@ -216,9 +222,9 @@ public class PPU {
             if (scanline == 0) {
                 ++framecount;
                 //System.err.println(framecount);
+                mapper.notifyscanline(scanline);
             }
         }
-        cycles = ++cycles % 341;
     }
 
     int bgcolor;

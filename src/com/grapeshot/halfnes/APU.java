@@ -49,11 +49,13 @@ public class APU {
             ai.destroy();
         }
         ai = new SwingAudioImpl(nes, samplerate);
-        ai = new Oscilloscope(ai);
+        if (PrefsSingleton.get().getBoolean("showScope", false)) {
+            ai = new Oscilloscope(ai);
+        }
 //        ai = new Reverberator(ai, 2,0.7,0.8,0.99);
 //        ai = new Reverberator(ai, 243,0.5,0.7,0.99);
 //       ai = new Reverberator(ai, 4001,0.3,0.5,0.99);
-//       ai = new Reverberator(ai, 6382,0.2,0.3,0.9);
+//       ai = new Reverberator(ai, 20382,0.2,0.3,0.9);
     }
 
     public boolean bufferHasLessThan(int samples) {

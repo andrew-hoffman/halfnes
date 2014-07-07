@@ -73,20 +73,17 @@ public class NES {
             gui.render();
         }
     };
-    int div = 2;
 
     private synchronized void runframe() {
         //the main method sequencing everything that has to happen in the nes each frame
         //loops unrolled a bit to avoid some conditionals every cycle
-        //vblank
-        //start by setting nmi
-        if ((utils.getbit(ppu.ppuregs[0], 7))) {
-            cpu.nmi();
-        }
+        
         //run for scanlines of vblank
         for (int scanline = 241; scanline < 262; ++scanline) {
             runLine(scanline);
         }
+        
+        //do end of frame stuff
 
         dontSleep = apu.bufferHasLessThan(1000);
         //if the audio buffer is completely drained, don't sleep for this frame
@@ -96,7 +93,7 @@ public class NES {
         apu.finishframe();
         cpu.modcycles();
         
-        //active drawing time
+        //run cpu, ppu for active drawing time
         for (int scanline = 0; scanline <= 240; ++scanline) {
             runLine(scanline);
         }
@@ -114,12 +111,8 @@ public class NES {
     private void runLine(int scanline) {
         //System.err.println(scanline);
         for (int pixel = 0; pixel < 341; ++pixel) {
-            if ((++div % 3) == 0) {
-                cpu.runcycle(scanline, pixel);
-            }
-            ppu.clock();
+            ppu.clock(pixel);
         }
-        mapper.notifyscanline(scanline);
     }
 
     public void setControllers(ControllerInterface controller1, ControllerInterface controller2) {
