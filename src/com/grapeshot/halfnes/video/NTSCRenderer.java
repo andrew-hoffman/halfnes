@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.video;
 
 import java.awt.image.*;
 import java.util.Collections;

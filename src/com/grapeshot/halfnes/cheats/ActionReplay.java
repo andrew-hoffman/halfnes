@@ -1,5 +1,6 @@
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.cheats;
 
+import com.grapeshot.halfnes.CPURAM;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

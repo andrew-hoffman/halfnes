@@ -1,7 +1,7 @@
 /*
  * This is an example of how things COULD have looked if the nes had used different timings
  */
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.video;
 
 import java.awt.image.*;
 

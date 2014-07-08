@@ -1,6 +1,11 @@
 package com.grapeshot.halfnes;
 //HalfNES, Copyright Andrew Hoffman, October 2010
 
+import com.grapeshot.halfnes.video.RGBRenderer;
+import com.grapeshot.halfnes.cheats.ActionReplay;
+import com.grapeshot.halfnes.cheats.ActionReplayGui;
+import com.grapeshot.halfnes.video.NTSCRenderer;
+import com.grapeshot.halfnes.video.Renderer;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;

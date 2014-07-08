@@ -4,6 +4,7 @@
  */
 package com.grapeshot.halfnes;
 
+import com.grapeshot.halfnes.cheats.Patch;
 import com.grapeshot.halfnes.mappers.Mapper;
 import java.util.Arrays;
 import java.util.HashMap;

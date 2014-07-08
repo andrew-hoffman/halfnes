@@ -1,4 +1,4 @@
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.cheats;
 
 /**
  * A patch object includes an address to modify and the value to write at this

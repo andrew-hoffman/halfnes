@@ -1,4 +1,4 @@
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.cheats;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -466,7 +466,7 @@ public class ActionReplayGui extends javax.swing.JDialog {
             .addGroup(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(btnTry)
-                .addContainerGap())
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);

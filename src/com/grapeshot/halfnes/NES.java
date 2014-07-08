@@ -1,5 +1,6 @@
 package com.grapeshot.halfnes;
 
+import com.grapeshot.halfnes.cheats.ActionReplay;
 import com.grapeshot.halfnes.mappers.BadMapperException;
 import com.grapeshot.halfnes.mappers.Mapper;
 
