@@ -1,5 +1,9 @@
 HalfNES Version Notes:
 
+056
+-Multithreaded NTSC filter for better performance
+-Rewrote CPU/PPU timing entirely
+
 055(9/7/2013)
 -Added support for NSF music files.
 -Added mapper for Super Spike V'Ball/Nintendo World Cup combo cartridge

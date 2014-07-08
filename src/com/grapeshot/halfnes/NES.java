@@ -110,9 +110,7 @@ public class NES {
 
     private void runLine(int scanline) {
         //System.err.println(scanline);
-        for (int pixel = 0; pixel < 341; ++pixel) {
-            ppu.clock(pixel);
-        }
+        ppu.clockLine(scanline);
     }
 
     public void setControllers(ControllerInterface controller1, ControllerInterface controller2) {

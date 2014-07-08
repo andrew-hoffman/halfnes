@@ -12,6 +12,10 @@ public class PPU {
     private int loopyV = 0x0;//ppu memory pointer
     private int loopyT = 0x0;//temp pointer
     private int loopyX = 0;//fine x scroll
+    private int scanline = 241;
+    private int cycles = 0;
+    private int framecount = 0;
+    private int div = 2;
     private final int[] OAM = new int[256], spriteshiftregH = new int[8],
             spriteshiftregL = new int[8], spriteXlatch = new int[8],
             spritepals = new int[8], bitmap = new int[240 * 256];
@@ -43,6 +47,10 @@ public class PPU {
         switch (regnum) {
             case 2:
                 even = true;
+                if (scanline == 241 && cycles == 1) {
+                    //suppress NMI flag if it was just turned on this same cycle
+                    setvblankflag(false);
+                }
                 final int tmp = ppuregs[2];
                 setvblankflag(false);
                 openbus = tmp;
@@ -181,48 +189,51 @@ public class PPU {
 
     }
 
-    int scanline = 241;
-    int framecount = 0;
-    int div = 2;
-
-    public final void clock(int cycles) {
-        //this will go away in a bit
-        //returns nothing
-        //runs for cycles 0-340 inclusive
-        if (scanline == 0
-                && cycles == 0
+    public final void clockLine(int scanline) {
+        //skip a PPU clock on line 0 of odd frames when rendering is on
+        int skip = (scanline == 0
                 && utils.getbit(ppuregs[1], 3)
-                && !utils.getbit(framecount, 1)) {
-            return;
-            //skip a clock on line 0 of odd frames
+                && !utils.getbit(framecount, 1)) ? 1 : 0;
+        for (cycles = skip; cycles < 341; ++cycles) {
+            clock();
         }
-        if ((++div % 3) == 0) {
-            mapper.cpu.runcycle(scanline, cycles);
-        }
+    }
+
+    public final void clock() {
+        //cycle based ppu stuff will go here
         if (cycles == 1) {
             drawLine();
         }
+        //handle sprite 0
         if (sprite0hit && sprite0x == (cycles + 1)) {
             sprite0hit = false;
             ppuregs[2] |= 0x40;
         }
-
+        //handle nmi
+        if (vblankflag && utils.getbit(ppuregs[0], 7)) {
+            //pull NMI line on when conditions are right
+            mapper.cpu.setNMI(true);
+        } else {
+            mapper.cpu.setNMI(false);
+        }
+        //handle vblank on / off
         if (scanline == 241 && cycles == 1) {
             setvblankflag(true);
-            if ((utils.getbit(ppuregs[0], 7))) {
-                mapper.cpu.nmi();
-            }
         } else if (scanline == 261 && cycles == 1) {
             // turn off vblank, sprite 0, sprite overflow flags
             setvblankflag(false);
             ppuregs[2] &= 0x9F;
         }
-        if (cycles == 340) {
+        //clock CPU once every 3 ppu cycles
+        if ((++div % 3) == 0) {
+            mapper.cpu.runcycle(scanline, cycles);
+        }
+        if (cycles == 257) {
+            mapper.notifyscanline(scanline);
+        } else if (cycles == 340) {
             scanline = ++scanline % 262;
             if (scanline == 0) {
                 ++framecount;
-                //System.err.println(framecount);
-                mapper.notifyscanline(scanline);
             }
         }
     }
@@ -539,8 +550,8 @@ public class PPU {
         gui.setFrame(bitmap, bgcolors, dotcrawl);
 
     }
-    private int[] tiledata = new int[8];
-    private int[] tilepal = new int[4];
+    private final int[] tiledata = new int[8];
+    private final int[] tilepal = new int[4];
 
     public final int[] getTile(final int tileptr, final int paletteindex, final int off) {
         //returns an 8 pixel line of tile data fron given PPU ram location
@@ -559,7 +570,10 @@ public class PPU {
         return tiledata;
     }
 
+    private boolean vblankflag = false;
+
     private void setvblankflag(boolean b) {
+        vblankflag = b;
         //on at the end of scanline 240
         //off at beginning of scanline 261 (or when it's read)
         ppuregs[2] = utils.setbit(ppuregs[2], 7, b);

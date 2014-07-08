@@ -120,7 +120,6 @@ Broken Games To Fix:
 -Caltron 6 in 1 (Very slow text scroll in Cosmo Cop)
 this has to do with reading $2002 in a loop and the NMI.
 it's high time i wrote a pixel accurate ppu to pass blargg's tests.
-(as of v056 7/7/14 the scroll is completely broken.)
 Codemasters games broken by DMC IRQ:
 -Bee 52
 -MIG-29 Soviet Fighter (needs better dmc timing!)

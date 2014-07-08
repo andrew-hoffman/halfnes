@@ -15,7 +15,7 @@ public final class CPU {
     private boolean carryFlag = false, zeroFlag = false,
             interruptsDisabled = true, decimalModeFlag = false;
     private boolean overflowFlag = false, negativeFlag = false,
-            previntflag = false;
+            previntflag = false, nmi=false, prevnmi = false, nmiNext = false;
     private int pb = 0;// set to 1 if access crosses page boundary
     public int interrupt = 0;
     private final static int ntscframe = 29780;
@@ -102,6 +102,15 @@ public final class CPU {
         if (cycles-- > 0) { //count down cycles until there is work to do again
             return;
         }
+        //handle nmi requests (NMI line is edge sensitive not level sensitive)
+        if(nmiNext){
+            nmi();
+            nmiNext = false;
+        }
+        if(nmi && !prevnmi){//only trigger on positive rising edge of NMI
+            nmiNext = true;
+        }
+        prevnmi = nmi;
 
         if (interrupt > 0) {
             if (!interruptsDisabled && !interruptDelay) {
@@ -1189,8 +1198,12 @@ public final class CPU {
         A |= (tmp ? 128 : 0);
         setflags(A);
     }
+    
+    public void setNMI(boolean val){
+        this.nmi = val;
+    }
 
-    public void nmi() {
+    private void nmi() {
         if (logging) {
             try {
                 w.write("**NMI**");
