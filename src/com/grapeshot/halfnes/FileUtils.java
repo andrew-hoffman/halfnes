@@ -15,8 +15,6 @@ public class FileUtils {
 
     public static String getExtension(final File f) {
         return getExtension(f.getName());
-
-
     }
 
     public static String getExtension(final String s) {
@@ -70,14 +68,15 @@ public class FileUtils {
 
     private static class AsyncWriter implements Runnable {
 
-        private int[] a;
-        private String path;
+        private final int[] a;
+        private final String path;
 
         public AsyncWriter(final int[] a, final String path) {
             this.a = a;
             this.path = path;
         }
 
+        @Override
         public void run() {
             if (a != null && path != null) {
                 try {
@@ -88,7 +87,6 @@ public class FileUtils {
                     }
                     b.write(buf);
                     b.flush();
-                    b.close();
                 } catch (IOException e) {
                     System.err.print("Could not save. ");
                     System.err.println(e);

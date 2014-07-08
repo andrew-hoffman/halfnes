@@ -2,8 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.ui;
 
+import com.grapeshot.halfnes.audio.AudioOutInterface;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;

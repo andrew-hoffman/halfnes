@@ -2,8 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.ui;
 
+import com.grapeshot.halfnes.PrefsSingleton;
 import static com.grapeshot.halfnes.utils.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;

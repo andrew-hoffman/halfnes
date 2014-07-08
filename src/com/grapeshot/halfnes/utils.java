@@ -1,6 +1,9 @@
 package com.grapeshot.halfnes;
 
 //HalfNES, Copyright Andrew Hoffman, October 2010
+
+import java.util.Locale;
+
 public class utils {
 
     public final static int BIT0 = 1, BIT1 = 2, BIT2 = 4, BIT3 = 8, BIT4 = 16,
@@ -37,7 +40,7 @@ public class utils {
     }
 
     public static String hex(final int num) {
-        String s = Integer.toHexString(num).toUpperCase();
+        String s = Integer.toHexString(num).toUpperCase(Locale.US);
         if ((s.length() & 1) == 1) {
             s = "0" + s;
         }
@@ -45,7 +48,7 @@ public class utils {
     }
 
     public static String hex(final long num) {
-        String s = Long.toHexString(num).toUpperCase();
+        String s = Long.toHexString(num).toUpperCase(Locale.US);
         if ((s.length() & 1) == 1) {
             s = "0" + s;
         }

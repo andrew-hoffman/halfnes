@@ -1,6 +1,7 @@
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.ui;
 //HalfNES, Copyright Andrew Hoffman, October 2010
 
+import com.grapeshot.halfnes.NES;
 import java.awt.*;
 import java.awt.image.*;
 import javax.swing.*;

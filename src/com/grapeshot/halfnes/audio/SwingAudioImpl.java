@@ -2,8 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.audio;
 
+import com.grapeshot.halfnes.NES;
+import com.grapeshot.halfnes.PrefsSingleton;
+import com.grapeshot.halfnes.audio.AudioOutInterface;
 import javax.sound.sampled.*;
 
 /**

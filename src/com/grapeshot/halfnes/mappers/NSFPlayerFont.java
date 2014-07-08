@@ -2,14 +2,16 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.mappers;
 
 /**
  *
  * @author Andrew
  */
-public class FontArray {
+public class NSFPlayerFont {
+
     //file auto-generated from Dwedit's ascii.chr by bin2h.exe
+
     public final static int[] font = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

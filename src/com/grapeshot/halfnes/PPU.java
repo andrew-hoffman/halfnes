@@ -1,6 +1,8 @@
 package com.grapeshot.halfnes;
 //HalfNES, Copyright Andrew Hoffman, October 2010
 
+import com.grapeshot.halfnes.ui.GUIInterface;
+import com.grapeshot.halfnes.ui.DebugUI;
 import com.grapeshot.halfnes.mappers.Mapper;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
@@ -100,6 +102,7 @@ public class PPU {
                 break;
             case 1:
                 ppuregs[1] = data;
+                break;
             case 3:
                 // PPUOAMADDR (2003)
                 // most games just write zero and use the dma
@@ -154,19 +157,10 @@ public class PPU {
                 break;
             case 7:
                 // PPUDATA
-                if (renderingisoff()) {
-                    // if rendering is off its safe to write
-                    mapper.ppuWrite((loopyV & 0x3fff), data);
-                    loopyV += vraminc;
-                } else {
-                    //System.err.println("dropped write");
-                    // write anyway though until i figure out which wrong thing to do
-                    //also since the ppu doesn't get pixel level timing right now,
-                    //i can't detect hblank.
-                    mapper.ppuWrite((loopyV & 0x3fff), data);
-                    loopyV += vraminc;
-                }
-            // increments on write but NOT on read
+                mapper.ppuWrite((loopyV & 0x3fff), data);
+                loopyV += vraminc;
+                // increments on write but NOT on read
+                break;
             default:
                 break;
         }
@@ -231,7 +225,7 @@ public class PPU {
         if (cycles == 257) {
             mapper.notifyscanline(scanline);
         } else if (cycles == 340) {
-            scanline = ++scanline % 262;
+            scanline = (scanline + 1) % 262;
             if (scanline == 0) {
                 ++framecount;
             }
@@ -553,7 +547,7 @@ public class PPU {
     private final int[] tiledata = new int[8];
     private final int[] tilepal = new int[4];
 
-    public final int[] getTile(final int tileptr, final int paletteindex, final int off) {
+    private final int[] getTile(final int tileptr, final int paletteindex, final int off) {
         //returns an 8 pixel line of tile data fron given PPU ram location
         //with given offset and given palette. (color expressed as NES color number)
         tilepal[0] = bgcolor;

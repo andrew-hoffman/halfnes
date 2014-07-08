@@ -1,5 +1,6 @@
 package com.grapeshot.halfnes;
 
+import com.grapeshot.halfnes.ui.*;
 import com.grapeshot.halfnes.cheats.ActionReplay;
 import com.grapeshot.halfnes.mappers.BadMapperException;
 import com.grapeshot.halfnes.mappers.Mapper;
@@ -78,14 +79,13 @@ public class NES {
     private synchronized void runframe() {
         //the main method sequencing everything that has to happen in the nes each frame
         //loops unrolled a bit to avoid some conditionals every cycle
-        
+
         //run for scanlines of vblank
         for (int scanline = 241; scanline < 262; ++scanline) {
             runLine(scanline);
         }
-        
-        //do end of frame stuff
 
+        //do end of frame stuff
         dontSleep = apu.bufferHasLessThan(1000);
         //if the audio buffer is completely drained, don't sleep for this frame
         //this is to prevent the emulator from getting stuck sleeping too much
@@ -93,12 +93,12 @@ public class NES {
 
         apu.finishframe();
         cpu.modcycles();
-        
+
         //run cpu, ppu for active drawing time
         for (int scanline = 0; scanline <= 240; ++scanline) {
             runLine(scanline);
         }
-        
+
         //render the frame
         ppu.renderFrame(gui);
         if ((framecount & 2047) == 0) {
@@ -285,7 +285,7 @@ public class NES {
         return controller2;
     }
 
-    void setApuVol() {
+    public void setApuVol() {
         if (apu != null) {
             apu.setParameters();
         }

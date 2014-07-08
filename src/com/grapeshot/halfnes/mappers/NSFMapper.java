@@ -67,7 +67,7 @@ public class NSFMapper extends Mapper {
             //so total number of banks can be 2 more than # of 4k
             //chunks in the file.
             int paddingLen = load & 0x0fff;
-            prg = new int[1024*1024]; 
+            prg = new int[1024 * 1024];
             System.arraycopy(loader.load(loader.romlen(), prgoff), 0, prg, paddingLen, loader.romlen());
         }
 
@@ -104,7 +104,7 @@ public class NSFMapper extends Mapper {
         ppu.pal[2] = 0x20 + (int) (crc & 7);
         ppu.pal[3] = 0x20 + (int) (crc & 7);
 
-        chr = FontArray.font;
+        chr = NSFPlayerFont.font;
     }
 
     public void init() {
@@ -134,7 +134,6 @@ public class NSFMapper extends Mapper {
         cpu.setRegX(0x00);//ntsc only
 
         //copy titles to ppu nametable
-
         for (int i = 0; i < 96; ++i) {
             pput0[i + (32 * 25)] = loader.header[i + 0xe];
         }

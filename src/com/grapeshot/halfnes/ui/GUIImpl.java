@@ -1,6 +1,9 @@
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.ui;
 //HalfNES, Copyright Andrew Hoffman, October 2010
 
+import com.grapeshot.halfnes.FileUtils;
+import com.grapeshot.halfnes.NES;
+import com.grapeshot.halfnes.PrefsSingleton;
 import com.grapeshot.halfnes.video.RGBRenderer;
 import com.grapeshot.halfnes.cheats.ActionReplay;
 import com.grapeshot.halfnes.cheats.ActionReplayGui;

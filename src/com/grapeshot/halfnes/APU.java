@@ -1,5 +1,6 @@
 package com.grapeshot.halfnes;
 
+import com.grapeshot.halfnes.ui.Oscilloscope;
 import com.grapeshot.halfnes.audio.*;
 import java.util.ArrayList;
 
@@ -19,7 +20,7 @@ public class APU {
         160, 202, 254, 380, 508, 762, 1016, 2034, 4068};
     // different for PAL
     private long accum = 0;
-    private ArrayList<ExpansionSoundChip> expnSound = new ArrayList<ExpansionSoundChip>();
+    private final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<ExpansionSoundChip>();
     private boolean soundFiltering;
     private final int[] tnd_lookup, square_lookup;
     private AudioOutInterface ai;
@@ -460,8 +461,8 @@ public class APU {
         framectr %= ctrmode;
         setvolumes();
     }
-    private boolean[] lenCtrEnable = {true, true, true, true};
-    private int[] volume = {0, 0, 0, 0};
+    private final boolean[] lenCtrEnable = {true, true, true, true};
+    private final int[] volume = new int[4];
 
     private void setvolumes() {
         volume[0] = ((lengthctr[0] <= 0 || sweepsilence[0]) ? 0 : (((envConstVolume[0]) ? envelopeValue[0] : envelopeCounter[0])));
@@ -481,7 +482,7 @@ public class APU {
         if (dmcBufferEmpty && dmcsamplesleft > 0) {
             dmcfillbuffer();
         }
-        dmcpos = ++dmcpos % dmcrate;
+        dmcpos = (dmcpos + 1) % dmcrate;
         if (dmcpos == 0) {
             if (dmcbitsleft <= 0) {
                 dmcbitsleft = 8;

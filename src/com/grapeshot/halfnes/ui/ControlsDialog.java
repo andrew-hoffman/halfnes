@@ -8,8 +8,9 @@
  *
  * Created on Jan 16, 2011, 4:21:43 PM
  */
-package com.grapeshot.halfnes;
+package com.grapeshot.halfnes.ui;
 
+import com.grapeshot.halfnes.PrefsSingleton;
 import java.awt.event.KeyEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
