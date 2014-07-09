@@ -47,6 +47,7 @@
                   <Component id="jCheckBoxSmoothVideo" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="jCheckBoxSleep" min="-2" max="-2" attributes="0"/>
                   <Component id="jCheckBoxShowScope" min="-2" max="-2" attributes="0"/>
+                  <Component id="jCheckBoxNTView" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
@@ -126,6 +127,8 @@
                       <Component id="jCheckBoxSleep" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="jCheckBoxShowScope" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="jCheckBoxNTView" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="32767" attributes="0"/>
@@ -261,6 +264,11 @@
     <Component class="javax.swing.JCheckBox" name="jCheckBoxShowScope">
       <Properties>
         <Property name="text" type="java.lang.String" value="Show Audio Output"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="jCheckBoxNTView">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Show Nametable Viewer"/>
       </Properties>
     </Component>
   </SubComponents>
