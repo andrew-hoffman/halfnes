@@ -211,14 +211,22 @@ public class PPU {
             mapper.cpu.setNMI(false);
         }
         //handle vblank on / off
-        if (scanline == 241 && cycles == 1) {
+        if (scanline < 240 || scanline == 261) {
+            //on all rendering lines
+            if (cycles >= 257 && cycles <= 341) {
+                //clear the oam address from pxls 257-341 continuously
+                ppuregs[3] = 0;
+            }
+            if (scanline == 261 && cycles == 1) {
+                // turn off vblank, sprite 0, sprite overflow flags
+                setvblankflag(false);
+                ppuregs[2] &= 0x9F;
+            }
+        } else if (scanline == 241 && cycles == 1) {
             setvblankflag(true);
-        } else if (scanline == 261 && cycles == 1) {
-            // turn off vblank, sprite 0, sprite overflow flags
-            setvblankflag(false);
-            ppuregs[2] &= 0x9F;
         }
-        //clock CPU once every 3 ppu cycles
+
+        //clock CPU, once every 3 ppu cycles
         if ((++div % 3) == 0) {
             mapper.cpu.runcycle(scanline, cycles);
         }
@@ -342,7 +350,7 @@ public class PPU {
 
     private void evalSprites() {
         if (!utils.getbit(ppuregs[1], 4) && !utils.getbit(ppuregs[1], 3)) {
-            //skip eval only if sprite and bg rendering are both off
+            //skip sprite evaluation iff sprite and bg rendering are both off
             return;
         }
         sprite0here = false;
@@ -352,6 +360,7 @@ public class PPU {
         found = 0;
         final boolean spritesize = utils.getbit(ppuregs[0], 5);
         //primary evaluation
+        //need to emulate behavior when OAM address is set to nonzero here
         for (int spritestart = 0; spritestart < 255; spritestart += 4) {
             //for each sprite, first we cull the non-visible ones
             ypos = OAM[spritestart];

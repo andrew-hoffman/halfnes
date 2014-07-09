@@ -260,12 +260,10 @@ public class APU {
                 break;
             case 0x14:
                 //sprite dma
-                cpuram.write(0x2003, 0);
-                //^shouldn't actually do that... but otherwise gauntlet breaks
-                //actual ppu clears the oam address from pxls 257-341 continuously
                 for (int i = 0; i < 256; ++i) {
                     cpuram.write(0x2004, cpuram.read((data << 8) + i));
                 }
+                //account for time stolen from cpu
                 sprdma_count = 2;
                 break;
             case 0x15:
