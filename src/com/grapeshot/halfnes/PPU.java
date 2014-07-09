@@ -32,8 +32,8 @@ public class PPU {
     private DebugUI debuggui;
     private int vraminc = 1;
     private final static boolean PPUDEBUG = PrefsSingleton.get().getBoolean("ntView", false);
-    private BufferedImage NametableView;
-    private int[] bgcolors = new int[256];
+    private BufferedImage nametableView;
+    private final int[] bgcolors = new int[256];
     private int openbus = 0; //the last value written to the PPU
 
     public PPU(final Mapper mapper) {
@@ -41,7 +41,7 @@ public class PPU {
         Arrays.fill(OAM, 0xff);
         Arrays.fill(ppuregs, 0x00);
         if (PPUDEBUG) {
-            NametableView = new BufferedImage(512, 480, BufferedImage.TYPE_INT_BGR);
+            nametableView = new BufferedImage(512, 480, BufferedImage.TYPE_INT_BGR);
             debuggui = new DebugUI(512, 480);
             debuggui.run();
         }
@@ -182,30 +182,28 @@ public class PPU {
         }
     }
 
-    public final boolean renderingisoff() {
-        // tells when it's ok to write to the ppu
-        return (scanline >= 240) //|| (pixel > 256)
-                || (!getbit(ppuregs[1], 3));
-    }
-
-    public final boolean ppuison() {
-        return getbit(ppuregs[1], 3) | getbit(ppuregs[1], 4);
-    }
-
     /**
-     * 
-     * @return 
+     * PPU is on if either background or sprites are enabled
+     * @return true 
+     */
+    private boolean ppuIsOn() {
+        return getbit(ppuregs[1], 3) || getbit(ppuregs[1], 4);
+    }
+    
+    /**
+     * MMC3 scan line counter isn't clocked if background and sprites are using
+     * the same half of the pattern table
+     * @return true if PPU is rendering and BG and sprites are 
+     * using different pattern tables
      */
     public final boolean mmc3CounterClocking() {
-        return (bgpattern != sprpattern)
-                //  && !renderingisoff()
-                && (getbit(ppuregs[1], 3) || getbit(ppuregs[1], 4));
-
+        return (bgpattern != sprpattern) && ppuIsOn();
     }
 
     /**
      * Runs the PPU emulation for one NES scan line.
-     * @param scanline 
+     *
+     * @param scanline
      */
     public final void clockLine(int scanline) {
         //skip a PPU clock on line 0 of odd frames when rendering is on
@@ -278,7 +276,7 @@ public class PPU {
         //this contains probably more magic numbers than the rest of the program combined.
         //TODO: define some static bitmasks to manipulate the address through, instead
         if (scanline == 0) {
-            dotcrawl = ppuison();
+            dotcrawl = ppuIsOn();
         }
         if (scanline >= 240) {
             return;
@@ -301,7 +299,7 @@ public class PPU {
         //draw sprites on top of whatever we had
         drawSprites();
         //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
-        if (getbit(ppuregs[1], 4) && getbit(ppuregs[1], 3)) {
+        if (ppuIsOn()) {
             evalSprites();
         }
         //deal with the grayscale flag
@@ -381,8 +379,8 @@ public class PPU {
             //nametable, zero the "row" bits and go to next nametable
             loopyV &= ~0x3e0;
             loopyV ^= 0x800;
-            ntoffset += 0x440;
-            attroffset += 0x7c0;
+            //ntoffset += 0x440;
+            //attroffset += 0x7c0;
         }
         //hide leftmost 8 pixels if that flag is on
         if (!getbit(ppuregs[1], 1)) {
@@ -549,28 +547,28 @@ public class PPU {
     private void debugDraw() {
         for (int i = 0; i < 32; ++i) {
             for (int j = 0; j < 30; ++j) {
-                NametableView.setRGB(i * 8, j * 8, 8, 8,
+                nametableView.setRGB(i * 8, j * 8, 8, 8,
                         debugGetTile(mapper.ppuRead(0x2000 + i + 32 * j) * 16
                                 + (bgpattern ? 0x1000 : 0)), 0, 8);
             }
         }
         for (int i = 0; i < 32; ++i) {
             for (int j = 0; j < 30; ++j) {
-                NametableView.setRGB(i * 8 + 255, j * 8, 8, 8,
+                nametableView.setRGB(i * 8 + 255, j * 8, 8, 8,
                         debugGetTile(mapper.ppuRead(0x2400 + i + 32 * j) * 16
                                 + (bgpattern ? 0x1000 : 0)), 0, 8);
             }
         }
         for (int i = 0; i < 32; ++i) {
             for (int j = 0; j < 30; ++j) {
-                NametableView.setRGB(i * 8, j * 8 + 239, 8, 8,
+                nametableView.setRGB(i * 8, j * 8 + 239, 8, 8,
                         debugGetTile(mapper.ppuRead(0x2800 + i + 32 * j) * 16
                                 + (bgpattern ? 0x1000 : 0)), 0, 8);
             }
         }
         for (int i = 0; i < 32; ++i) {
             for (int j = 0; j < 30; ++j) {
-                NametableView.setRGB(i * 8 + 255, j * 8 + 239, 8, 8,
+                nametableView.setRGB(i * 8 + 255, j * 8 + 239, 8, 8,
                         debugGetTile(mapper.ppuRead(0x2C00 + i + 32 * j) * 16
                                 + (bgpattern ? 0x1000 : 0)), 0, 8);
             }
@@ -579,7 +577,7 @@ public class PPU {
         //draw the tileset
 //        for (int i = 0; i < 16; ++i) {
 //            for (int j = 0; j < 32; ++j) {
-//                NametableView.setRGB(i * 8, j * 8, 8, 8,
+//                nametableView.setRGB(i * 8, j * 8, 8, 8,
 //                        debugGetTile((i + 16 * j) * 16), 0, 8);
 //            }
 //        }
@@ -587,11 +585,11 @@ public class PPU {
 //        for (int i = 0; i < 32; ++i) {
 //            for (int j = 0; j < 16; ++j) {
 //                for (int k = 0; k < 16; ++k) {
-//                    NametableView.setRGB(j + i * 16, k + 256, nescolor[0][pal[i]]);
+//                    nametableView.setRGB(j + i * 16, k + 256, nescolor[0][pal[i]]);
 //                }
 //            }
 //        }
-        debuggui.setFrame(NametableView);
+        debuggui.setFrame(nametableView);
         //debugbuff.clear();
     }
 
