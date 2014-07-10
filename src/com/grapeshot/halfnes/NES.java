@@ -26,7 +26,7 @@ public class NES {
     private boolean frameLimiterOn = true;
     private String curRomPath, curRomName;
     private final GUIInterface gui = new GUIImpl(this);
-    private FrameLimiterInterface limiter = new FrameLimiterImpl(this);
+    private final FrameLimiterInterface limiter = new FrameLimiterImpl(this);
     // Pro Action Replay device
     private ActionReplay actionReplay;
 
@@ -79,6 +79,9 @@ public class NES {
     private synchronized void runframe() {
         //the main method sequencing everything that has to happen in the nes each frame
         //loops unrolled a bit to avoid some conditionals every cycle
+        for (int scanline = 0; scanline <= 240; ++scanline) {
+            runLine(scanline);
+        }
 
         //run for scanlines of vblank
         for (int scanline = 241; scanline < 262; ++scanline) {
@@ -95,9 +98,6 @@ public class NES {
         cpu.modcycles();
 
         //run cpu, ppu for active drawing time
-        for (int scanline = 0; scanline <= 240; ++scanline) {
-            runLine(scanline);
-        }
 
         //render the frame
         ppu.renderFrame(gui);
