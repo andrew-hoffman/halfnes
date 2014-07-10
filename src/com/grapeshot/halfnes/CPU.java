@@ -15,9 +15,10 @@ public final class CPU {
     private boolean carryFlag = false, zeroFlag = false,
             interruptsDisabled = true, decimalModeFlag = false;
     private boolean overflowFlag = false, negativeFlag = false,
-            previntflag = false, nmi = false, prevnmi = false, nmiNext = false;
+            previntflag = false, nmi = false, prevnmi = false;
     private int pb = 0;// set to 1 if access crosses page boundary
     public int interrupt = 0;
+    public boolean nmiNext = false;
     private final static int ntscframe = 29780;
     private final static boolean logging = false, decimalModeEnable = false;
     //NES 6502 is missing decimal mode, but most other 6502s have it
@@ -61,7 +62,7 @@ public final class CPU {
         ram.write(0x4015, 0x00);
         ram.write(0x4017, 0x00);
 
-        clocks = 27394; //correct for position we start vblank in
+        //clocks = 27393; //correct for position we start vblank in
         A = 0;
         X = 0;
         Y = 0;
@@ -95,7 +96,7 @@ public final class CPU {
         if (ram.apu.sprdma_count > 0) {
             ram.apu.sprdma_count--;
             if (ram.apu.sprdma_count == 0) {
-                cycles += 514;
+                cycles += 513;
             }
         }
 

@@ -15,7 +15,7 @@ public class PPU {
     private int loopyV = 0x0;//ppu memory pointer
     private int loopyT = 0x0;//temp pointer
     private int loopyX = 0;//fine x scroll
-    private int scanline = 241;
+    private int scanline = 0;
     private int cycles = 0;
     private int framecount = 0;
     private int div = 2;
@@ -59,11 +59,21 @@ public class PPU {
         switch (regnum) {
             case 2:
                 even = true;
-                if (scanline == 241 && cycles == 1) {
-                    //suppress NMI flag if it was just turned on this same cycle
-                    setvblankflag(false);
+                if (scanline == 241) {
+                    if (cycles == 1) {//suppress NMI flag if it was just turned on this same cycle
+                        setvblankflag(false);
+                    }
+                    //OK, uncommenting this makes blargg's NMI suppression test
+                    //work but breaks Antarctic Adventure.
+                    //I'm going to need a cycle accurate CPU to fix that...
+//                    if (cycles < 4) {
+//                        //show vblank flag but cancel pending NMI before the CPU
+//                        //can actually do anything with it
+//                        //TODO: use proper interface for this
+//                        mapper.cpu.nmiNext = false;
+//                    }
                 }
-                final int tmp = ppuregs[2];
+                final int tmp = (ppuregs[2] & ~0x1f) + (openbus & 0x1f);
                 setvblankflag(false);
                 openbus = tmp;
                 break;
@@ -184,17 +194,19 @@ public class PPU {
 
     /**
      * PPU is on if either background or sprites are enabled
-     * @return true 
+     *
+     * @return true
      */
     private boolean ppuIsOn() {
         return getbit(ppuregs[1], 3) || getbit(ppuregs[1], 4);
     }
-    
+
     /**
      * MMC3 scan line counter isn't clocked if background and sprites are using
      * the same half of the pattern table
-     * @return true if PPU is rendering and BG and sprites are 
-     * using different pattern tables
+     *
+     * @return true if PPU is rendering and BG and sprites are using different
+     * pattern tables
      */
     public final boolean mmc3CounterClocking() {
         return (bgpattern != sprpattern) && ppuIsOn();
@@ -228,13 +240,6 @@ public class PPU {
             sprite0hit = false;
             ppuregs[2] |= 0x40;
         }
-        //handle nmi
-        if (vblankflag && getbit(ppuregs[0], 7)) {
-            //pull NMI line on when conditions are right
-            mapper.cpu.setNMI(true);
-        } else {
-            mapper.cpu.setNMI(false);
-        }
         //handle vblank on / off
         if (scanline < 240 || scanline == 261) {
             //on all rendering lines
@@ -242,7 +247,7 @@ public class PPU {
                 //clear the oam address from pxls 257-341 continuously
                 ppuregs[3] = 0;
             }
-            if (scanline == 261 && cycles == 1) {
+            if (scanline == 261 && cycles == 0) {
                 // turn off vblank, sprite 0, sprite overflow flags
                 setvblankflag(false);
                 ppuregs[2] &= 0x9F;
@@ -250,9 +255,17 @@ public class PPU {
         } else if (scanline == 241 && cycles == 1) {
             setvblankflag(true);
         }
+        //handle nmi
+        if (vblankflag && getbit(ppuregs[0], 7)) {
+            //pull NMI line on when conditions are right
+            mapper.cpu.setNMI(true);
+        } else {
+            mapper.cpu.setNMI(false);
+        }
 
         //clock CPU, once every 3 ppu cycles
-        if ((++div % 3) == 0) {
+        div = (div + 1) % 3;
+        if (div == 0) {
             mapper.cpu.runcycle(scanline, cycles);
         }
         if (cycles == 257) {
