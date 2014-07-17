@@ -260,9 +260,8 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         final int modFeedback = (mod[ch] + oldmodout[ch]) >> (6 + fb);
         //no i don't know why it adds the last 2 old outputs but MAME
         //does it that way and the feedback doesn't sound right w/o it
-
-        //each of these values is an attenuation value
         final int mod_f = (int) ((wave[ch] + modFeedback) * modFreqMultiplier + modVibrato);
+        //each of these values is an attenuation value
         final int modVol = (inst[2] & 0x3f) * 32;//modulator vol
         final int modEnvelope = ((int) modenv_vol[ch]) << 2;
         final int modAM = getbit(inst[0], 7) ? am[amctr] : 0;
@@ -272,8 +271,9 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         oldmodout[ch] = mod[ch];
         //now repeat most of that for the carrier
         final double carVibrato = getbit(inst[1], 6) ? vib[fmctr] * (freq[ch] << octave[ch]) / 512. : 0;
-        final double carFreqMultiplier = wave[ch] * multbl[inst[1] & 0xf];
-        final int car_f = (mod[ch] + oldmodout[ch]) / 2 + (int) (carVibrato + carFreqMultiplier);
+        final double carFreqMultiplier = multbl[inst[1] & 0xf];
+        final int carFeedback = (mod[ch] + oldmodout[ch]) / 2; //inaccurately named
+        final int car_f = carFeedback + (int) (carVibrato + carFreqMultiplier * wave[ch]); // <-- THIS LINE LOOKS VERY SUSPICIOUS TO ME <--
         final int carVol = vol[ch] * 128; //4 bits for carrier vol not 6
         final int carEnvelope = ((int) carenv_vol[ch]) << 2;
         final int carAM = getbit(inst[1], 7) ? am[amctr] : 0;
