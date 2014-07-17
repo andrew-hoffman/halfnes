@@ -472,7 +472,7 @@ public class APU {
     private final static int[] dmcperiods = {428, 380, 340, 320, 286, 254,
         226, 214, 190, 160, 142, 128, 106, 84, 72, 54};
     private int dmcrate = 0x36, dmcpos = 0, dmcshiftregister = 0, dmcbuffer = 0,
-            dmcvalue = 0, dmcsamplelength = 0, dmcsamplesleft = 0,
+            dmcvalue = 0, dmcsamplelength = 1, dmcsamplesleft = 0,
             dmcstartaddr = 0xc000, dmcaddr = 0xc000, dmcbitsleft = 8;
     private boolean dmcsilence = true, dmcirq = false, dmcloop = false, dmcBufferEmpty = true;
 
@@ -512,7 +512,7 @@ public class APU {
         if (dmcsamplesleft > 0) {
             dmcbuffer = cpuram.read(dmcaddr++);
             dmcBufferEmpty = false;
-            cpu.stealcycles(2);
+            cpu.stealcycles(4);
             //DPCM Does steal cpu cycles - this should actually vary between 1-4
             //can't do this properly without a cycle accurate cpu/ppu
             if (dmcaddr > 0xffff) {
