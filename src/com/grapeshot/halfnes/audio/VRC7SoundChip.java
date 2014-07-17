@@ -5,7 +5,7 @@
 package com.grapeshot.halfnes.audio;
 
 import com.grapeshot.halfnes.ui.DebugUI;
-import com.grapeshot.halfnes.utils;
+import static com.grapeshot.halfnes.utils.*;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
@@ -18,7 +18,6 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     //Emulates the YM2413 sound chip, pretty much only found in Lagrange Point
     //sound test in lagrange point: hold A and B on controller 2 and reset.
     //note: this is the cutdown version from the vrc7. Only 6 channels, no percussion. 
-    
     //todo: clean up all the conditional operators in here because this
     //may be compact but it's also unintelligible
     private static enum adsr {
@@ -189,14 +188,14 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 int m = register - 0x20;
                 octave[m] = (data >> 1) & 7;
                 freq[m] = (freq[m] & 0xff) | ((data & 1) << 8);
-                if (utils.getbit(data, 4) && !key[m]) {
+                if (getbit(data, 4) && !key[m]) {
                     //when note is keyed on
                     carenv_state[m] = adsr.CUTOFF;
                     modenv_state[m] = adsr.CUTOFF;
-                    // utils.printarray(key);
+                    // printarray(key);
                 }
-                key[m] = utils.getbit(data, 4);
-                sust[m] = utils.getbit(data, 5);
+                key[m] = getbit(data, 4);
+                sust[m] = getbit(data, 5);
                 break;
             case 0x30:
             case 0x31:
@@ -206,11 +205,11 @@ public class VRC7SoundChip implements ExpansionSoundChip {
             case 0x35: //top 4 bits instrument number, bottom 4 volume
                 int j = register - 0x30;
                 vol[j] = data & 0xf;
-                //System.err.println(j + " " + utils.hex(data));
+                //System.err.println(j + " " + hex(data));
                 instrument[j] = (data >> 4) & 0xf;
                 break;
             default:
-            //System.err.println(utils.hex(register) + " doesn't exist " + utils.hex(data));
+            //System.err.println(hex(register) + " doesn't exist " + hex(data));
         }
     }
     int ch = 0;
@@ -223,67 +222,64 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         //actual chip on the nes runs at 3.6 mhz with a separate clock
         //code is running at a higher sample rate than the real chip
 
-
         for (int i = 0; i < cycle; ++i) {
-            ch = ++ch % (6 * 6);
+            ch = (ch + 1) % (6 * 6);
             if (ch < 6) {
-                wave[ch] += (1 / (256. * 2.)) * (freq[ch] << (octave[ch]));
-                //Tuned this with audacity so it's definitely ok this time.
-                int[] inst = instdata[instrument[ch]];
-                //envelopes
-                //TODO: rewrite the whole envelope code
-                //to match rate chip is actually running envelope updates at
-                for (int fi = 0; fi < 10; ++fi) { //this # should rightfully be 6 (hack alert)
-                    setenvelope(inst, modenv_state, modenv_vol, ch, false);
-                    setenvelope(inst, carenv_state, carenv_vol, ch, true);
-                }
-                int keyscale = keyscaletbl[freq[ch] >> 5] - 512 * (7 - octave[ch]);
-                if (keyscale < 0) {
-                    keyscale = 0;
-                }
-                int modks = inst[2] >> 6;
-                modks = (modks == 0) ? 0 : (keyscale >> (3 - modks));
-                int carks = (inst[3] >> 6);
-                carks = (carks == 0) ? 0 : (keyscale >> (3 - carks));
-                int fb = (~inst[3] & 7);
-                //now the operator cells
-                //invaluable info: http://gendev.spritesmind.net/forum/viewtopic.php?t=386
-                int mod_f;
-
-                mod_f = (int) ((wave[ch]
-                        + ((mod[ch] + oldmodout[ch]) >> (6 + fb)))
-                        * multbl[inst[0] & 0xf]//modulator base freq and multiplier
-                        + (utils.getbit(inst[0], 6) ? vib[fmctr] * (1 << octave[ch]) : 0))//modulator vibrato
-                        ;
-
-                //no i don't know why it adds the last 2 old outputs but MAME
-                //does it that way and the feedback doesn't sound right w/o it
-
-                mod[ch] = operator(mod_f,
-                        (int) ((inst[2] & 0x3f) * 32//modulator vol
-                        + (((int) modenv_vol[ch]) << 2)
-                        + modks //key scaling
-                        + (utils.getbit(inst[0], 7) ? am[amctr] : 0)),
-                        utils.getbit(inst[3], 3))//modulator rectify
-                        << 2;
-                out[ch] = operator((mod[ch] + oldmodout[ch]) / 2
-                        + (int) ((utils.getbit(inst[1], 6) ? vib[fmctr] * (freq[ch] << octave[ch]) / 512. : 0)//carrier vibrato
-                        + wave[ch] * multbl[inst[1] & 0xf]//carrier freq multiplier
-                        ),
-                        (int) (vol[ch] * 128
-                        + (utils.getbit(inst[1], 7) ? am[amctr] : 0)
-                        + carks//key scaling
-                        + (((int) carenv_vol[ch]) << 2)//carrier volume
-                        ),
-                        utils.getbit(inst[3], 4))//carrier rectify
-                        << 3;
-                wave[ch] %= 1024;
-                oldmodout[ch] = mod[ch];
-                outputSample();
-                fmctr = ++fmctr % vib.length;
-                amctr = ++amctr % am.length;
+                operate();
             }
         }
+    }
+
+    private void operate() {
+        fmctr = (fmctr + 1) % vib.length;
+        amctr = (amctr + 1) % am.length;
+        wave[ch] += (1 / (256. * 2.)) * (freq[ch] << (octave[ch]));
+        //Tuned this with audacity so it's definitely ok this time.
+        wave[ch] %= 1024;
+        int[] inst = instdata[instrument[ch]];
+        //envelopes
+        //TODO: rewrite the whole envelope code
+        //to match rate chip is actually running envelope updates at
+        for (int fi = 0; fi < 6; ++fi) {
+            setenvelope(inst, modenv_state, modenv_vol, ch, false);
+            setenvelope(inst, carenv_state, carenv_vol, ch, true);
+        }
+        int keyscale = keyscaletbl[freq[ch] >> 5] - 512 * (7 - octave[ch]);
+        if (keyscale < 0) {
+            keyscale = 0;
+        }
+        int modks = inst[2] >> 6;
+        modks = (modks == 0) ? 0 : (keyscale >> (3 - modks));
+        int carks = (inst[3] >> 6);
+        carks = (carks == 0) ? 0 : (keyscale >> (3 - carks));
+        int fb = (~inst[3] & 7);
+        //now the operator cells
+        //invaluable info: http://gendev.spritesmind.net/forum/viewtopic.php?t=386
+        final double modVibrato = getbit(inst[0], 6) ? vib[fmctr] * (1 << octave[ch]) : 0;
+        final double modFreqMultiplier = multbl[inst[0] & 0xf];
+        final int modFeedback = (mod[ch] + oldmodout[ch]) >> (6 + fb);
+        //no i don't know why it adds the last 2 old outputs but MAME
+        //does it that way and the feedback doesn't sound right w/o it
+
+        //each of these values is an attenuation value
+        final int mod_f = (int) ((wave[ch] + modFeedback) * modFreqMultiplier + modVibrato);
+        final int modVol = (inst[2] & 0x3f) * 32;//modulator vol
+        final int modEnvelope = ((int) modenv_vol[ch]) << 2;
+        final int modAM = getbit(inst[0], 7) ? am[amctr] : 0;
+        final boolean modRectify = getbit(inst[3], 3);
+        //calculate modulator operator value
+        mod[ch] = operator(mod_f, (int) (modVol + modEnvelope + modks + modAM), modRectify) << 2;
+        oldmodout[ch] = mod[ch];
+        //now repeat most of that for the carrier
+        final double carVibrato = getbit(inst[1], 6) ? vib[fmctr] * (freq[ch] << octave[ch]) / 512. : 0;
+        final double carFreqMultiplier = wave[ch] * multbl[inst[1] & 0xf];
+        final int car_f = (mod[ch] + oldmodout[ch]) / 2 + (int) (carVibrato + carFreqMultiplier);
+        final int carVol = vol[ch] * 128; //4 bits for carrier vol not 6
+        final int carEnvelope = ((int) carenv_vol[ch]) << 2;
+        final int carAM = getbit(inst[1], 7) ? am[amctr] : 0;
+        final boolean carRectify = getbit(inst[3], 4);
+        out[ch] = operator(car_f, (int) (carVol + carEnvelope + carks + carAM), carRectify) << 3;
+        outputSample();
     }
 
     private int operator(final int phase, final int gain, final boolean rectify) {
@@ -291,8 +287,8 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     }
 
     private int exp(int val) {
-    //perform e^x function on 13 bit fp output value using the hardware table on the chip
-    //value should never be negative; if it is, find out why.
+        //perform e^x function on 13 bit fp output value using the hardware table on the chip
+        //value should never be negative; if it is, find out why.
 //        if (val < 0) {
 //            val = 0;
 //            System.err.println("why");
@@ -342,30 +338,32 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     public final int getval() {
         return lpaccum;
     }
-    final private static int zerovol = 511;
-    final private static int maxvol = 0;
+    final private static int ZEROVOL = 511;
+    final private static int MAXVOL = 0;
 
     private void setenvelope(final int[] instrument, final adsr[] state, final double[] vol, final int ch, final boolean isCarrier) {
-        
+        final boolean keyscaleRate = getbit(instrument[(isCarrier ? 1 : 0)], 4);
+        final int ksrShift = keyscaleRate ? octave[ch] << 1 : octave[ch] >> 1;
+        //^ the key scaling bit (java should really have unions, this is such a mess)
         /*TODO: fix all of this. Most of these constants were calculated from a 
-        badly translated YM2413 technical manual and are objectively wrong.
-        To compensate somewhat I clock this function 2x as fast as the envelopes
-        are supposed to run which produces closer sounding notes but makes long note decays too short. 
+         badly translated YM2413 technical manual and are objectively wrong.
+         To compensate somewhat I clock this function 2x as fast as the envelopes
+         are supposed to run which produces closer sounding notes but makes long note decays too short. 
         
-        The key scaling stuff is similarly just a best guess.
+         The key scaling stuff is similarly just a best guess.
         
-        Of course the real hardware isn't using floating point here either.
-        */
+         Of course the real hardware isn't using floating point here either.
+         */
 
         //from docs on the OPL3: envelope starts at 511 and counts down to zero (no attenuation)
         switch (state[ch]) {
             default:
             case CUTOFF:
-                if (vol[ch] < zerovol) {
+                if (vol[ch] < ZEROVOL) {
                     vol[ch] += 2; //the programmer's manual suggests that sound has to
                     //decay back to zero volume when keyed on, but other references don't say this
                 } else {
-                    vol[ch] = zerovol;
+                    vol[ch] = ZEROVOL;
                     if (key[ch]) {
                         state[ch] = adsr.ATTACK;
                         wave[ch] = 0;
@@ -375,15 +373,13 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 }
                 break;
             case ATTACK:
-                if (vol[ch] > maxvol + 0.01) {
+                if (vol[ch] > MAXVOL + 0.01) {
                     //((vol[ch] + 17) / 272)
                     //or
                     // (1 + (((int)vol[ch]) >> 4) )
                     vol[ch] -= ((vol[ch] + 17) / 272) * attack_tbl[
                             (instrument[(isCarrier ? 5 : 4)] >> 4) * 4
-                            + (utils.getbit(instrument[(isCarrier ? 1 : 0)], 4) ? octave[ch] << 1 : octave[ch] >> 1)
-                            // ^ the key scaling bit (java should really have unions, this is such a mess)
-                            ];
+                            + ksrShift];
                 } else {
                     state[ch] = adsr.DECAY;
                 }
@@ -393,11 +389,12 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 break;
             case DECAY:
                 if (vol[ch] < ((instrument[(isCarrier ? 7 : 6)] >> 4)) * 32) {
-                    //not entirely sure whether higher value = more attenuation or more volume here. docs are unclear.
+                    //not entirely sure whether higher value = more attenuation 
+                    //or more volume here. docs are unclear.
                     //opl3 site suggests it's more volume.
                     vol[ch] += decay_tbl[
                             (instrument[(isCarrier ? 5 : 4)] & 0xf) * 4
-                            + (utils.getbit(instrument[(isCarrier ? 1 : 0)], 4) ? octave[ch] << 1 : octave[ch] >> 1)];
+                            + ksrShift];
                 } else {
                     state[ch] = adsr.RELEASE;
                 }
@@ -407,14 +404,14 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 break;
             case RELEASE:
                 //release at std rate if key is off
-                if (!key[ch] && vol[ch] < zerovol) {
+                if (!key[ch] && vol[ch] < ZEROVOL) {
                     if (sust[ch]) {
                         vol[ch] += 0.001;
                     } else {
                         vol[ch] += .005;
                     }
-                } else if (vol[ch] < zerovol) {
-                    if (utils.getbit(instrument[isCarrier ? 1 : 0], 5)) {
+                } else if (vol[ch] < ZEROVOL) {
+                    if (getbit(instrument[isCarrier ? 1 : 0], 5)) {
                         //sustain on, don't decay until keyed
                         if (!key[ch]) {
                             state[ch] = adsr.SUSTRELEASE;
@@ -422,27 +419,27 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                     } else {
                         //decay immediately
                         vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
-                                + (utils.getbit(instrument[(isCarrier ? 1 : 0)], 4) ? octave[ch] << 1 : octave[ch] >> 1)];
+                                + ksrShift];
                     }
 
                 }
                 break;
             case SUSTRELEASE:
-                if (vol[ch] < zerovol) {
+                if (vol[ch] < ZEROVOL) {
                     if (sust[ch]) {
                         vol[ch] += 0.0001;
                     } else {
                         vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
-                                + (utils.getbit(instrument[(isCarrier ? 1 : 0)], 4) ? octave[ch] << 1 : octave[ch] >> 1)];
+                                + ksrShift];
                     }
                 }
                 break;
         }
-        if (vol[ch] < maxvol) {
-            vol[ch] = maxvol;
+        if (vol[ch] < MAXVOL) {
+            vol[ch] = MAXVOL;
         }
-        if (vol[ch] > zerovol) {
-            vol[ch] = zerovol;
+        if (vol[ch] > ZEROVOL) {
+            vol[ch] = ZEROVOL;
         }
     }
     private final static double[] attack_tbl = {0, 0, 0, 0,

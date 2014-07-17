@@ -133,4 +133,6 @@ Codemasters games broken by DMC IRQ:
 -figure out why chopped.nsf.nes works but zanzan-pull-over(chiptune)nes doesn't.
 (they're the same NSF made into a ROM w/ different drivers, but one goes all over and does illegal things
 before it starts in on the song.)
+-Mickey's Safari in Letterland needs exact MMC3B behavior. 
+This has to do with PPU mirroring and the A12 address line.
 
