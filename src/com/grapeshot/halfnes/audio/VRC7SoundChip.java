@@ -260,7 +260,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         final int modFeedback = (mod[ch] + oldmodout[ch]) >> (6 + fb);
         //no i don't know why it adds the last 2 old outputs but MAME
         //does it that way and the feedback doesn't sound right w/o it
-        final int mod_f = (int) ((wave[ch] + modFeedback) * modFreqMultiplier + modVibrato);
+        final int mod_f = (int) ((wave[ch] + modFeedback) * modFreqMultiplier + modVibrato); // <-- OR ELSE THIS LINE IS WRONG BUT THEY CAN'T BOTH BE RIGHT
         //each of these values is an attenuation value
         final int modVol = (inst[2] & 0x3f) * 32;//modulator vol
         final int modEnvelope = ((int) modenv_vol[ch]) << 2;
