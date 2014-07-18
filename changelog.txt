@@ -1,8 +1,11 @@
 HalfNES Version Notes:
 
-056
+056 (7/17/2014)
 -Multithreaded NTSC filter for better performance
--Rewrote CPU/PPU timing entirely
+-Rewrote CPU/PPU timing entirely (passes many timing tests that used to fail)
+-Fixed VRC7 feedback (Lagrange Point now sounds almost completely correct)
+-Fixed loading of large NSF files.
+-Many other minor fixes over the past year. 
 
 055(9/7/2013)
 -Added support for NSF music files.

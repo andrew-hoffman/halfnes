@@ -3,14 +3,6 @@ halfnes
 
 An accurate NES/Famicom emulator
 
-Building instructions
----------------------
-
-Not following best practices here until I'm done rewriting everything I want to. 
-At this point you might as well just create a new netbeans project, import all
-the src files, and delete anything referring to a library that isn't installed.
-(the libraries are for the ntsc filter and XInput controllers, and so don't really matter.)
-
 Current Features
 ----------------
 
@@ -29,6 +21,16 @@ Current Features
 - NTSC filter
 - NSF player
 
+Running HalfNES
+---------------
+
+Download the latest version from (https://github.com/andrew-hoffman/halfnes/releases).
+There are three versions of HalfNES included in this package: a Windows
+executable, a Linux shell script, and a JAR file for other platforms.
+Use whichever one works best on your platform, but you will need
+Java installed no matter what file is to be used.
+Linux users will need to set execute permissions on the script/JAR.
+
 # Default Controls (See Preferences dialog to remap them)
 Controller 1:
 - D-Pad: Arrow Keys
@@ -43,15 +45,6 @@ Controller 1:
 - A Button: G
 - Select: R
 - Start: T 
- 
-Running HalfNES
----------------
-
-There are three versions of HalfNES included in this package: a Windows
-executable, a Linux shell script, and a JAR file for other platforms.
-Use whichever one works best on your platform, but you will need
-Java installed no matter what file is to be used.
-Linux users will need to set execute permissions on the script/JAR.
 
 The keys mapped to the A and B buttons are used to change tracks in the NSF player.
 
@@ -68,6 +61,14 @@ development, almost all US released games will start, but certain games
 still have graphics corruption or freezing problems. Please report any 
 issues you encounter with the emulator or with games on the Google Code 
 page (http://code.google.com/p/halfnes/). 
+
+Building instructions
+---------------------
+
+Not following best practices here until I'm done rewriting everything I want to. 
+At this point you might as well just create a new netbeans project, import all
+the src files, and delete anything referring to a library that isn't installed.
+(the libraries are for the ntsc filter and XInput controllers, and so don't really matter.)
 
 Do NOT ask me where to find ROM files of commercial games. Some public 
 domain homebrew ROMs are available at www.pdroms.de for testing 
