@@ -100,9 +100,9 @@ public class NSFMapper extends Mapper {
         //set up the PPU to display titles
         //pick a random color based on the tune's crc (why not?)
         ppu.pal[0] = 0x3f;
-        ppu.pal[1] = 0x20 + (int) (crc & 7);
-        ppu.pal[2] = 0x20 + (int) (crc & 7);
-        ppu.pal[3] = 0x20 + (int) (crc & 7);
+        ppu.pal[1] = 0x20 + (int) (crc % 12);
+        ppu.pal[2] = 0x20 + (int) (crc % 12);
+        ppu.pal[3] = 0x20 + (int) (crc % 12);
 
         chr = NSFPlayerFont.font;
     }
@@ -301,14 +301,14 @@ public class NSFMapper extends Mapper {
                 if (song > numSongs) {
                     song = 0;
                 }
-                System.err.println("next song");
+                //System.err.println("next song");
                 init();
             } else if (((control & 0x40) != 0) && ((prevcontrol & 0x40) == 0)) {
                 --song;
                 if (song < 0) {
                     song = numSongs;
                 }
-                System.err.println("previous song");
+                //System.err.println("previous song");
                 init();
             } else {
                 //fake a jsr to the play address from wherever
