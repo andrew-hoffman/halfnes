@@ -24,12 +24,12 @@ Current Features
 Running HalfNES
 ---------------
 
-Download the latest version from (https://github.com/andrew-hoffman/halfnes/releases).
+Download the latest version from https://github.com/andrew-hoffman/halfnes/releases .
 There are three versions of HalfNES included in this package: a Windows
-executable, a Linux shell script, and a JAR file for other platforms.
+executable, a Mac .app package, and a JAR file for other platforms.
 Use whichever one works best on your platform, but you will need
 Java installed no matter what file is to be used.
-Linux users will need to set execute permissions on the script/JAR.
+Linux users will need to set execute permissions on the JAR.
 
 # Default Controls (See Preferences dialog to remap them)
 Controller 1:
