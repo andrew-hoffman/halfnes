@@ -17,9 +17,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
 
     //Emulates the YM2413 sound chip, pretty much only found in Lagrange Point
     //sound test in lagrange point: hold A and B on controller 2 and reset.
-    //note: this is the cutdown version from the vrc7. Only 6 channels, no percussion. 
-    //todo: clean up all the conditional operators in here because this
-    //may be compact but it's also unintelligible
+    //this is the cut-down version from the vrc7. Only 6 channels, no percussion. 
     private static enum adsr {
 
         CUTOFF, ATTACK, DECAY, SUSTAIN, SUSTRELEASE, RELEASE;
@@ -31,7 +29,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
             oldmodout = new int[6], out = new int[6];
     private final boolean[] key = new boolean[6], sust = new boolean[6];
     private int fmctr = 0, amctr = 0; //free running counter for indices
-    private final double[] wave = new double[6], modenv_vol = new double[6], carenv_vol = new double[6];
+    private final double[] phase = new double[6], modenv_vol = new double[6], carenv_vol = new double[6];
     private final int[] usertone = new int[8];
     private final int[][] instdata = { //instrument parameters
         usertone, //user tone register
@@ -233,9 +231,9 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     private void operate() {
         fmctr = (fmctr + 1) % vib.length;
         amctr = (amctr + 1) % am.length;
-        wave[ch] += (1 / (256. * 2.)) * (freq[ch] << (octave[ch]));
+        phase[ch] += (1 / (256. * 2.)) * (freq[ch] << (octave[ch]));
         //Tuned this with audacity so it's definitely ok this time.
-        wave[ch] %= 1024;
+        phase[ch] %= 1024;
         int[] inst = instdata[instrument[ch]];
         //envelopes
         //TODO: rewrite the whole envelope code
@@ -244,6 +242,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
             setenvelope(inst, modenv_state, modenv_vol, ch, false);
             setenvelope(inst, carenv_state, carenv_vol, ch, true);
         }
+        //key scaling
         int keyscale = keyscaletbl[freq[ch] >> 5] - 512 * (7 - octave[ch]);
         if (keyscale < 0) {
             keyscale = 0;
@@ -255,12 +254,14 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         int fb = (~inst[3] & 7);
         //now the operator cells
         //invaluable info: http://gendev.spritesmind.net/forum/viewtopic.php?t=386
+        //http://www.smspower.org/maxim/Documents/YM2413ApplicationManual
+        //http://forums.nesdev.com/viewtopic.php?f=3&t=9102
         final double modVibrato = getbit(inst[0], 6) ? vib[fmctr] * (1 << octave[ch]) : 0;
         final double modFreqMultiplier = multbl[inst[0] & 0xf];
-        final int modFeedback = (mod[ch] + oldmodout[ch]) >> (6 + fb);
+        final int modFeedback = (fb == 7) ? 0 : (mod[ch] + oldmodout[ch]) >> (2 + fb);
         //no i don't know why it adds the last 2 old outputs but MAME
         //does it that way and the feedback doesn't sound right w/o it
-        final int mod_f = modFeedback + (int) (modVibrato + modFreqMultiplier * wave[ch]);
+        final int mod_f = modFeedback + (int) (modVibrato + modFreqMultiplier * phase[ch]);
         //each of these values is an attenuation value
         final int modVol = (inst[2] & 0x3f) * 32;//modulator vol
         final int modEnvelope = ((int) modenv_vol[ch]) << 2;
@@ -272,8 +273,8 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         //now repeat most of that for the carrier
         final double carVibrato = getbit(inst[1], 6) ? vib[fmctr] * (freq[ch] << octave[ch]) / 512. : 0;
         final double carFreqMultiplier = multbl[inst[1] & 0xf];
-        final int carFeedback = (mod[ch] + oldmodout[ch]) / 2; //inaccurately named
-        final int car_f = carFeedback + (int) (carVibrato + carFreqMultiplier * wave[ch]);
+        final int carFeedback = (mod[ch] + oldmodout[ch]) >> 1; //inaccurately named
+        final int car_f = carFeedback + (int) (carVibrato + carFreqMultiplier * phase[ch]);
         final int carVol = vol[ch] * 128; //4 bits for carrier vol not 6
         final int carEnvelope = ((int) carenv_vol[ch]) << 2;
         final int carAM = getbit(inst[1], 7) ? am[amctr] : 0;
@@ -366,7 +367,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                     vol[ch] = ZEROVOL;
                     if (key[ch]) {
                         state[ch] = adsr.ATTACK;
-                        wave[ch] = 0;
+                        phase[ch] = 0;
                         //reset phase to avoid popping? can't tell if the chip does this.
                         //i think it doesn't, but it does sound better if I do.
                     }
