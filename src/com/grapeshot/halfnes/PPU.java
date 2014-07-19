@@ -240,33 +240,65 @@ public class PPU {
             sprite0hit = false;
             ppuregs[2] |= 0x40;
         }
-        //handle vblank on / off
         if (scanline < 240 || scanline == 261) {
             //on all rendering lines
-            switch((cycles-1) & 7){
-                case 1:
+            if ((cycles >= 1 && cycles <= 256) || (cycles >= 321 && cycles <= 326)) {
+                //background fetches
+                switch ((cycles - 1) & 7) {
+                    case 1:
                     //fetch nt byte
-                case 3:
+                    case 3:
                     //fetch AT byte
-                case 5:
+                    case 5:
                     //fetch low bg byte
-                case 7:
+                    case 7:
                     //fetch high bg byte
                     //increment loopyv
-                default:
-                    
-            }
-            if (cycles >= 257 && cycles <= 341) {
+                    default:
+
+                }
+            } else if (cycles == 257) {
+                //horizontal bits of loopyV = loopyT
+                //loopyV &= ~0x41f;
+                //loopyV |= loopyT & 0x41f;
+
+            } else if (cycles > 257 && cycles <= 341) {
                 //clear the oam address from pxls 257-341 continuously
                 ppuregs[3] = 0;
             }
-            if (scanline == 261 && cycles == 0) {
-                // turn off vblank, sprite 0, sprite overflow flags
-                setvblankflag(false);
-                ppuregs[2] &= 0x9F;
+            if (scanline == 261) {
+                if (cycles == 0) {// turn off vblank, sprite 0, sprite overflow flags
+                    setvblankflag(false);
+                    ppuregs[2] &= 0x9F;
+                } else if (cycles >= 280 && cycles <= 304) {
+                    //loopyV = (all of)loopyT for each of these cycles
+                    //loopyV = loopyT;
+                }
+
             }
         } else if (scanline == 241 && cycles == 1) {
+            //handle vblank on / off
             setvblankflag(true);
+        }
+        if (scanline < 240) {
+            if (cycles >= 1 && cycles <= 256) {
+                //background and sprite drawing
+                drawSprites(scanline << 8, cycles - 1);
+                //deal with the grayscale flag
+                int bufferoffset = (scanline << 8) + (cycles - 1);
+                if (getbit(ppuregs[1], 0)) {
+                    bitmap[bufferoffset] &= 0x30;
+                }
+                //handle color emphasis
+                final int emph = (ppuregs[1] & 0xe0) << 1;
+                bitmap[bufferoffset] = bitmap[bufferoffset] & 0x3f | emph;
+
+            } else if (cycles == 257) {
+                //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
+                if (ppuIsOn()) {
+                    evalSprites();
+                }
+            }
         }
         //handle nmi
         if (vblankflag && getbit(ppuregs[0], 7)) {
@@ -327,23 +359,7 @@ public class PPU {
             bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
             Arrays.fill(bitmap, bufferoffset, bufferoffset + 256, bgcolor);
         }
-        //draw sprites on top of whatever we had
-        drawSprites();
-        //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
-        if (ppuIsOn()) {
-            evalSprites();
-        }
-        //deal with the grayscale flag
-        if (getbit(ppuregs[1], 0)) {
-            for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
-                bitmap[i] &= 0x30;
-            }
-        }
-        //handle color emphasis
-        final int emph = (ppuregs[1] & 0xe0) << 1;
-        for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
-            bitmap[i] = bitmap[i] & 0x3f | emph;
-        }
+        //drawing sprites and grayscale have been moved
     }
 
     /**
@@ -501,45 +517,37 @@ public class PPU {
     /**
      * draws appropriate lines of the sprites selected by sprite evaluation
      */
-    private void drawSprites() {
-        //profiler doesn't see how slow it is though. fix that!
-        if (found == 0) {
-            //no sprites to draw on line.
+    private void drawSprites(int bufferoffset, int x) {
+        final int startdraw = getbit(ppuregs[1], 2) ? 0 : 8;//sprite left 8 pixels clip
+        sprpxl = 0;
+        index = 7;
+        //per pixel in de line that could have a sprite
+        for (y = found - 1; y >= 0; --y) {
+            off = x - spriteXlatch[y];
+            if (off >= 0 && off <= 8) {
+                if ((spriteshiftregH[y] & 1) + (spriteshiftregL[y] & 1) != 0) {
+                    index = y;
+                    sprpxl = 2 * (spriteshiftregH[y] & 1) + (spriteshiftregL[y] & 1);
+                }
+                spriteshiftregH[y] >>= 1;
+                spriteshiftregL[y] >>= 1;
+            }
+        }
+        if (sprpxl == 0 || x < startdraw || !getbit(ppuregs[1], 4)) {
+            //no opaque sprite pixel here
             return;
         }
-        final int bufferoffset = scanline << 8;
-        final int startdraw = getbit(ppuregs[1], 2) ? 0 : 8;//sprite left 8 pixels clip
-        for (int x = 0; x < 256; ++x) {
-            sprpxl = 0;
-            index = 7;
-            //per pixel in de line that could have a sprite
-            for (y = found - 1; y >= 0; --y) {
-                off = x - spriteXlatch[y];
-                if (off >= 0 && off <= 8) {
-                    if ((spriteshiftregH[y] & 1) + (spriteshiftregL[y] & 1) != 0) {
-                        index = y;
-                        sprpxl = 2 * (spriteshiftregH[y] & 1) + (spriteshiftregL[y] & 1);
-                    }
-                    spriteshiftregH[y] >>= 1;
-                    spriteshiftregL[y] >>= 1;
-                }
-            }
-            if (sprpxl == 0 || x < startdraw || !getbit(ppuregs[1], 4)) {
-                //no opaque sprite pixel here
-                continue;
-            }
 
-            if (sprite0here && (index == 0) && bitmap[bufferoffset + x] != bgcolor
-                    && x < 255) {
-                //sprite 0 hit!
-                sprite0hit = true;
-                sprite0x = x;
-                // ppuregs[1] |= 1;//debug
-            }
-            //now, FINALLY, drawing.
-            if (!spritebgflags[index] || (bitmap[bufferoffset + x] == bgcolor)) {
-                bitmap[bufferoffset + x] = pal[spritepals[index] + sprpxl];
-            }
+        if (sprite0here && (index == 0) && bitmap[bufferoffset + x] != bgcolor
+                && x < 255) {
+            //sprite 0 hit!
+            sprite0hit = true;
+            sprite0x = x;
+            // ppuregs[1] |= 1;//debug
+        }
+        //now, FINALLY, drawing.
+        if (!spritebgflags[index] || (bitmap[bufferoffset + x] == bgcolor)) {
+            bitmap[bufferoffset + x] = pal[spritepals[index] + sprpxl];
         }
     }
 
