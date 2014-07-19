@@ -243,6 +243,19 @@ public class PPU {
         //handle vblank on / off
         if (scanline < 240 || scanline == 261) {
             //on all rendering lines
+            switch((cycles-1) & 7){
+                case 1:
+                    //fetch nt byte
+                case 3:
+                    //fetch AT byte
+                case 5:
+                    //fetch low bg byte
+                case 7:
+                    //fetch high bg byte
+                    //increment loopyv
+                default:
+                    
+            }
             if (cycles >= 257 && cycles <= 341) {
                 //clear the oam address from pxls 257-341 continuously
                 ppuregs[3] = 0;
@@ -276,6 +289,11 @@ public class PPU {
                 ++framecount;
             }
         }
+    }
+    int BGShiftRegH, BGShiftRegL, BGAttrShiftReg;
+
+    private void DrawBGPixel() {
+
     }
 
     int bgcolor;
@@ -355,8 +373,7 @@ public class PPU {
             if ((tilenum * 8 + (((loopyV & 0x1f) << 3) + loopyX)) > 255
                     && !horizWrap) {
                 //if scrolling off the side of the nametable, bump address to next nametable
-                ntoffset ^= 0x400;
-                ntoffset -= 32;
+                ntoffset = (ntoffset ^ 0x400) - 32;
                 attroffset ^= 0x400;
                 horizWrap = true;
             }
