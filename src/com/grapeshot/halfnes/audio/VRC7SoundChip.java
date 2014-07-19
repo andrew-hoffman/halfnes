@@ -279,7 +279,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         final int carEnvelope = ((int) carenv_vol[ch]) << 2;
         final int carAM = getbit(inst[1], 7) ? am[amctr] : 0;
         final boolean carRectify = getbit(inst[3], 4);
-        out[ch] = operator(car_f, (int) (carVol + carEnvelope + carks + carAM), carRectify) << 3;
+        out[ch] = operator(car_f, (int) (carVol + carEnvelope + carks + carAM), carRectify) << 2;
         outputSample();
     }
 
@@ -330,7 +330,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     int lpaccum = 0;
 
     private void outputSample() {
-        int sample = (out[0] + out[1] + out[2] + out[3] + out[4] + out[5]);
+        int sample = (out[0] + out[1] + out[2] + out[3] + out[4] + out[5]) * 3;
         sample += lpaccum;
         lpaccum -= sample >> 2;
     }
@@ -348,8 +348,6 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         //^ the key scaling bit (java should really have unions, this is such a mess)
         /*TODO: fix all of this. Most of these constants were calculated from a 
          badly translated YM2413 technical manual and are objectively wrong.
-         To compensate somewhat I clock this function 2x as fast as the envelopes
-         are supposed to run which produces closer sounding notes but makes long note decays too short. 
         
          The key scaling stuff is similarly just a best guess.
         
