@@ -1,17 +1,20 @@
 package com.grapeshot.halfnes;
-//HalfNES, Copyright Andrew Hoffman, October 2010
+//HalfNES by Andrew Hoffman
 
-import static com.grapeshot.halfnes.utils.*;
-import com.grapeshot.halfnes.ui.GUIInterface;
-import com.grapeshot.halfnes.ui.DebugUI;
 import com.grapeshot.halfnes.mappers.Mapper;
+import com.grapeshot.halfnes.ui.DebugUI;
+import com.grapeshot.halfnes.ui.GUIInterface;
+import static com.grapeshot.halfnes.utils.getbit;
+import static com.grapeshot.halfnes.utils.getbitI;
+import static com.grapeshot.halfnes.utils.reverseByte;
+import static com.grapeshot.halfnes.utils.setbit;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
 public class PPU {
 
     public Mapper mapper;
-    private int oamaddr, sprite0x, readbuffer = 0;
+    private int oamaddr, readbuffer = 0;
     private int loopyV = 0x0;//ppu memory pointer
     private int loopyT = 0x0;//temp pointer
     private int loopyX = 0;//fine x scroll
@@ -24,9 +27,9 @@ public class PPU {
             spritepals = new int[8], bitmap = new int[240 * 256];
     int bgShiftRegH, bgShiftRegL, bgAttrShiftRegH, bgAttrShiftRegL;
     private final boolean[] spritebgflags = new boolean[8];
-    private boolean sprite0hit = false, even = true, bgpattern = true, sprpattern = false;
+    private boolean even = true, bgpattern = true, sprpattern = false;
     private final int[] ppuregs = new int[0x8];
-    public final int[] pal = //power-up pallette verified by Blargg's power_up_palette test 
+    public final int[] pal = //power-up pallette verified by Blargg's power_up_palette test
             {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D, 0x08, 0x10, 0x08, 0x24, 0x00, 0x00, //palette *might* be different on every NES
                 0x04, 0x2C, 0x09, 0x01, 0x34, 0x03, 0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, //but some emulators (nesemu1, BizHawk, RockNES, MyNes)
                 0x00, 0x20, 0x2C, 0x08};    //use it anyway
@@ -106,7 +109,7 @@ public class PPU {
 
             // and don't increment on read
             default:
-                return openbus; // last value written to ppu 
+                return openbus; // last value written to ppu
         }
         return openbus;
     }
@@ -249,11 +252,6 @@ public class PPU {
                 bgcolors[scanline] = pal[0];
             }
         }
-        //handle sprite 0
-        if (sprite0hit && sprite0x == (cycles + 1)) {
-            sprite0hit = false;
-            ppuregs[2] |= 0x40;
-        }
         if (scanline < 240 || scanline == 261) {
             //on all rendering lines
             if (ppuIsOn()
@@ -272,7 +270,7 @@ public class PPU {
                     case 3:
                         //fetch attribute (FIX MATH)
                         penultimateattr = getAttribute(((loopyV & 0xc00) +0x23c0), (loopyV) & 0x1f,
-                                (((((loopyV & 0xc00) | 0x2000) + loopyV) & 0x3e0) >> 5));
+                                (((loopyV) & 0x3e0) >> 5));
                         break;
                     case 5:
                         //fetch low bg byte
@@ -405,7 +403,7 @@ public class PPU {
         final int butts;
         final boolean isBG;
         if (!getbit(ppuregs[1], 1) && (bufferoffset & 0xff) < 8) {
-            //left hand of screen clipping 
+            //left hand of screen clipping
             //(needs to be marked as BG and not cause a sprite hit)
             butts = pal[0];
             isBG = true;
@@ -536,9 +534,8 @@ public class PPU {
         if (sprite0here && (index == 0) && !bgflag
                 && x < 255) {
             //sprite 0 hit!
-            sprite0hit = true;
-            sprite0x = x;
-            // ppuregs[1] |= 1;//debug
+            ppuregs[2] |= 0x40;
+            //ppuregs[1] |= 1;//debug
         }
         //now, FINALLY, drawing.
         if (!spritebgflags[index] || bgflag) {
@@ -665,21 +662,6 @@ public class PPU {
         gui.setFrame(bitmap, bgcolors, dotcrawl);
 
     }
-    private final int[] tiledata = new int[8];
-    private final int[] tilepal = new int[4];
-
-    /**
-     * Returns an 8 pixel line of tile data from given PPU ram location with
-     * given offset and given palette. (color expressed as NES color number)
-     *
-     * NES fetches for each tile are done in the order of: Nametable byte,
-     * Attribute table byte, tile data high bits, tile data low bits
-     *
-     * @param tileptr
-     * @param paletteindex which of the 8 3 color plus BG color palettes to use
-     * @param off PPU base address
-     * @return int array with 8 NES color numbers
-     */
     private boolean vblankflag = false;
 
     /**

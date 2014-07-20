@@ -112,7 +112,6 @@ Things I probably can't fix at all:
 
 
 Broken Games To Fix:
--Marble Madness
 -Don Doko Don 2 (actually header was incorrect, this should use mapper 48 not 33)
 *Battle Chess (fixed in 055, who knows why)
 -Laser Invasion (graphics corruption)
@@ -135,4 +134,5 @@ Codemasters games broken by DMC IRQ:
 before it starts in on the song.)
 -Mickey's Safari in Letterland needs exact MMC3B behavior. 
 This has to do with PPU mirroring and the A12 address line.
+N163 scanline counter is completely broken (and may have been for a while)
 
