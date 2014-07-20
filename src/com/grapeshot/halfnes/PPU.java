@@ -229,7 +229,7 @@ public class PPU {
         }
     }
 
-    private int ntByte = 0;
+    private int tileAddr = 0;
 
     /**
      * runs the emulation for one PPU clock cycle.
@@ -256,13 +256,13 @@ public class PPU {
             if (ppuIsOn()
                     && ((cycles >= 1 && cycles <= 256)
                     || (cycles >= 321 && cycles <= 326))) {
+                //System.err.println(hex(loopyV));
                 //background fetches
                 switch ((cycles - 1) & 7) {
                     case 1:
                         //fetch nt byte
-                        ntByte = mapper.ppuRead(((loopyV & 0xc00) | 0x2000)
-                                + (loopyV & 0x3ff) * 16
-                                + (bgpattern ? 0x1000 : 0));
+                        tileAddr = mapper.ppuRead(((loopyV & 0xc00) | 0x2000) + (loopyV & 0x3ff))
+                                * 16 + (bgpattern ? 0x1000 : 0);
                         break;
                     case 3:
                         //fetch attribute (FIX MATH)
@@ -271,14 +271,14 @@ public class PPU {
                         break;
                     case 5:
                         //fetch low bg byte
+                        int linelowbits = mapper.ppuRead((tileAddr) + ((loopyV & 0x7000) >> 12));
 
-                        int linehighbits = mapper.ppuRead(ntByte + (loopyV & 0x7000) >> 12);
-                        bgShiftRegH = linehighbits << 8;
+                        bgShiftRegL |= linelowbits << 8;
                         break;
                     case 7:
                         //fetch high bg byte
-                        int linelowbits = mapper.ppuRead(ntByte + 8 + (loopyV & 0x7000) >> 12);
-                        bgShiftRegL |= linelowbits << 8;
+                        int linehighbits = mapper.ppuRead((tileAddr) + 8 + ((loopyV & 0x7000) >> 12));
+                        bgShiftRegH |= linehighbits << 8;
                         if (cycles != 256) {
                             //increment horizontal part of loopyv
                             if ((loopyV & 0x001F) == 31) // if coarse X == 31
