@@ -19,7 +19,7 @@ public class NES {
     private CPURAM cpuram;
     private PPU ppu;
     private ControllerInterface controller1, controller2;
-    final public static String VERSION = "056";
+    final public static String VERSION = "057";
     public boolean runEmulation = false;
     private boolean dontSleep = false;
     public long frameStartTime, framecount, frameDoneTime;

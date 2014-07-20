@@ -39,6 +39,7 @@ public class PPU {
     private int nextattr;
     private int linelowbits;
     private int linehighbits;
+    private int penultimateattr;
 
     public PPU(final Mapper mapper) {
         this.mapper = mapper;
@@ -257,8 +258,10 @@ public class PPU {
             //on all rendering lines
             if (ppuIsOn()
                     && ((cycles >= 1 && cycles <= 256)
-                    || (cycles >= 321 && cycles <= 326))) {
+                    || (cycles >= 321 && cycles <= 336))) {
                 //System.err.println(hex(loopyV));
+                bgAttrShiftRegH |= ((nextattr >> 1) & 1);
+                bgAttrShiftRegL |= (nextattr & 1);
                 //background fetches
                 switch ((cycles - 1) & 7) {
                     case 1:
@@ -268,20 +271,19 @@ public class PPU {
                         break;
                     case 3:
                         //fetch attribute (FIX MATH)
-                        nextattr = getAttribute((((loopyV & 0xc00) | 0x2000) + 0x3c0), (loopyV) & 0x1f,
+                        penultimateattr = getAttribute(((loopyV & 0xc00) +0x23c0), (loopyV) & 0x1f,
                                 (((((loopyV & 0xc00) | 0x2000) + loopyV) & 0x3e0) >> 5));
                         break;
                     case 5:
                         //fetch low bg byte
                         linelowbits = mapper.ppuRead((tileAddr) + ((loopyV & 0x7000) >> 12));
-
-
                         break;
                     case 7:
                         //fetch high bg byte
                         linehighbits = mapper.ppuRead((tileAddr) + 8 + ((loopyV & 0x7000) >> 12));
                         bgShiftRegL |= linelowbits;
                         bgShiftRegH |= linehighbits;
+                        nextattr = penultimateattr;
                         if (cycles != 256) {
                             //increment horizontal part of loopyv
                             if ((loopyV & 0x001F) == 31) // if coarse X == 31
@@ -312,9 +314,12 @@ public class PPU {
                         }
                         break;
                     default:
+                        break;
                 }
-                bgAttrShiftRegH |= ((nextattr >> 1) & 1);
-                bgAttrShiftRegL |= (nextattr & 1);
+                if(cycles >= 321 && cycles <= 336){
+                    bgShiftClock();
+                }
+
             } else if (cycles == 257 && ppuIsOn()) {
                 //horizontal bits of loopyV = loopyT
                 loopyV &= ~0x41f;
@@ -407,69 +412,24 @@ public class PPU {
         } else {
             final int bgPix = (getbitI(bgShiftRegH, -loopyX + 16) << 1)
                     + getbitI(bgShiftRegL, -loopyX + 16);
-            final int bgPal = (getbitI(bgAttrShiftRegH, -loopyX + 16) << 1)
-                    + getbitI(bgAttrShiftRegL, -loopyX + 16);
+            final int bgPal = (getbitI(bgAttrShiftRegH, -loopyX + 8) << 1)
+                    + getbitI(bgAttrShiftRegL, -loopyX + 8);
             isBG = (bgPix == 0);
             butts = isBG ? pal[0] : pal[(bgPal << 2) + bgPix];
         }
         bitmap[bufferoffset] = butts;
+        bgShiftClock();
+        return isBG;
+    }
+
+    private void bgShiftClock() {
         bgShiftRegH <<= 1;
         bgShiftRegL <<= 1;
         bgAttrShiftRegH <<= 1;
         bgAttrShiftRegL <<= 1;
-        return isBG;
     }
 
     boolean dotcrawl = true;
-
-    /**
-     * Draws one line of PPU backgrounds
-     *
-     * @param bufferoffset where in the video buffer to draw to (should be a
-     * multiple of 256)
-     */
-    private void drawBG(final int bufferoffset) {
-        //System.err.println(" BG ON!");
-        // if bg is on, draw tiles.
-        if (scanline == 0) {
-            //update whole scroll
-            loopyV = loopyT;
-        } else {
-            //update horizontal scroll bits only
-            //actually some of these may be updated DURING the line
-            loopyV &= ~0x41f;
-            loopyV |= loopyT & 0x41f;
-        }
-        //draw background
-        int ntoffset = (loopyV & 0xc00) | 0x2000;
-        int attroffset = ntoffset + 0x3c0;
-        boolean horizWrap = false;
-        for (int tilenum = 0; tilenum < 33; ++tilenum) {
-            //for each tile in row
-            if ((tilenum * 8 + (((loopyV & 0x1f) << 3) + loopyX)) > 255
-                    && !horizWrap) {
-                //if scrolling off the side of the nametable, bump address to next nametable
-                ntoffset = (ntoffset ^ 0x400) - 32;
-                attroffset ^= 0x400;
-                horizWrap = true;
-            }
-            //get palette number from attribute table byte
-            final int tileaddr = mapper.ppuRead(ntoffset
-                    + (loopyV & 0x3ff) + tilenum) * 16
-                    + (bgpattern ? 0x1000 : 0);
-            final int palettenum = getAttribute(attroffset, (loopyV + tilenum) & 0x1f,
-                    (((ntoffset + loopyV + tilenum) & 0x3e0) >> 5));
-            final int[] tile = getTile(tileaddr, palettenum * 4,
-                    (loopyV & 0x7000) >> 12);
-            //now put inna buffer
-            final int xpos = tilenum * 8 - loopyX;
-            for (int pxl = 0; pxl < 8; ++pxl) {
-                if ((pxl + xpos) < 256 && (pxl + xpos) >= 0) { //it's not off the screen
-                    bitmap[pxl + xpos + bufferoffset] = tile[pxl];
-                }
-            }
-        }
-    }
     private int off, y, index, sprpxl, found;
     private boolean sprite0here = false;
 
@@ -720,21 +680,6 @@ public class PPU {
      * @param off PPU base address
      * @return int array with 8 NES color numbers
      */
-    private int[] getTile(final int tileptr, final int paletteindex, final int off) {
-        tilepal[0] = pal[0];
-        System.arraycopy(pal, paletteindex + 1, tilepal, 1, 3);
-        // per line of tile ( 1 byte)
-        int linelowbits = mapper.ppuRead(off + tileptr);
-        int linehighbits = mapper.ppuRead(off + tileptr + 8);
-        for (int j = 7; j >= 0; --j) {
-            // per pixel(1 bit)
-            tiledata[j] = tilepal[((linehighbits & 1) << 1) + (linelowbits & 1)];
-            linehighbits >>= 1;
-            linelowbits >>= 1;
-        }
-        return tiledata;
-    }
-
     private boolean vblankflag = false;
 
     /**
