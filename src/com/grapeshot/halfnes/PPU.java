@@ -22,6 +22,7 @@ public class PPU {
     private final int[] OAM = new int[256], spriteshiftregH = new int[8],
             spriteshiftregL = new int[8], spriteXlatch = new int[8],
             spritepals = new int[8], bitmap = new int[240 * 256];
+    int bgShiftRegH, bgShiftRegL, bgAttrShiftRegH, bgAttrShiftRegL;
     private final boolean[] spritebgflags = new boolean[8];
     private boolean sprite0hit = false, even = true, bgpattern = true, sprpattern = false;
     private final int[] ppuregs = new int[0x8];
@@ -35,6 +36,7 @@ public class PPU {
     private BufferedImage nametableView;
     private final int[] bgcolors = new int[256];
     private int openbus = 0; //the last value written to the PPU
+    private int nextattr;
 
     public PPU(final Mapper mapper) {
         this.mapper = mapper;
@@ -227,13 +229,22 @@ public class PPU {
         }
     }
 
+    private int ntByte = 0;
+
     /**
      * runs the emulation for one PPU clock cycle.
      */
     public final void clock() {
+        bgpattern = getbit(ppuregs[0], 4);
+        sprpattern = getbit(ppuregs[0], 3);
         //cycle based ppu stuff will go here
         if (cycles == 1) {
-            drawLine();
+            if (scanline == 0) {
+                dotcrawl = ppuIsOn();
+            }
+            if (scanline < 240) {
+                bgcolors[scanline] = pal[0];
+            }
         }
         //handle sprite 0
         if (sprite0hit && sprite0x == (cycles + 1)) {
@@ -242,25 +253,69 @@ public class PPU {
         }
         if (scanline < 240 || scanline == 261) {
             //on all rendering lines
-            if ((cycles >= 1 && cycles <= 256) || (cycles >= 321 && cycles <= 326)) {
+            if (ppuIsOn()
+                    && ((cycles >= 1 && cycles <= 256)
+                    || (cycles >= 321 && cycles <= 326))) {
                 //background fetches
                 switch ((cycles - 1) & 7) {
                     case 1:
-                    //fetch nt byte
+                        //fetch nt byte
+                        ntByte = mapper.ppuRead(((loopyV & 0xc00) | 0x2000)
+                                + (loopyV & 0x3ff) * 16
+                                + (bgpattern ? 0x1000 : 0));
+                        break;
                     case 3:
-                    //fetch AT byte
+                        //fetch attribute (FIX MATH)
+                        nextattr = getAttribute((((loopyV & 0xc00) | 0x2000) + 0x3c0), (loopyV) & 0x1f,
+                                (((((loopyV & 0xc00) | 0x2000) + loopyV) & 0x3e0) >> 5));
+                        break;
                     case 5:
-                    //fetch low bg byte
-                    case 7:
-                    //fetch high bg byte
-                    //increment loopyv
-                    default:
+                        //fetch low bg byte
 
+                        int linehighbits = mapper.ppuRead(ntByte + (loopyV & 0x7000) >> 12);
+                        bgShiftRegH = linehighbits << 8;
+                        break;
+                    case 7:
+                        //fetch high bg byte
+                        int linelowbits = mapper.ppuRead(ntByte + 8 + (loopyV & 0x7000) >> 12);
+                        bgShiftRegL |= linelowbits << 8;
+                        if (cycles != 256) {
+                            //increment horizontal part of loopyv
+                            if ((loopyV & 0x001F) == 31) // if coarse X == 31
+                            {
+                                loopyV &= ~0x001F; // coarse X = 0
+                                loopyV ^= 0x0400;// switch horizontal nametable
+                            } else {
+                                loopyV += 1;// increment coarse X
+                            }
+
+                        } else {
+                            //increment loopy_v to next row of tiles
+                            int newfinescroll = (loopyV & 0x7000) + 0x1000;
+                            loopyV &= ~0x7000;
+                            if (newfinescroll > 0x7000) {
+                                //reset the fine scroll bits and increment tile address to next row
+                                loopyV += 32;
+                            } else {
+                                //increment the fine scroll
+                                loopyV += newfinescroll;
+                            }
+                            if (((loopyV >> 5) & 0x1f) == 30) {
+                                //if incrementing loopy_v to the next row pushes us into the next
+                                //nametable, zero the "row" bits and go to next nametable
+                                loopyV &= ~0x3e0;
+                                loopyV ^= 0x800;
+                            }
+                        }
+                        break;
+                    default:
                 }
-            } else if (cycles == 257) {
+                bgAttrShiftRegH |= ((nextattr >> 1) & 1) << 8;
+                bgAttrShiftRegL |= (nextattr & 1) << 8;
+            } else if (cycles == 257 && ppuIsOn()) {
                 //horizontal bits of loopyV = loopyT
-                //loopyV &= ~0x41f;
-                //loopyV |= loopyT & 0x41f;
+                loopyV &= ~0x41f;
+                loopyV |= loopyT & 0x41f;
 
             } else if (cycles > 257 && cycles <= 341) {
                 //clear the oam address from pxls 257-341 continuously
@@ -270,9 +325,9 @@ public class PPU {
                 if (cycles == 0) {// turn off vblank, sprite 0, sprite overflow flags
                     setvblankflag(false);
                     ppuregs[2] &= 0x9F;
-                } else if (cycles >= 280 && cycles <= 304) {
+                } else if (cycles >= 280 && cycles <= 304 && ppuIsOn()) {
                     //loopyV = (all of)loopyT for each of these cycles
-                    //loopyV = loopyT;
+                    loopyV = loopyT;
                 }
 
             }
@@ -282,10 +337,22 @@ public class PPU {
         }
         if (scanline < 240) {
             if (cycles >= 1 && cycles <= 256) {
-                //background and sprite drawing
-                drawSprites(scanline << 8, cycles - 1);
-                //deal with the grayscale flag
                 int bufferoffset = (scanline << 8) + (cycles - 1);
+                //bg drawing
+                if (getbit(ppuregs[1], 3)) { //if background is on, draw a line of that
+                    final boolean isBG = drawBGPixel(bufferoffset);
+                    //sprite drawing
+                    if (found > 0) {
+                        drawSprites(scanline << 8, cycles - 1, isBG);
+                    }
+                } else {
+                    //rendering is off, so draw either the background color OR
+                    //if the PPU address points to the palette, draw that color instead.
+                    int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
+                    bitmap[bufferoffset] = bgcolor;
+                }
+
+                //deal with the grayscale flag
                 if (getbit(ppuregs[1], 0)) {
                     bitmap[bufferoffset] &= 0x30;
                 }
@@ -295,6 +362,7 @@ public class PPU {
 
             } else if (cycles == 257) {
                 //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
+                //this does not happen on scanine 261
                 if (ppuIsOn()) {
                     evalSprites();
                 }
@@ -322,45 +390,34 @@ public class PPU {
             }
         }
     }
-    int BGShiftRegH, BGShiftRegL, BGAttrShiftReg;
 
-    private void DrawBGPixel() {
-
-    }
-
-    int bgcolor;
-    boolean dotcrawl = true;
-
-    /**
-     * Causes the PPU to draw one line of video.
-     */
-    private void drawLine() {
-        //System.err.println("SCANLINE " + scanline);
-        //this contains probably more magic numbers than the rest of the program combined.
-        //TODO: define some static bitmasks to manipulate the address through, instead
-        if (scanline == 0) {
-            dotcrawl = ppuIsOn();
-        }
-        if (scanline >= 240) {
-            return;
-        }
-        bgpattern = getbit(ppuregs[0], 4);
-        sprpattern = getbit(ppuregs[0], 3);
-        final int bufferoffset = scanline << 8;
-        //TODO: Simplify Logic
-        bgcolor = pal[0] + 256; //plus 256 is to give indication it IS the bgcolor
-        //because bg color is special
-        bgcolors[scanline] = pal[0];
-        if (getbit(ppuregs[1], 3)) { //if background is on, draw a line of that
-            drawBG(bufferoffset);
+    private boolean drawBGPixel(int bufferoffset) {
+        //background drawing
+        //loopyX picks bits
+        final int butts;
+        final boolean isBG;
+        if (!getbit(ppuregs[1], 1) && (bufferoffset & 0xff) < 8) {
+            //left hand of screen clipping 
+            //(needs to be marked as BG and not cause a sprite hit)
+            butts = pal[0];
+            isBG = true;
         } else {
-            //rendering is off, so draw either the background color OR
-            //if the PPU address points to the palette, draw that color instead.
-            bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
-            Arrays.fill(bitmap, bufferoffset, bufferoffset + 256, bgcolor);
+            final int bgPix = (getbitI(bgShiftRegH, loopyX) << 1)
+                    + getbitI(bgShiftRegL, loopyX);
+            final int bgPal = (getbitI(bgAttrShiftRegH, loopyX) << 1)
+                    + getbitI(bgAttrShiftRegL, loopyX);
+            isBG = (bgPix == 0);
+            butts = isBG ? pal[0] : pal[(bgPal << 2) + bgPix];
         }
-        //drawing sprites and grayscale have been moved
+        bitmap[bufferoffset] = butts;
+        bgShiftRegH >>= 1;
+        bgShiftRegL >>= 1;
+        bgAttrShiftRegH >>= 1;
+        bgAttrShiftRegL >>= 1;
+        return isBG;
     }
+
+    boolean dotcrawl = true;
 
     /**
      * Draws one line of PPU backgrounds
@@ -407,31 +464,6 @@ public class PPU {
                 if ((pxl + xpos) < 256 && (pxl + xpos) >= 0) { //it's not off the screen
                     bitmap[pxl + xpos + bufferoffset] = tile[pxl];
                 }
-            }
-        }
-        //increment loopy_v to next row of tiles
-        int newfinescroll = loopyV & 0x7000;
-        newfinescroll += 0x1000;
-        loopyV &= ~0x7000;
-        if (newfinescroll > 0x7000) {
-            //reset the fine scroll bits and increment tile address to next row
-            loopyV += 32;
-        } else {
-            //increment the fine scroll
-            loopyV += newfinescroll;
-        }
-        if (((loopyV >> 5) & 0x1f) == 30) {
-            //if incrementing loopy_v to the next row pushes us into the next
-            //nametable, zero the "row" bits and go to next nametable
-            loopyV &= ~0x3e0;
-            loopyV ^= 0x800;
-            //ntoffset += 0x440;
-            //attroffset += 0x7c0;
-        }
-        //hide leftmost 8 pixels if that flag is on
-        if (!getbit(ppuregs[1], 1)) {
-            for (int i = 0; i < 8; ++i) {
-                bitmap[i + bufferoffset] = bgcolor;
             }
         }
     }
@@ -517,7 +549,7 @@ public class PPU {
     /**
      * draws appropriate lines of the sprites selected by sprite evaluation
      */
-    private void drawSprites(int bufferoffset, int x) {
+    private void drawSprites(int bufferoffset, int x, boolean bgflag) {
         final int startdraw = getbit(ppuregs[1], 2) ? 0 : 8;//sprite left 8 pixels clip
         sprpxl = 0;
         index = 7;
@@ -538,7 +570,7 @@ public class PPU {
             return;
         }
 
-        if (sprite0here && (index == 0) && bitmap[bufferoffset + x] != bgcolor
+        if (sprite0here && (index == 0) && !bgflag
                 && x < 255) {
             //sprite 0 hit!
             sprite0hit = true;
@@ -546,7 +578,7 @@ public class PPU {
             // ppuregs[1] |= 1;//debug
         }
         //now, FINALLY, drawing.
-        if (!spritebgflags[index] || (bitmap[bufferoffset + x] == bgcolor)) {
+        if (!spritebgflags[index] || bgflag) {
             bitmap[bufferoffset + x] = pal[spritepals[index] + sprpxl];
         }
     }
@@ -686,7 +718,7 @@ public class PPU {
      * @return int array with 8 NES color numbers
      */
     private int[] getTile(final int tileptr, final int paletteindex, final int off) {
-        tilepal[0] = bgcolor;
+        tilepal[0] = pal[0];
         System.arraycopy(pal, paletteindex + 1, tilepal, 1, 3);
         // per line of tile ( 1 byte)
         int linelowbits = mapper.ppuRead(off + tileptr);
