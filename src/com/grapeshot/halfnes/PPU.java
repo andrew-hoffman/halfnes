@@ -37,6 +37,8 @@ public class PPU {
     private final int[] bgcolors = new int[256];
     private int openbus = 0; //the last value written to the PPU
     private int nextattr;
+    private int linelowbits;
+    private int linehighbits;
 
     public PPU(final Mapper mapper) {
         this.mapper = mapper;
@@ -271,14 +273,15 @@ public class PPU {
                         break;
                     case 5:
                         //fetch low bg byte
-                        int linelowbits = mapper.ppuRead((tileAddr) + ((loopyV & 0x7000) >> 12));
+                        linelowbits = mapper.ppuRead((tileAddr) + ((loopyV & 0x7000) >> 12));
 
-                        bgShiftRegL |= linelowbits << 8;
+
                         break;
                     case 7:
                         //fetch high bg byte
-                        int linehighbits = mapper.ppuRead((tileAddr) + 8 + ((loopyV & 0x7000) >> 12));
-                        bgShiftRegH |= linehighbits << 8;
+                        linehighbits = mapper.ppuRead((tileAddr) + 8 + ((loopyV & 0x7000) >> 12));
+                        bgShiftRegL |= linelowbits;
+                        bgShiftRegH |= linehighbits;
                         if (cycles != 256) {
                             //increment horizontal part of loopyv
                             if ((loopyV & 0x001F) == 31) // if coarse X == 31
@@ -310,8 +313,8 @@ public class PPU {
                         break;
                     default:
                 }
-                bgAttrShiftRegH |= ((nextattr >> 1) & 1) << 8;
-                bgAttrShiftRegL |= (nextattr & 1) << 8;
+                bgAttrShiftRegH |= ((nextattr >> 1) & 1);
+                bgAttrShiftRegL |= (nextattr & 1);
             } else if (cycles == 257 && ppuIsOn()) {
                 //horizontal bits of loopyV = loopyT
                 loopyV &= ~0x41f;
@@ -402,18 +405,18 @@ public class PPU {
             butts = pal[0];
             isBG = true;
         } else {
-            final int bgPix = (getbitI(bgShiftRegH, loopyX) << 1)
-                    + getbitI(bgShiftRegL, loopyX);
-            final int bgPal = (getbitI(bgAttrShiftRegH, loopyX) << 1)
-                    + getbitI(bgAttrShiftRegL, loopyX);
+            final int bgPix = (getbitI(bgShiftRegH, -loopyX + 16) << 1)
+                    + getbitI(bgShiftRegL, -loopyX + 16);
+            final int bgPal = (getbitI(bgAttrShiftRegH, -loopyX + 16) << 1)
+                    + getbitI(bgAttrShiftRegL, -loopyX + 16);
             isBG = (bgPix == 0);
             butts = isBG ? pal[0] : pal[(bgPal << 2) + bgPix];
         }
         bitmap[bufferoffset] = butts;
-        bgShiftRegH >>= 1;
-        bgShiftRegL >>= 1;
-        bgAttrShiftRegH >>= 1;
-        bgAttrShiftRegL >>= 1;
+        bgShiftRegH <<= 1;
+        bgShiftRegL <<= 1;
+        bgAttrShiftRegH <<= 1;
+        bgAttrShiftRegL <<= 1;
         return isBG;
     }
 
