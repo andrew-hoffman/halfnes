@@ -257,67 +257,8 @@ public class PPU {
             if (ppuIsOn()
                     && ((cycles >= 1 && cycles <= 256)
                     || (cycles >= 321 && cycles <= 336))) {
-                //System.err.println(hex(loopyV));
-                bgAttrShiftRegH |= ((nextattr >> 1) & 1);
-                bgAttrShiftRegL |= (nextattr & 1);
-                //background fetches
-                switch ((cycles - 1) & 7) {
-                    case 1:
-                        //fetch nt byte
-                        tileAddr = mapper.ppuRead(((loopyV & 0xc00) | 0x2000) + (loopyV & 0x3ff))
-                                * 16 + (bgpattern ? 0x1000 : 0);
-                        break;
-                    case 3:
-                        //fetch attribute (FIX MATH)
-                        penultimateattr = getAttribute(((loopyV & 0xc00) +0x23c0), (loopyV) & 0x1f,
-                                (((loopyV) & 0x3e0) >> 5));
-                        break;
-                    case 5:
-                        //fetch low bg byte
-                        linelowbits = mapper.ppuRead((tileAddr) + ((loopyV & 0x7000) >> 12));
-                        break;
-                    case 7:
-                        //fetch high bg byte
-                        linehighbits = mapper.ppuRead((tileAddr) + 8 + ((loopyV & 0x7000) >> 12));
-                        bgShiftRegL |= linelowbits;
-                        bgShiftRegH |= linehighbits;
-                        nextattr = penultimateattr;
-                        if (cycles != 256) {
-                            //increment horizontal part of loopyv
-                            if ((loopyV & 0x001F) == 31) // if coarse X == 31
-                            {
-                                loopyV &= ~0x001F; // coarse X = 0
-                                loopyV ^= 0x0400;// switch horizontal nametable
-                            } else {
-                                loopyV += 1;// increment coarse X
-                            }
-
-                        } else {
-                            //increment loopy_v to next row of tiles
-                            int newfinescroll = (loopyV & 0x7000) + 0x1000;
-                            loopyV &= ~0x7000;
-                            if (newfinescroll > 0x7000) {
-                                //reset the fine scroll bits and increment tile address to next row
-                                loopyV += 32;
-                            } else {
-                                //increment the fine scroll
-                                loopyV += newfinescroll;
-                            }
-                            if (((loopyV >> 5) & 0x1f) == 30) {
-                                //if incrementing loopy_v to the next row pushes us into the next
-                                //nametable, zero the "row" bits and go to next nametable
-                                loopyV &= ~0x3e0;
-                                loopyV ^= 0x800;
-                            }
-                        }
-                        break;
-                    default:
-                        break;
-                }
-                if(cycles >= 321 && cycles <= 336){
-                    bgShiftClock();
-                }
-
+                //fetch background tiles, load shift registers
+                bgFetch();
             } else if (cycles == 257 && ppuIsOn()) {
                 //horizontal bits of loopyV = loopyT
                 loopyV &= ~0x41f;
@@ -335,7 +276,6 @@ public class PPU {
                     //loopyV = (all of)loopyT for each of these cycles
                     loopyV = loopyT;
                 }
-
             }
         } else if (scanline == 241 && cycles == 1) {
             //handle vblank on / off
@@ -357,7 +297,6 @@ public class PPU {
                     int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
                     bitmap[bufferoffset] = bgcolor;
                 }
-
                 //deal with the grayscale flag
                 if (getbit(ppuregs[1], 0)) {
                     bitmap[bufferoffset] &= 0x30;
@@ -386,6 +325,7 @@ public class PPU {
         div = (div + 1) % 3;
         if (div == 0) {
             mapper.cpu.runcycle(scanline, cycles);
+            mapper.cpucycle(1);
         }
         if (cycles == 257) {
             mapper.notifyscanline(scanline);
@@ -394,6 +334,73 @@ public class PPU {
             if (scanline == 0) {
                 ++framecount;
             }
+        }
+    }
+
+    private void bgFetch() {
+        //System.err.println(hex(loopyV));
+        bgAttrShiftRegH |= ((nextattr >> 1) & 1);
+        bgAttrShiftRegL |= (nextattr & 1);
+        //background fetches
+        switch ((cycles - 1) & 7) {
+            case 1:
+                //fetch nt byte
+                tileAddr = mapper.ppuRead(
+                        ((loopyV & 0xc00) | 0x2000) + (loopyV & 0x3ff)) * 16 
+                        + (bgpattern ? 0x1000 : 0);
+                break;
+            case 3:
+                //fetch attribute (FIX MATH)
+                penultimateattr = getAttribute(((loopyV & 0xc00) + 0x23c0), 
+                        (loopyV) & 0x1f,
+                        (((loopyV) & 0x3e0) >> 5));
+                break;
+            case 5:
+                //fetch low bg byte
+                linelowbits = mapper.ppuRead((tileAddr) 
+                        + ((loopyV & 0x7000) >> 12));
+                break;
+            case 7:
+                //fetch high bg byte
+                linehighbits = mapper.ppuRead((tileAddr) + 8 
+                        + ((loopyV & 0x7000) >> 12));
+                bgShiftRegL |= linelowbits;
+                bgShiftRegH |= linehighbits;
+                nextattr = penultimateattr;
+                if (cycles != 256) {
+                    //increment horizontal part of loopyv
+                    if ((loopyV & 0x001F) == 31) // if coarse X == 31
+                    {
+                        loopyV &= ~0x001F; // coarse X = 0
+                        loopyV ^= 0x0400;// switch horizontal nametable
+                    } else {
+                        loopyV += 1;// increment coarse X
+                    }
+
+                } else {
+                    //increment loopy_v to next row of tiles
+                    int newfinescroll = (loopyV & 0x7000) + 0x1000;
+                    loopyV &= ~0x7000;
+                    if (newfinescroll > 0x7000) {
+                        //reset the fine scroll bits and increment tile address to next row
+                        loopyV += 32;
+                    } else {
+                        //increment the fine scroll
+                        loopyV += newfinescroll;
+                    }
+                    if (((loopyV >> 5) & 0x1f) == 30) {
+                        //if incrementing loopy_v to the next row pushes us into the next
+                        //nametable, zero the "row" bits and go to next nametable
+                        loopyV &= ~0x3e0;
+                        loopyV ^= 0x800;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+        if (cycles >= 321 && cycles <= 336) {
+            bgShiftClock();
         }
     }
 
