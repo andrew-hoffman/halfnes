@@ -268,6 +268,12 @@ public class PPU {
                 //clear the oam address from pxls 257-341 continuously
                 ppuregs[3] = 0;
             }
+//          if ((cycles == 340)) {
+//              //read the same nametable byte twice
+//              //this signals the MMC5 to increment the scanline counter
+//              fetchNTByte();
+//              fetchNTByte();
+//          }
             if (scanline == 261) {
                 if (cycles == 0) {// turn off vblank, sprite 0, sprite overflow flags
                     setvblankflag(false);
@@ -338,6 +344,8 @@ public class PPU {
     }
 
     private void bgFetch() {
+        //fetch tiles for background
+        //on real PPU this logic is repurposed for sprite fetches as well
         //System.err.println(hex(loopyV));
         bgAttrShiftRegH |= ((nextattr >> 1) & 1);
         bgAttrShiftRegL |= (nextattr & 1);
@@ -351,18 +359,18 @@ public class PPU {
                 break;
             case 3:
                 //fetch attribute (FIX MATH)
-                penultimateattr = getAttribute(((loopyV & 0xc00) + 0x23c0), 
+                penultimateattr = getAttribute(((loopyV & 0xc00) + 0x23c0),
                         (loopyV) & 0x1f,
                         (((loopyV) & 0x3e0) >> 5));
                 break;
             case 5:
                 //fetch low bg byte
-                linelowbits = mapper.ppuRead((tileAddr) 
+                linelowbits = mapper.ppuRead((tileAddr)
                         + ((loopyV & 0x7000) >> 12));
                 break;
             case 7:
                 //fetch high bg byte
-                linehighbits = mapper.ppuRead((tileAddr) + 8 
+                linehighbits = mapper.ppuRead((tileAddr) + 8
                         + ((loopyV & 0x7000) >> 12));
                 bgShiftRegL |= linelowbits;
                 bgShiftRegH |= linehighbits;
@@ -407,12 +415,11 @@ public class PPU {
     private boolean drawBGPixel(int bufferoffset) {
         //background drawing
         //loopyX picks bits
-        final int butts;
         final boolean isBG;
         if (!getbit(ppuregs[1], 1) && (bufferoffset & 0xff) < 8) {
             //left hand of screen clipping
             //(needs to be marked as BG and not cause a sprite hit)
-            butts = pal[0];
+            bitmap[bufferoffset] = pal[0];
             isBG = true;
         } else {
             final int bgPix = (getbitI(bgShiftRegH, -loopyX + 16) << 1)
@@ -420,9 +427,8 @@ public class PPU {
             final int bgPal = (getbitI(bgAttrShiftRegH, -loopyX + 8) << 1)
                     + getbitI(bgAttrShiftRegL, -loopyX + 8);
             isBG = (bgPix == 0);
-            butts = isBG ? pal[0] : pal[(bgPal << 2) + bgPix];
+            bitmap[bufferoffset] = isBG ? pal[0] : pal[(bgPal << 2) + bgPix];
         }
-        bitmap[bufferoffset] = butts;
         bgShiftClock();
         return isBG;
     }

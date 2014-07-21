@@ -360,18 +360,19 @@ public class MMC5Mapper extends Mapper {
             prg_map[i + bankpos] = (1024 * ((banknum * banksize) + i)) & (prgsize - 1);
         }
     }
-    int fetchcount = 0;
-    int exlatch = 0;
-    boolean spritemode = false;
-    int lastfetch = 0;
+    private int fetchcount, exlatch, lastfetch, prevfetch, prevprevfetch;
+    private boolean spritemode = false;
 
     @Override
     public int ppuRead(final int addr) {
         //so how DO we detect which reads are which without
         //seeing the nametable reads?
+        
+        //well, as it turns out in the real NES, the MMC5 can in fact see everything
+        //put on the PPU bus, whether or not the CS line is asserted for it.
         //must be something to do with 8x16 sprites, and with
         //the 34 reads per scanline of background
-        //sigh, it reads 33 bg tiles (66 bytes) then some unknown amt of sprite bytes
+        //it reads 34 bg tiles (68 bytes) then some unknown amt of sprite bytes
         //(less than 16)
         if (addr < 0x2000) {
             // System.err.print("p");
@@ -403,6 +404,15 @@ public class MMC5Mapper extends Mapper {
         } else {
             // System.err.print("n");
             //nametable read
+//            if(prevfetch == prevprevfetch && prevprevfetch == addr && prevfetch == addr){
+//               //last 3 fetches are the same and that's the signal
+//               //to increment the scan line counter
+//               //unfortunately I don't know how the MMC5 resets the counter when PPU is off yet
+//            
+//               incScanline();
+//            }
+            prevprevfetch = prevfetch;
+            prevfetch = addr;
             spritemode = false;
             fetchcount = 0;
             //  System.err.println(" bg");
