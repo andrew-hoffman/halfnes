@@ -69,7 +69,6 @@ public class MMC3Mapper extends Mapper {
             } else if ((addr >= 0xc000) && (addr <= 0xdfff)) {
                 //any value here reloads irq counter
                 irqreload = true;
-
             } else if ((addr >= 0xe000) && (addr <= 0xffff)) {
                 //iany value here enables interrupts
                 irqenable = true;
@@ -95,7 +94,9 @@ public class MMC3Mapper extends Mapper {
             } else if ((addr >= 0xc000) && (addr <= 0xdfff)) {
                 //value written here used to reload irq counter _@ end of scanline_
                 irqctrreload = data;
-                irqreload = true;
+                //irqreload = true;
+                //mega man 3 is changing the reload value right after the irq
+                //and it works, somehow...
             } else if ((addr >= 0xe000) && (addr <= 0xffff)) {
                 //any value here disables IRQ and acknowledges
                 if (interrupted) {
@@ -103,7 +104,6 @@ public class MMC3Mapper extends Mapper {
                 }
                 interrupted = false;
                 irqenable = false;
-                irqctr = irqctrreload;
             }
         }
     }
@@ -146,35 +146,49 @@ public class MMC3Mapper extends Mapper {
         }
     }
 
+    private boolean lastA12 = false;
+
     @Override
-    public void notifyscanline(int scanline) {
-        //Scanline counter
-        if (scanline > 239 && scanline != 261) {
-            //clocked on LAST line of vblank and all lines of frame. Not on 240.
-            return;
-        }
-        if (!ppu.mmc3CounterClocking()) {
-            return;
-        }
+    public int ppuRead(int addr) {
+        checkA12(addr);
+        return super.ppuRead(addr);
+    }
 
-        if (irqreload) {
+    @Override
+    public void ppuWrite(int addr, int data) {
+        checkA12(addr);
+        super.ppuWrite(addr, data);
+    }
+
+    int a12timer = 3;
+
+    private void checkA12(int addr) {
+        boolean a12 = utils.getbit(addr, 12);
+        if (a12 && (!lastA12) && a12timer <= 0) {
+            //System.err.println("clock at ppu line " + ppu.scanline + " " + addr);
+            clockScanCounter();
+            a12timer = 3;
+        }
+        --a12timer;
+        lastA12 = a12;
+    }
+
+    private void clockScanCounter() {
+        if (irqreload || (irqctr == 0)) {
+            //System.err.println("reloading");
+            irqctr = irqctrreload;
             irqreload = false;
-            irqctr = irqctrreload;
+        } else {
+            --irqctr;
+        }
+        if ((irqctr == 0) && irqenable) {
+            if (!interrupted) {
+                ++cpu.interrupt;
+                interrupted = true;
+                System.err.println("interrupt line " + ppu.scanline + " reload " + irqctrreload);
+            }
         }
 
-        if (irqctr-- <= 0) {
-            if (irqctrreload == 0) {
-                return;
-                //irqs stop being generated if reload set to zero
-            }
-            if (irqenable) {
-                if (!interrupted) {
-                    ++cpu.interrupt;
-                    interrupted = true;
-                }
-            }
-            irqctr = irqctrreload;
-        }
     }
 
     private void setppubank(int banksize, int bankpos, int banknum) {
