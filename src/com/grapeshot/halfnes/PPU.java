@@ -18,8 +18,8 @@ public class PPU {
     private int loopyV = 0x0;//ppu memory pointer
     private int loopyT = 0x0;//temp pointer
     private int loopyX = 0;//fine x scroll
-    public int scanline = 0;
-    public int cycles = 0;
+    private int scanline = 0;
+    private int cycles = 0;
     private int framecount = 0;
     private int div = 2;
     private final int[] OAM = new int[256], spriteshiftregH = new int[8],
@@ -184,15 +184,9 @@ public class PPU {
                 } else {
                     loopyT &= 0xff00;
                     loopyT += data;
-
-                    //HACK ALERT
-                    //handle the case of MMC3 mapper watching A12 toggle
-                    //even when read or write aren't asserted on the bus
-                    //needed to pass Blargg's mmc3 tests
-                    mapper.ppuRead(loopyV);
-
                     loopyV = loopyT;
                     even = true;
+
                 }
                 break;
             case 7:
@@ -274,20 +268,12 @@ public class PPU {
                 //clear the oam address from pxls 257-341 continuously
                 ppuregs[3] = 0;
             }
-            if ((cycles == 340)) {
-                //read the same nametable byte twice
-                //this signals the MMC5 to increment the scanline counter
-                fetchNTByte();
-                fetchNTByte();
-            }
-            if (cycles == 260 && ppuIsOn()) {
-                //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
-                //this does in fact happen on scanine 261 but it doesn't do anything useful
-                //it's cycle 260 because that's when the first important sprite byte is read
-                //actually sprite overflow should be set by sprite eval somewhat before
-                //so this needs to be split into 2 parts, the eval and the data fetches
-                evalSprites();
-            }
+//          if ((cycles == 340)) {
+//              //read the same nametable byte twice
+//              //this signals the MMC5 to increment the scanline counter
+//              fetchNTByte();
+//              fetchNTByte();
+//          }
             if (scanline == 261) {
                 if (cycles == 0) {// turn off vblank, sprite 0, sprite overflow flags
                     setvblankflag(false);
@@ -308,8 +294,9 @@ public class PPU {
                 if (getbit(ppuregs[1], 3)) { //if background is on, draw a line of that
                     final boolean isBG = drawBGPixel(bufferoffset);
                     //sprite drawing
-                    drawSprites(scanline << 8, cycles - 1, isBG);
-
+                    if (found > 0) {
+                        drawSprites(scanline << 8, cycles - 1, isBG);
+                    }
                 } else {
                     //rendering is off, so draw either the background color OR
                     //if the PPU address points to the palette, draw that color instead.
@@ -324,6 +311,12 @@ public class PPU {
                 final int emph = (ppuregs[1] & 0xe0) << 1;
                 bitmap[bufferoffset] = bitmap[bufferoffset] & 0x3f | emph;
 
+            } else if (cycles == 257) {
+                //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
+                //this does not happen on scanine 261
+                if (ppuIsOn()) {
+                    evalSprites();
+                }
             }
         }
         //handle nmi
@@ -359,7 +352,10 @@ public class PPU {
         //background fetches
         switch ((cycles - 1) & 7) {
             case 1:
-                fetchNTByte();
+                //fetch nt byte
+                tileAddr = mapper.ppuRead(
+                        ((loopyV & 0xc00) | 0x2000) + (loopyV & 0x3ff)) * 16 
+                        + (bgpattern ? 0x1000 : 0);
                 break;
             case 3:
                 //fetch attribute (FIX MATH)
@@ -414,13 +410,6 @@ public class PPU {
         if (cycles >= 321 && cycles <= 336) {
             bgShiftClock();
         }
-    }
-
-    private void fetchNTByte() {
-        //fetch nt byte
-        tileAddr = mapper.ppuRead(
-                ((loopyV & 0xc00) | 0x2000) + (loopyV & 0x3ff)) * 16
-                + (bgpattern ? 0x1000 : 0);
     }
 
     private boolean drawBGPixel(int bufferoffset) {
@@ -504,7 +493,23 @@ public class PPU {
                 }
                 //get tile address (8x16 sprites can use both pattern tbl pages but only the even tiles)
                 final int tilenum = OAM[spritestart + 1];
-                spriteFetch(spritesize, tilenum, offset, oamextra);
+                if (spritesize) {
+                    tilefetched = ((tilenum & 1) * 0x1000)
+                            + (tilenum & 0xfe) * 16;
+                } else {
+                    tilefetched = tilenum * 16
+                            + ((sprpattern) ? 0x1000 : 0);
+                }
+                tilefetched += offset;
+                //now load up the shift registers for said sprite
+                final boolean hflip = getbit(oamextra, 6);
+                if (!hflip) {
+                    spriteshiftregL[found] = reverseByte(mapper.ppuRead(tilefetched));
+                    spriteshiftregH[found] = reverseByte(mapper.ppuRead(tilefetched + 8));
+                } else {
+                    spriteshiftregL[found] = mapper.ppuRead(tilefetched);
+                    spriteshiftregH[found] = mapper.ppuRead(tilefetched + 8);
+                }
                 ++found;
             }
         }
@@ -512,30 +517,6 @@ public class PPU {
             //fill unused sprite registers with zeros
             spriteshiftregL[found] = 0;
             spriteshiftregH[found] = 0;
-            //also, we need to do 8 reads no matter how many sprites we found
-            //dummy reads are to sprite 0xff
-            spriteFetch(spritesize, 0xff, 0, 0);
-        }
-    }
-
-    private void spriteFetch(final boolean spritesize, final int tilenum, int offset, final int oamextra) {
-        int tilefetched;
-        if (spritesize) {
-            tilefetched = ((tilenum & 1) * 0x1000)
-                    + (tilenum & 0xfe) * 16;
-        } else {
-            tilefetched = tilenum * 16
-                    + ((sprpattern) ? 0x1000 : 0);
-        }
-        tilefetched += offset;
-        //now load up the shift registers for said sprite
-        final boolean hflip = getbit(oamextra, 6);
-        if (!hflip) {
-            spriteshiftregL[found] = reverseByte(mapper.ppuRead(tilefetched));
-            spriteshiftregH[found] = reverseByte(mapper.ppuRead(tilefetched + 8));
-        } else {
-            spriteshiftregL[found] = mapper.ppuRead(tilefetched);
-            spriteshiftregH[found] = mapper.ppuRead(tilefetched + 8);
         }
     }
 
