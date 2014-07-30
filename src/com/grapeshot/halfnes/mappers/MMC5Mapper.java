@@ -414,6 +414,7 @@ public class MMC5Mapper extends Mapper {
                 //to increment the scan line counter
                 //unfortunately I don't know how the MMC5 resets the counter when PPU is off yet           
                 incScanline();
+                exlatch = 0;
             }
             prevprevfetch = prevfetch;
             prevfetch = addr;
