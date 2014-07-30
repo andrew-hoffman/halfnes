@@ -131,11 +131,11 @@ public class FME7Mapper extends Mapper {
                     }
                     break;
                 case 0xe:
-                    irqcounter &= 0xff;
+                    irqcounter &= 0xff00;
                     irqcounter |= data;
                     break;
                 case 0xf:
-                    irqcounter &= 0xff00;
+                    irqcounter &= 0xff;
                     irqcounter |= (data << 8);
                     break;
             }

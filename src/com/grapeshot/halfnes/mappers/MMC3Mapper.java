@@ -12,18 +12,16 @@ import com.grapeshot.halfnes.*;
  */
 public class MMC3Mapper extends Mapper {
 
-    private int whichbank = 0;
-    private boolean prgconfig = false;
-    private boolean chrconfig = false;
-    private int irqctrreload = 0;
-    private int irqctr = 0;
-    private boolean irqenable = false;
-    private boolean irqreload = false;
-    private int bank6 = 0;
-    private int[] chrreg = {0, 0, 0, 0, 0, 0};
-    private boolean interrupted = false;
-    private boolean messages = false;
-    private int debug;
+    protected int whichbank = 0;
+    protected boolean prgconfig = false;
+    protected boolean chrconfig = false;
+    protected int irqctrreload = 0;
+    protected int irqctr = 0;
+    protected boolean irqenable = false;
+    protected boolean irqreload = false;
+    protected int bank6 = 0;
+    protected int[] chrreg = {0, 0, 0, 0, 0, 0};
+    protected boolean interrupted = false;
 
     @Override
     public void loadrom() throws BadMapperException {
@@ -41,7 +39,7 @@ public class MMC3Mapper extends Mapper {
     }
 
     @Override
-    public final void cartWrite(int addr, int data) {
+    public void cartWrite(int addr, int data) {
         if (addr < 0x8000 || addr > 0xffff) {
             super.cartWrite(addr, data);
             return;
@@ -108,7 +106,7 @@ public class MMC3Mapper extends Mapper {
         }
     }
 
-    private void setupchr() {
+    protected void setupchr() {
         if (chrconfig) {
 
             setppubank(1, 0, chrreg[2]);
@@ -130,7 +128,7 @@ public class MMC3Mapper extends Mapper {
         }
     }
 
-    private void setbank6() {
+    protected void setbank6() {
         if (!prgconfig) {
             //map c000-dfff to last bank, 8000-9fff to selected bank
             for (int i = 0; i < 8; ++i) {
@@ -202,7 +200,7 @@ public class MMC3Mapper extends Mapper {
 
     }
 
-    private void setppubank(int banksize, int bankpos, int banknum) {
+    protected void setppubank(int banksize, int bankpos, int banknum) {
 //        System.err.println(banksize + ", " + bankpos + ", "+ banknum);
         for (int i = 0; i < banksize; ++i) {
             chr_map[i + bankpos] = (1024 * ((banknum) + i)) % chrsize;

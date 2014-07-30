@@ -69,20 +69,11 @@ Todo List For HalfNES:
 
 -Make the NTSC filter usably fast!
 
-Things that will have to wait for pixel-at-a-time PPU:
+Things that I can do with the pixel-at-a-time PPU:
 
 -Zapper support
 
 -fix the last of the timing problems (including prev.mentioned sprite 0)
-
--allow for proper per-scanline scroll changing (Rad Racer etc.) where some
- of the counters are only updated at certain points on the line.
- some scrolling registers have to be updated @ specific points in frame.
-
--Finish MMC5 emulation to allow for proper detection of background/sprite fetches
-
--Make the MMC3 scanline counter work the way it really does
- (will break Mario Adventure)
 
 Things I can't do without adding a CRC database:
 
@@ -127,7 +118,7 @@ Codemasters games broken by DMC IRQ:
 -Big Nose Freaks Out (glitchy in 035, completely broken in 036, back to glitchy in 049.)
 -Lion King (only works on PAL)
 -Bandit Kings of Ancient China doesn't redraw map properly (broken ExGrafix?)
--Tepples rgb121.nes only shows the 1st frame (also broken in Nestopia, OK in Nintendulator)
+no it needs to map RAM to 0x8000, there's a note in tha mapper docs
 -Huge Insect depends on obscure behavior of modifying OAM address during rendering
 -figure out why chopped.nsf.nes works but zanzan-pull-over(chiptune)nes doesn't.
 (they're the same NSF made into a ROM w/ different drivers, but one goes all over and does illegal things
@@ -135,4 +126,5 @@ before it starts in on the song.)
 -Mickey's Safari in Letterland needs exact MMC3B behavior. 
 This has to do with PPU mirroring and the A12 address line.
 N163 scanline counter is completely broken (and may have been for a while)
+Fix MMC3 derivatives to use more accurate scan line counters (should be able to remove NotifyScanline entirely)
 
