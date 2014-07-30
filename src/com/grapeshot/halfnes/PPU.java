@@ -189,7 +189,7 @@ public class PPU {
                     //handle the case of MMC3 mapper watching A12 toggle
                     //even when read or write aren't asserted on the bus
                     //needed to pass Blargg's mmc3 tests
-                    mapper.ppuRead(loopyV);
+                    mapper.ppuRead(loopyT & 0x3fff);
 
                     loopyV = loopyT;
                     even = true;
@@ -211,7 +211,7 @@ public class PPU {
      *
      * @return true
      */
-    private boolean ppuIsOn() {
+    public boolean ppuIsOn() {
         return getbit(ppuregs[1], 3) || getbit(ppuregs[1], 4);
     }
 
@@ -274,7 +274,7 @@ public class PPU {
                 //clear the oam address from pxls 257-341 continuously
                 ppuregs[3] = 0;
             }
-            if ((cycles == 340)) {
+            if ((cycles == 340) && ppuIsOn()) {
                 //read the same nametable byte twice
                 //this signals the MMC5 to increment the scanline counter
                 fetchNTByte();
