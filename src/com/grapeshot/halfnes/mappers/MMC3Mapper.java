@@ -22,6 +22,7 @@ public class MMC3Mapper extends Mapper {
     private int bank6 = 0;
     private int[] chrreg = {0, 0, 0, 0, 0, 0};
     private boolean interrupted = false;
+    private boolean messages = false;
 
     @Override
     public void loadrom() throws BadMapperException {
@@ -46,7 +47,7 @@ public class MMC3Mapper extends Mapper {
         }
         //bankswitches here
         //different register for even/odd writes
-        System.err.println("mmc3 write " + utils.hex(addr) + " " + utils.hex(data));
+        //System.err.println("mmc3 write " + utils.hex(addr) + " " + utils.hex(data));
         if (utils.getbit(addr, 0)) {
             //odd registers
             if ((addr >= 0x8000) && (addr <= 0x9fff)) {
@@ -95,9 +96,6 @@ public class MMC3Mapper extends Mapper {
             } else if ((addr >= 0xc000) && (addr <= 0xdfff)) {
                 //value written here used to reload irq counter _@ end of scanline_
                 irqctrreload = data;
-                //irqreload = true;
-                //mega man 3 is changing the reload value right after the irq
-                //and it works, somehow...
             } else if ((addr >= 0xe000) && (addr <= 0xffff)) {
                 //any value here disables IRQ and acknowledges
                 if (interrupted) {
@@ -151,6 +149,9 @@ public class MMC3Mapper extends Mapper {
 
     @Override
     public int ppuRead(int addr) {
+        if (messages) {
+            System.err.println("ppu read of " + utils.hex(addr) + " sl " + ppu.scanline + " cycle " + ppu.cycles);
+        }
         checkA12(addr);
         return super.ppuRead(addr);
     }
@@ -161,7 +162,8 @@ public class MMC3Mapper extends Mapper {
         super.ppuWrite(addr, data);
     }
 
-    int a12timer = 3;
+    int a12timer = 0;
+    int prevcpuclocks = 0;
 
     private void checkA12(int addr) {
         //so here's what's going on: this is firing waaayy too many times with bg set at $1000
@@ -169,9 +171,11 @@ public class MMC3Mapper extends Mapper {
         //i'm sure that's set up wrong or there are other ppu defects
         //no one plays any games any more so no one will ever notice the diff in mm3
         boolean a12 = utils.getbit(addr, 12);
-        if (a12 && (!lastA12) && (a12timer <= 0)) {
-            //System.err.println("clock at ppu line " + ppu.scanline + " cycle " + ppu.cycles +" a " + utils.hex(addr));
-            clockScanCounter();
+        if (a12 && (!lastA12)) {
+            if ((a12timer <= 0)) {
+                System.err.println("clock at ppu line " + ppu.scanline + " cycle " + ppu.cycles + " a " + utils.hex(addr));
+                clockScanCounter();
+            }
             a12timer = 3;
         }
         --a12timer;
@@ -180,14 +184,15 @@ public class MMC3Mapper extends Mapper {
 
     private void clockScanCounter() {
         if (irqreload || (irqctr == 0)) {
-            //System.err.println(ppu.scanline + "reloading"+ irqctrreload);
+            //System.err.println(ppu.scanline + "reloading" + irqctrreload);
             irqctr = irqctrreload;
             irqreload = false;
         } else {
             --irqctr;
         }
-        if(interrupted){
-            //System.err.println("what");
+        if (interrupted) {
+            System.err.println("what");
+            messages = true;
         }
         if ((irqctr == 0) && irqenable) {
             if (!interrupted) {
