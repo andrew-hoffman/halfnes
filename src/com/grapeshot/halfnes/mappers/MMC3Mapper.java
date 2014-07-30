@@ -23,6 +23,7 @@ public class MMC3Mapper extends Mapper {
     private int[] chrreg = {0, 0, 0, 0, 0, 0};
     private boolean interrupted = false;
     private boolean messages = false;
+    private int debug;
 
     @Override
     public void loadrom() throws BadMapperException {
@@ -149,9 +150,11 @@ public class MMC3Mapper extends Mapper {
 
     @Override
     public int ppuRead(int addr) {
-        if (messages) {
-            System.err.println("ppu read of " + utils.hex(addr) + " sl " + ppu.scanline + " cycle " + ppu.cycles);
-        }
+        //note: to pass blargg's mmc3 tests the vram address is read
+        //in a loop while the PPU is not rendering
+        //actually the read signal is not asserted then
+        //but I have no other way to call into the mapper code when
+        //the address changes.
         checkA12(addr);
         return super.ppuRead(addr);
     }
@@ -165,18 +168,17 @@ public class MMC3Mapper extends Mapper {
     int a12timer = 0;
     int prevcpuclocks = 0;
 
-    private void checkA12(int addr) {
-        //so here's what's going on: this is firing waaayy too many times with bg set at $1000
-        //but, for blargg's test to pass there can't be any more than 3 cycles on a12timer
-        //i'm sure that's set up wrong or there are other ppu defects
-        //no one plays any games any more so no one will ever notice the diff in mm3
+    @Override
+    public void checkA12(int addr) {
         boolean a12 = utils.getbit(addr, 12);
         if (a12 && (!lastA12)) {
+            //rising edge
             if ((a12timer <= 0)) {
-                System.err.println("clock at ppu line " + ppu.scanline + " cycle " + ppu.cycles + " a " + utils.hex(addr));
                 clockScanCounter();
             }
-            a12timer = 3;
+        } else if (!a12 && lastA12) {
+            //falling edge
+            a12timer = 8;
         }
         --a12timer;
         lastA12 = a12;
@@ -189,10 +191,6 @@ public class MMC3Mapper extends Mapper {
             irqreload = false;
         } else {
             --irqctr;
-        }
-        if (interrupted) {
-            System.err.println("what");
-            messages = true;
         }
         if ((irqctr == 0) && irqenable) {
             if (!interrupted) {

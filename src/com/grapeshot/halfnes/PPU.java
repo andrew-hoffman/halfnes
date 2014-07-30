@@ -184,13 +184,6 @@ public class PPU {
                 } else {
                     loopyT &= 0xff00;
                     loopyT += data;
-
-                    //HACK ALERT
-                    //handle the case of MMC3 mapper watching A12 toggle
-                    //even when read or write aren't asserted on the bus
-                    //needed to pass Blargg's mmc3 tests
-                    mapper.ppuRead(loopyT & 0x3fff);
-
                     loopyV = loopyT;
                     even = true;
                 }
@@ -199,7 +192,6 @@ public class PPU {
                 // PPUDATA
                 mapper.ppuWrite((loopyV & 0x3fff), data);
                 loopyV += vraminc;
-                // increments on write but NOT on read
                 break;
             default:
                 break;
@@ -300,6 +292,13 @@ public class PPU {
         } else if (scanline == 241 && cycles == 1) {
             //handle vblank on / off
             setvblankflag(true);
+        }
+        if (!ppuIsOn() || (scanline > 240 && scanline < 261)) {
+            //HACK ALERT
+            //handle the case of MMC3 mapper watching A12 toggle
+            //even when read or write aren't asserted on the bus
+            //needed to pass Blargg's mmc3 tests
+            mapper.checkA12(loopyV & 0x3fff);
         }
         if (scanline < 240) {
             if (cycles >= 1 && cycles <= 256) {
