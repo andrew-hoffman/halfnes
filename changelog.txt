@@ -1,5 +1,22 @@
 HalfNES Version Notes:
 
+057 (7/30/2014)
+-PPU is now pixel accurate. Meaning that many glitchy games are now completely
+fixed. However it also means that performance is worse.
+-MMC3 and MMC5 scanline counters have been rewritten to be more accurate.
+Fixed games:
+-Marble Madness
+-Laser Invasion
+-Mickey's Adventures in Letterland
+-Rad Racer
+-Slalom
+-Tiny Toon Adventures (the status bar was off by one scan line before)
+-Mega Man 3 (displays same glitchy lines as real hardware)
+-Every Namco 163 game (scanline counter was broken)
+
+Also passes several more of blargg's PPU and MMC3 tests.
+I haven't fixed all of the MMC3 based multicart mappers yet.
+
 056 (7/17/2014)
 -Multithreaded NTSC filter for better performance
 -Rewrote CPU/PPU timing entirely (passes many timing tests that used to fail)

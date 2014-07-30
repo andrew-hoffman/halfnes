@@ -26,9 +26,10 @@ public class MMC5Mapper extends Mapper {
     private int[] chrmapB = new int[4];
     private boolean[] romHere = new boolean[3];
     private int prevaddr;
-    private int scanctrLine, scanline;
+    private int scanctrLine, irqCounter = 20;
     private final int[] fillnt = new int[1024];
     private MMC5SoundChip soundchip;
+    private boolean inFrame = false;
 
     @Override
     public void loadrom() throws BadMapperException {
@@ -226,6 +227,10 @@ public class MMC5Mapper extends Mapper {
 
     @Override
     public final int cartRead(final int addr) {
+        //hook for turning off PPU in frame flag
+        if(!ppu.ppuIsOn() || ppu.scanline > 241){
+            inFrame = false;
+        }
         // by default has wram at 0x6000 and cartridge at 0x8000-0xfff
         // but some mappers have different so override for those
         if (addr >= 0x8000) {
@@ -253,7 +258,7 @@ public class MMC5Mapper extends Mapper {
                     return soundchip.status();
                 case 0x5204:
                     //irq status
-                    int stat = (irqPend ? 0x80 : 0) + (scanline < 240 ? 0x40 : 0);
+                    int stat = (irqPend ? 0x80 : 0) + (inFrame ? 0x40 : 0);
                     if (irqPend) {
                         irqPend = false;
                         --cpu.interrupt;
@@ -367,7 +372,7 @@ public class MMC5Mapper extends Mapper {
     public int ppuRead(final int addr) {
         //so how DO we detect which reads are which without
         //seeing the nametable reads?
-        
+
         //well, as it turns out in the real NES, the MMC5 can in fact see everything
         //put on the PPU bus, whether or not the CS line is asserted for it.
         //must be something to do with 8x16 sprites, and with
@@ -404,13 +409,13 @@ public class MMC5Mapper extends Mapper {
         } else {
             // System.err.print("n");
             //nametable read
-//            if(prevfetch == prevprevfetch && prevprevfetch == addr && prevfetch == addr){
-//               //last 3 fetches are the same and that's the signal
-//               //to increment the scan line counter
-//               //unfortunately I don't know how the MMC5 resets the counter when PPU is off yet
-//            
-//               incScanline();
-//            }
+            if (prevfetch == prevprevfetch && prevprevfetch == addr && prevfetch == addr) {
+                //last 3 fetches are the same and that's the signal
+                //to increment the scan line counter
+                //unfortunately I don't know how the MMC5 resets the counter when PPU is off yet           
+                incScanline();
+                exlatch = 0;
+            }
             prevprevfetch = prevfetch;
             prevfetch = addr;
             spritemode = false;
@@ -432,12 +437,22 @@ public class MMC5Mapper extends Mapper {
         }
     }
 
-    @Override
-    public void notifyscanline(final int scanline) {
-        this.scanline = scanline;
-        if (scanctrEnable && scanline == scanctrLine - 1) {
-            irqPend = true;
-            ++cpu.interrupt;
+    public void incScanline() {
+        if (!inFrame) {
+            inFrame = true;
+            irqCounter = 0;
+            if (irqPend) {
+                irqPend = false;
+                --cpu.interrupt;
+            }
+        } else {
+            if (irqCounter++ == scanctrLine) {
+                irqPend = true;
+                
+            }
+            if(irqPend && scanctrEnable){
+                ++cpu.interrupt;
+            }
         }
     }
 

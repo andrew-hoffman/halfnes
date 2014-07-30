@@ -10,20 +10,10 @@ import com.grapeshot.halfnes.*;
  *
  * @author Andrew
  */
-public class Mapper47 extends Mapper {
+public class Mapper47 extends MMC3Mapper {
 
     //official Nintendo multicart mapper, mmc3 variant
     //used for super spike vball, nintendo world cup
-    private int whichbank = 0;
-    private boolean prgconfig = false;
-    private boolean chrconfig = false;
-    private int irqctrreload = 0;
-    private int irqctr = 0;
-    private boolean irqenable = false;
-    private boolean irqreload = false;
-    private int bank6 = 0;
-    private int[] chrreg = {0, 0, 0, 0, 0, 0};
-    private boolean interrupted = false;
     private int multibank = 1;
 
     @Override
@@ -57,8 +47,8 @@ public class Mapper47 extends Mapper {
             setbank6();
             setupchr();
             for (int i = 1; i <= 8; ++i) {
-            prg_map[32 - i] = 131072 - (1024 * i) + multibank * 131072;
-        }
+                prg_map[32 - i] = 131072 - (1024 * i) + multibank * 131072;
+            }
         }
         //different register for even/odd writes
         if (utils.getbit(addr, 0)) {
@@ -110,7 +100,6 @@ public class Mapper47 extends Mapper {
             } else if ((addr >= 0xc000) && (addr <= 0xdfff)) {
                 //value written here used to reload irq counter _@ end of scanline_
                 irqctrreload = data;
-                irqreload = true;
             } else if ((addr >= 0xe000) && (addr <= 0xffff)) {
                 //any value here disables IRQ and acknowledges
                 if (interrupted) {
@@ -118,34 +107,12 @@ public class Mapper47 extends Mapper {
                 }
                 interrupted = false;
                 irqenable = false;
-                irqctr = irqctrreload;
             }
         }
     }
 
-    private void setupchr() {
-        if (chrconfig) {
 
-            setppubank(1, 0, chrreg[2]);
-            setppubank(1, 1, chrreg[3]);
-            setppubank(1, 2, chrreg[4]);
-            setppubank(1, 3, chrreg[5]);
-            //Lowest bit of bank number IS IGNORED for the 2k banks
-            setppubank(2, 4, (chrreg[0] >> 1) << 1);
-            setppubank(2, 6, (chrreg[1] >> 1) << 1);
-
-        } else {
-            setppubank(1, 4, chrreg[2]);
-            setppubank(1, 5, chrreg[3]);
-            setppubank(1, 6, chrreg[4]);
-            setppubank(1, 7, chrreg[5]);
-
-            setppubank(2, 0, (chrreg[0] >> 1) << 1);
-            setppubank(2, 2, (chrreg[1] >> 1) << 1);
-        }
-    }
-
-    private void setbank6() {
+    protected void setbank6() {
         if (!prgconfig) {
             //map c000-dfff to last bank, 8000-9fff to selected bank
             for (int i = 0; i < 8; ++i) {
@@ -161,41 +128,10 @@ public class Mapper47 extends Mapper {
         }
     }
 
-    @Override
-    public void notifyscanline(int scanline) {
-        //Scanline counter
-        if (scanline > 239 && scanline != 261) {
-            //clocked on LAST line of vblank and all lines of frame. Not on 240.
-            return;
-        }
-        if (!ppu.mmc3CounterClocking()) {
-            return;
-        }
-
-        if (irqreload) {
-            irqreload = false;
-            irqctr = irqctrreload;
-        }
-
-        if (irqctr-- <= 0) {
-            if (irqctrreload == 0) {
-                return;
-                //irqs stop being generated if reload set to zero
-            }
-            if (irqenable) {
-                if (!interrupted) {
-                    ++cpu.interrupt;
-                    interrupted = true;
-                }
-            }
-            irqctr = irqctrreload;
-        }
-    }
-
-    private void setppubank(int banksize, int bankpos, int banknum) {
+    protected void setppubank(int banksize, int bankpos, int banknum) {
 //        System.err.println(banksize + ", " + bankpos + ", "+ banknum);
         for (int i = 0; i < banksize; ++i) {
-            chr_map[i + bankpos] = ((1024 * ((banknum) + i)) % (chrsize/2)) + multibank * 131072;
+            chr_map[i + bankpos] = ((1024 * ((banknum) + i)) % (chrsize / 2)) + multibank * 131072;
         }
     }
 }

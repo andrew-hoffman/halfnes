@@ -26,3 +26,5 @@ nesdebug*.txt
 !retrace.jar
 
 
+/dist/
+/HalfNES.exe

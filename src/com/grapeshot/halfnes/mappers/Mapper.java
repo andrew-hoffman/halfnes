@@ -384,6 +384,10 @@ public abstract class Mapper {
     public CPURAM getCPURAM() {
         return cpuram;
     }
+    
+    public void checkA12(int addr){
+        //needed for mmc3 irq counter
+    }
 
     public void setPRGRAM(final int[] newprgram) {
         prgram = newprgram.clone();

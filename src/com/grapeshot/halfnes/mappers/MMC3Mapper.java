@@ -12,16 +12,16 @@ import com.grapeshot.halfnes.*;
  */
 public class MMC3Mapper extends Mapper {
 
-    private int whichbank = 0;
-    private boolean prgconfig = false;
-    private boolean chrconfig = false;
-    private int irqctrreload = 0;
-    private int irqctr = 0;
-    private boolean irqenable = false;
-    private boolean irqreload = false;
-    private int bank6 = 0;
-    private int[] chrreg = {0, 0, 0, 0, 0, 0};
-    private boolean interrupted = false;
+    protected int whichbank = 0;
+    protected boolean prgconfig = false;
+    protected boolean chrconfig = false;
+    protected int irqctrreload = 0;
+    protected int irqctr = 0;
+    protected boolean irqenable = false;
+    protected boolean irqreload = false;
+    protected int bank6 = 0;
+    protected int[] chrreg = {0, 0, 0, 0, 0, 0};
+    protected boolean interrupted = false;
 
     @Override
     public void loadrom() throws BadMapperException {
@@ -39,13 +39,14 @@ public class MMC3Mapper extends Mapper {
     }
 
     @Override
-    public final void cartWrite(int addr, int data) {
+    public void cartWrite(int addr, int data) {
         if (addr < 0x8000 || addr > 0xffff) {
             super.cartWrite(addr, data);
             return;
         }
         //bankswitches here
         //different register for even/odd writes
+        //System.err.println("mmc3 write " + utils.hex(addr) + " " + utils.hex(data));
         if (utils.getbit(addr, 0)) {
             //odd registers
             if ((addr >= 0x8000) && (addr <= 0x9fff)) {
@@ -69,7 +70,6 @@ public class MMC3Mapper extends Mapper {
             } else if ((addr >= 0xc000) && (addr <= 0xdfff)) {
                 //any value here reloads irq counter
                 irqreload = true;
-
             } else if ((addr >= 0xe000) && (addr <= 0xffff)) {
                 //iany value here enables interrupts
                 irqenable = true;
@@ -95,7 +95,6 @@ public class MMC3Mapper extends Mapper {
             } else if ((addr >= 0xc000) && (addr <= 0xdfff)) {
                 //value written here used to reload irq counter _@ end of scanline_
                 irqctrreload = data;
-                irqreload = true;
             } else if ((addr >= 0xe000) && (addr <= 0xffff)) {
                 //any value here disables IRQ and acknowledges
                 if (interrupted) {
@@ -103,12 +102,11 @@ public class MMC3Mapper extends Mapper {
                 }
                 interrupted = false;
                 irqenable = false;
-                irqctr = irqctrreload;
             }
         }
     }
 
-    private void setupchr() {
+    protected void setupchr() {
         if (chrconfig) {
 
             setppubank(1, 0, chrreg[2]);
@@ -130,7 +128,7 @@ public class MMC3Mapper extends Mapper {
         }
     }
 
-    private void setbank6() {
+    protected void setbank6() {
         if (!prgconfig) {
             //map c000-dfff to last bank, 8000-9fff to selected bank
             for (int i = 0; i < 8; ++i) {
@@ -146,38 +144,63 @@ public class MMC3Mapper extends Mapper {
         }
     }
 
+    private boolean lastA12 = false;
+
     @Override
-    public void notifyscanline(int scanline) {
-        //Scanline counter
-        if (scanline > 239 && scanline != 261) {
-            //clocked on LAST line of vblank and all lines of frame. Not on 240.
-            return;
-        }
-        if (!ppu.mmc3CounterClocking()) {
-            return;
-        }
-
-        if (irqreload) {
-            irqreload = false;
-            irqctr = irqctrreload;
-        }
-
-        if (irqctr-- <= 0) {
-            if (irqctrreload == 0) {
-                return;
-                //irqs stop being generated if reload set to zero
-            }
-            if (irqenable) {
-                if (!interrupted) {
-                    ++cpu.interrupt;
-                    interrupted = true;
-                }
-            }
-            irqctr = irqctrreload;
-        }
+    public int ppuRead(int addr) {
+        //note: to pass blargg's mmc3 tests the vram address is read
+        //in a loop while the PPU is not rendering
+        //actually the read signal is not asserted then
+        //but I have no other way to call into the mapper code when
+        //the address changes.
+        checkA12(addr);
+        return super.ppuRead(addr);
     }
 
-    private void setppubank(int banksize, int bankpos, int banknum) {
+    @Override
+    public void ppuWrite(int addr, int data) {
+        checkA12(addr);
+        super.ppuWrite(addr, data);
+    }
+
+    int a12timer = 0;
+    int prevcpuclocks = 0;
+
+    @Override
+    public void checkA12(int addr) {
+        boolean a12 = utils.getbit(addr, 12);
+        if (a12 && (!lastA12)) {
+            //rising edge
+            if ((a12timer <= 0)) {
+                clockScanCounter();
+            }
+        } else if (!a12 && lastA12) {
+            //falling edge
+            a12timer = 8;
+        }
+        --a12timer;
+        lastA12 = a12;
+    }
+
+    private void clockScanCounter() {
+        if (irqreload || (irqctr == 0)) {
+            //System.err.println(ppu.scanline + "reloading" + irqctrreload);
+            irqctr = irqctrreload;
+            irqreload = false;
+        } else {
+            --irqctr;
+        }
+        if ((irqctr == 0) && irqenable) {
+            if (!interrupted) {
+                ++cpu.interrupt;
+                interrupted = true;
+                //System.err.println("interrupt line " + ppu.scanline + " reload " + irqctrreload);
+            }
+        }
+
+    }
+
+    protected void setppubank(int banksize, int bankpos, int banknum) {
 //        System.err.println(banksize + ", " + bankpos + ", "+ banknum);
         for (int i = 0; i < banksize; ++i) {
             chr_map[i + bankpos] = (1024 * ((banknum) + i)) % chrsize;
