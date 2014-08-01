@@ -62,17 +62,15 @@ public class MMC5Mapper extends Mapper {
                 case 0x5005:
                 case 0x5006:
                 case 0x5007:
+                case 0x5010:
+                case 0x5011:
+                case 0x5015:
                     if (soundchip == null) {
                         soundchip = new MMC5SoundChip();
                         cpuram.apu.addExpnSound(soundchip);
                     }
-                case 0x5010:
-                case 0x5011:
-                case 0x5015:
                     //sound chip
-                    if (soundchip != null) {
-                        soundchip.write(addr - 0x5000, data);
-                    }
+                    soundchip.write(addr - 0x5000, data);
                     break;
                 case 0x5100:
                     //prg mode select
@@ -136,58 +134,59 @@ public class MMC5Mapper extends Mapper {
                     setupPRG();
                     break;
                 case 0x5120:
-                    chrregsA[0] = data;
+                    chrregsA[0] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x5121:
-                    chrregsA[1] = data;
+                    chrregsA[1] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x5122:
-                    chrregsA[2] = data;
+                    chrregsA[2] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x5123:
-                    chrregsA[3] = data;
+                    chrregsA[3] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x5124:
-                    chrregsA[4] = data;
+                    chrregsA[4] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x5125:
-                    chrregsA[5] = data;
+                    chrregsA[5] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x5126:
-                    chrregsA[6] = data;
+                    chrregsA[6] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x5127:
-                    chrregsA[7] = data;
+                    chrregsA[7] = data | chrOr;
                     setupCHR();
                     break;
                 //chr regs A
                 case 0x5128:
-                    chrregsB[0] = data;
+                    chrregsB[0] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x5129:
-                    chrregsB[1] = data;
+                    chrregsB[1] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x512a:
-                    chrregsB[2] = data;
+                    chrregsB[2] = data | chrOr;
                     setupCHR();
                     break;
                 case 0x512b:
-                    chrregsB[3] = data;
+                    chrregsB[3] = data | chrOr;
                     setupCHR();
                     break;
                 //chr regs b
                 case 0x5130:
                     //chr bank high bits (CHR_OR)
-                    chrOr = data & 3;
+                    System.err.println(data);
+                    chrOr = (data & 3) << 8;
                     break;
                 case 0x5200:
                     //splitscreen control
@@ -217,37 +216,61 @@ public class MMC5Mapper extends Mapper {
                     break;
             }
         } else if (addr < 0x6000) {
-            //exram            
+            //exram
             exram[addr - 0x5c00] = data;
         } else if (addr < 0x8000) {
-            //System.err.println("wrote wram " + (wrambank * 8192 + (addr - 0x6000)) + " " + data);
-            prgram[wrambank * 8192 + (addr - 0x6000)] = data;
+            final int wramaddr = wrambank * 8192 + (addr - 0x6000);
+            //System.err.println("wrote wram " + utils.hex(wramaddr));
+            prgram[wramaddr] = data;
+        } else if (addr < 0xA000 && !romHere[0] && prgMode == 3) {
+            System.err.println("RAM write to 0x8000 area");
+            prgram[((prgregs[0] & 7) * 8192) + (addr - 0x8000)] = data;
+        } else if (addr < 0xC000 && !romHere[1]) {
+            int subaddr = (prgMode == 3) ? 0xA000 : 0x8000;
+            int prgbank = (prgMode == 3) ? (prgregs[1] & 7) : ((prgregs[1] & 7) >> 1);
+            int ramaddr = (prgbank * ((prgMode == 3) ? 8192 : 16384)) + (addr - subaddr);
+            ////System.err.println("RAM write to 0xA000 area " + utils.hex(addr) + " " + prgbank);
+            //System.err.println(utils.hex(ramaddr));
+            prgram[ramaddr] = data;
+        } else if (addr < 0xE000 && !romHere[2]) {
+            System.err.println("RAM write to 0xC000 area " + utils.hex(addr));
+            prgram[((prgregs[2] & 7) * 8192) + (addr - 0xc000)] = data;
+        } else {
+            System.err.println("unsupported mmc5 write");
         }
     }
 
     @Override
     public final int cartRead(final int addr) {
-        //hook for turning off PPU in frame flag
-        if(!ppu.ppuIsOn() || ppu.scanline > 241){
+        //hook for turning off PPU in frame flag since idk how the real thing works
+        if (!ppu.ppuIsOn() || ppu.scanline > 241) {
             inFrame = false;
         }
         // by default has wram at 0x6000 and cartridge at 0x8000-0xfff
         // but some mappers have different so override for those
         if (addr >= 0x8000) {
             //rom or maybe wram
-            if (prgMode == 0 || (prgMode == 1 && (addr >= 0xc000 || romHere[1]))
-                    || (prgMode == 2 && ((addr >= 0xe000 || (addr >= 0xc000 && romHere[2]) || romHere[1]))
-                    || (prgMode == 3 && (addr >= 0xe000 || (addr >= 0xc000 && romHere[2]) || (addr >= 0xa000 && romHere[1]) || romHere[0])))) {
+            if (prgMode == 0
+                    || ((prgMode == 1) && (addr >= 0xc000 || romHere[1]))
+                    || ((prgMode == 2) && ((addr >= 0xe000 || (addr >= 0xc000 && romHere[2]) || romHere[1]))
+                    || ((prgMode == 3) && 
+                        (addr >= 0xe000 
+                        || (addr >= 0xc000 && romHere[2]) 
+                        || (addr >= 0xa000 && romHere[1]) 
+                        || romHere[0])
+                    ))) {
                 return prg[prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023)];
             } else {
                 //don't know quite how to deal with this yet
                 System.err.println("MMC5 wants RAM at " + utils.hex(addr));
-                return 42;
+                return 0xffff;
             }
 
         } else if (addr >= 0x6000) {
             //wram
-            return prgram[wrambank * 8192 + (addr - 0x6000)];
+            int ramaddr = wrambank * 8192 + (addr - 0x6000);
+            //System.err.println("reading prgram from " + utils.hex(ramaddr));
+            return prgram[ramaddr];
         } else if (addr >= 0x5c00) {
             //exram
             return exram[addr - 0x5c00];
@@ -340,12 +363,6 @@ public class MMC5Mapper extends Mapper {
                 setppubankB(1, 0, chrregsB[0]);
                 break;
         }
-        for (int i = 0; i < 8; ++i) {
-            chr_map[i] += chrOr * 256 * 1024;
-        }
-        for (int i = 0; i < 4; ++i) {
-            chrmapB[i] += chrOr * 256 * 1024;
-        }
     }
 
     private void setppubank(int banksize, int bankpos, int banknum) {
@@ -377,8 +394,7 @@ public class MMC5Mapper extends Mapper {
         //put on the PPU bus, whether or not the CS line is asserted for it.
         //must be something to do with 8x16 sprites, and with
         //the 34 reads per scanline of background
-        //it reads 34 bg tiles (68 bytes) then some unknown amt of sprite bytes
-        //(less than 16)
+        //it reads 34 bg tiles (68 bytes) then 16 sprite tiles (32 bytes)
         if (addr < 0x2000) {
             // System.err.print("p");
             //pattern table read
@@ -397,11 +413,11 @@ public class MMC5Mapper extends Mapper {
                     if (exlatch == 2) {
                         //fetch 3: tile bitmap a
                         ++exlatch;
-                        return chr[((chrOr * 262144) | ((exram[lastfetch] & 0x3f) * 4096) | (addr & 4095)) % chr.length];
+                        return chr[((chrOr*1024) | ((exram[lastfetch] & 0x3f) * 4096) | (addr & 4095)) % chr.length];
                     } else if (exlatch == 3) {
                         //fetch 4: tile bitmap b (+ 8 bytes from tile bitmap a)
                         exlatch = 0;
-                        return chr[((chrOr * 262144) | ((exram[lastfetch] & 0x3f) * 4096) | (addr & 4095)) % chr.length];
+                        return chr[((chrOr*1024) | ((exram[lastfetch] & 0x3f) * 4096) | (addr & 4095)) % chr.length];
                     }
                 }
                 return chr[chrmapB[(addr >> 10) & 3] + (addr & 1023)];
@@ -448,9 +464,9 @@ public class MMC5Mapper extends Mapper {
         } else {
             if (irqCounter++ == scanctrLine) {
                 irqPend = true;
-                
+
             }
-            if(irqPend && scanctrEnable){
+            if (irqPend && scanctrEnable) {
                 ++cpu.interrupt;
             }
         }
