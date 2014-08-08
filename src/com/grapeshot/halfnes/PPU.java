@@ -93,19 +93,24 @@ public class PPU {
                 // PPUDATA
                 // correct behavior. read is delayed by one
                 // -unless- is a read from sprite pallettes
+                final int temp;
                 if ((loopyV & 0x3fff) < 0x3f00) {
-                    final int temp = readbuffer;
+                    temp = readbuffer;
                     readbuffer = mapper.ppuRead(loopyV & 0x3fff);
-                    loopyV += vraminc;
-                    openbus = temp;
-                    break;
                 } else {
                     readbuffer = mapper.ppuRead((loopyV & 0x3fff) - 0x1000);
-                    final int temp = mapper.ppuRead(loopyV);
-                    loopyV += vraminc;
-                    openbus = temp;
-                    break;
+                    temp = mapper.ppuRead(loopyV);
                 }
+                if (!ppuIsOn() || (scanline > 240 && scanline < 261)) {
+                    loopyV += vraminc;
+                } else {
+                    //if 2007 is read during rendering PPU increments both horiz
+                    //and vert counters erroneously.
+                    incLoopyVHoriz();
+                    incLoopyVVert();
+                }
+                openbus = temp;
+                break;
 
             // and don't increment on read
             default:
@@ -191,7 +196,16 @@ public class PPU {
             case 7:
                 // PPUDATA
                 mapper.ppuWrite((loopyV & 0x3fff), data);
-                loopyV += vraminc;
+                if (!ppuIsOn() || (scanline > 240 && scanline < 261)) {
+                    loopyV += vraminc;
+                } else {
+                    //if 2007 is read during rendering PPU increments both horiz
+                    //and vert counters erroneously.
+                    if (((cycles - 1) & 7) != 7) {
+                        incLoopyVHoriz();
+                        incLoopyVVert();
+                    }
+                }
                 break;
             default:
                 break;
@@ -379,32 +393,9 @@ public class PPU {
                 bgShiftRegH |= linehighbits;
                 nextattr = penultimateattr;
                 if (cycles != 256) {
-                    //increment horizontal part of loopyv
-                    if ((loopyV & 0x001F) == 31) // if coarse X == 31
-                    {
-                        loopyV &= ~0x001F; // coarse X = 0
-                        loopyV ^= 0x0400;// switch horizontal nametable
-                    } else {
-                        loopyV += 1;// increment coarse X
-                    }
-
+                    incLoopyVHoriz();
                 } else {
-                    //increment loopy_v to next row of tiles
-                    int newfinescroll = (loopyV & 0x7000) + 0x1000;
-                    loopyV &= ~0x7000;
-                    if (newfinescroll > 0x7000) {
-                        //reset the fine scroll bits and increment tile address to next row
-                        loopyV += 32;
-                    } else {
-                        //increment the fine scroll
-                        loopyV += newfinescroll;
-                    }
-                    if (((loopyV >> 5) & 0x1f) == 30) {
-                        //if incrementing loopy_v to the next row pushes us into the next
-                        //nametable, zero the "row" bits and go to next nametable
-                        loopyV &= ~0x3e0;
-                        loopyV ^= 0x800;
-                    }
+                    incLoopyVVert();
                 }
                 break;
             default:
@@ -412,6 +403,36 @@ public class PPU {
         }
         if (cycles >= 321 && cycles <= 336) {
             bgShiftClock();
+        }
+    }
+
+    private void incLoopyVVert() {
+        //increment loopy_v to next row of tiles
+        int newfinescroll = (loopyV & 0x7000) + 0x1000;
+        loopyV &= ~0x7000;
+        if (newfinescroll > 0x7000) {
+            //reset the fine scroll bits and increment tile address to next row
+            loopyV += 32;
+        } else {
+            //increment the fine scroll
+            loopyV += newfinescroll;
+        }
+        if (((loopyV >> 5) & 0x1f) == 30) {
+            //if incrementing loopy_v to the next row pushes us into the next
+            //nametable, zero the "row" bits and go to next nametable
+            loopyV &= ~0x3e0;
+            loopyV ^= 0x800;
+        }
+    }
+
+    private void incLoopyVHoriz() {
+        //increment horizontal part of loopyv
+        if ((loopyV & 0x001F) == 31) // if coarse X == 31
+        {
+            loopyV &= ~0x001F; // coarse X = 0
+            loopyV ^= 0x0400;// switch horizontal nametable
+        } else {
+            loopyV += 1;// increment coarse X
         }
     }
 
