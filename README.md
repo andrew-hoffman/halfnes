@@ -65,10 +65,8 @@ page (http://code.google.com/p/halfnes/).
 Building instructions
 ---------------------
 
-Not following best practices here until I'm done rewriting everything I want to. 
-At this point you might as well just create a new netbeans project, import all
-the src files, and delete anything referring to a library that isn't installed.
-(the libraries are for the ntsc filter and XInput controllers, and so don't really matter.)
+The project requires two libraries to build: JInput (gamepad support) and The Happy Java Library 1.3 (parallel for loops). 
+Sorry there's no decent build script included with this package, at this point you might as well just create a new Netbeans project, import all the src files, and add those two libraries in the project properties.
 
 Do NOT ask me where to find ROM files of commercial games. Some public 
 domain homebrew ROMs are available at www.pdroms.de for testing 

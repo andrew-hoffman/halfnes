@@ -29,10 +29,14 @@ public class PPU {
     private final boolean[] spritebgflags = new boolean[8];
     private boolean even = true, bgpattern = true, sprpattern = false;
     private final int[] ppuregs = new int[0x8];
-    public final int[] pal = //power-up pallette verified by Blargg's power_up_palette test
-            {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D, 0x08, 0x10, 0x08, 0x24, 0x00, 0x00, //palette *might* be different on every NES
-                0x04, 0x2C, 0x09, 0x01, 0x34, 0x03, 0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, //but some emulators (nesemu1, BizHawk, RockNES, MyNes)
-                0x00, 0x20, 0x2C, 0x08};    //use it anyway
+    public final int[] pal = {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D,
+        0x08, 0x10, 0x08, 0x24, 0x00, 0x00, 0x04, 0x2C, 0x09, 0x01, 0x34, 0x03,
+        0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, 0x00, 0x20, 0x2C, 0x08};
+    /*
+     power-up pallette checked by Blargg's power_up_palette test. Different
+     revs of NES PPU might give different initial results but there's a test
+     expecting this set of values and nesemu1, BizHawk, RockNES, MyNes use it
+     */
     private DebugUI debuggui;
     private int vraminc = 1;
     private final static boolean PPUDEBUG = PrefsSingleton.get().getBoolean("ntView", false);
@@ -137,7 +141,12 @@ public class PPU {
                 //set 2 bits of vram address (nametable select)
                 loopyT &= ~0xc00;
                 loopyT += (data & 3) << 10;
-                //ppuregs[1] ^= 0xe0; //DEBUG: why does SMB write $2000 in midframe?
+                /*
+                 SMB1 writes here at the end of its main loop and if this write
+                 lands on one exact PPU clock, the address bits are set to 0.
+                 This only happens on one CPU/PPU alignment of real hardware 
+                 though so it only shows up ~33% of the time.
+                 */
                 break;
             case 1:
                 ppuregs[1] = data;
@@ -155,20 +164,20 @@ public class PPU {
                     OAM[oamaddr++] = data;
                 }
                 oamaddr &= 0xff;
-                // games don't write this directly anyway
+                // games don't usually write this directly anyway, it's unreliable
                 break;
 
             // PPUSCROLL(2005)
             case 5:
                 if (even) {
-                    // horizontal scroll
+                    // update horizontal scroll
                     loopyT &= ~0x1f;
                     loopyX = data & 7;
                     loopyT += data >> 3;
 
                     even = false;
                 } else {
-                    // vertical scroll
+                    // update vertical scroll
                     loopyT &= ~0x7000;
                     loopyT |= ((data & 7) << 12);
                     loopyT &= ~0x3e0;
