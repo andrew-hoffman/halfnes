@@ -34,12 +34,6 @@ public class VRC7Mapper extends Mapper {
             super.cartWrite(addr, data);
             return;
         }
-        if (irqmode && irqenable) {
-            //if irq prescaler is disabled should cause a clock of counter every cycle
-            //but i can't interrupt every cycle, so i'm settling for every ram read
-            notifyscanline(999);
-            notifyscanline(999);
-        }
 
         final boolean bit0 = utils.getbit(addr, 4) | utils.getbit(addr, 3);
         final boolean bit1 = utils.getbit(addr, 5);
@@ -124,6 +118,7 @@ public class VRC7Mapper extends Mapper {
                     irqmode = utils.getbit(data, 2);
                     if (irqenable) {
                         irqcounter = irqreload;
+                        prescaler = 341;
                     }
                     if (firedinterrupt) {
                         --cpu.interrupt;
@@ -165,9 +160,25 @@ public class VRC7Mapper extends Mapper {
         }
 //        utils.printarray(chr_map);
     }
+    int prescaler = 341;
 
     @Override
-    public void notifyscanline(final int scanline) {
+    public void cpucycle(int cycles) {
+        if (irqenable) {
+            if (irqmode) {
+                scanlinecount();
+                //clock regardless of prescaler state
+            } else {
+                prescaler -= 3;
+                if (prescaler <= 0) {
+                    prescaler += 341;
+                    scanlinecount();
+                }
+            }
+        }
+    }
+
+    public void scanlinecount() {
         if (!hasInitSound) {
             //tiny hack, because the APU is not initialized until AFTER this happens
             //TODO: this really should not need to be here.
