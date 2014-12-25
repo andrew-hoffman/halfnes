@@ -6,8 +6,8 @@ import com.grapeshot.halfnes.*;
 public class VRC4Mapper extends Mapper {
 
     int[][][] registerselectbits = {{{1, 2}, {6, 7}},
-        {{2, 3}, {0, 1}},
-        {{3, 2}, {1, 0}}};
+    {{2, 3}, {0, 1}},
+    {{3, 2}, {1, 0}}};
     int[][] registers;
     int prgbank0, prgbank1 = 0;
     int[] chrbank = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -51,11 +51,6 @@ public class VRC4Mapper extends Mapper {
         if (addr < 0x8000 || addr > 0xffff) {
             super.cartWrite(addr, data);
             return;
-        }
-        if (irqmode && irqenable) {
-            //if irq prescaler is disabled should cause an irq every cycle
-            //but i can't interrupt every cycle, so i'm settling for every ram read
-            notifyscanline(999);
         }
 
         boolean bit0 = utils.getbit(addr, registers[0][0]) || utils.getbit(addr, registers[1][0]);
@@ -122,6 +117,7 @@ public class VRC4Mapper extends Mapper {
                         irqmode = utils.getbit(data, 2);
                         if (irqenable) {
                             irqcounter = irqreload;
+                            prescaler = 341;
                         }
                         if (firedinterrupt) {
                             --cpu.interrupt;
@@ -189,10 +185,27 @@ public class VRC4Mapper extends Mapper {
 //        utils.printarray(chr_map);
     }
 
+    int prescaler = 341;
+
     @Override
-    public void notifyscanline(final int scanline) {
+    public void cpucycle(int cycles) {
         if (irqenable) {
-            if (irqcounter >= 255) {
+            if (irqmode) {
+                scanlinecount();
+                //clock regardless of prescaler state
+            } else {
+                prescaler -= 3;
+                if (prescaler <= 0) {
+                    prescaler += 341;
+                    scanlinecount();
+                }
+            }
+        }
+    }
+
+    public void scanlinecount() {
+        if (irqenable) {
+            if (irqcounter == 255) {
                 irqcounter = irqreload;
                 //System.err.println("Interrupt @ Scanline " + scanline + " reload " + irqreload);
                 if (!firedinterrupt) {

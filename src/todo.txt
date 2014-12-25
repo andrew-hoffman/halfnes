@@ -118,7 +118,8 @@ Codemasters games broken by DMC IRQ:
 -Big Nose Freaks Out (glitchy in 035, completely broken in 036, back to glitchy in 049.)
 -Lion King (only works on PAL)
 -Bandit Kings of Ancient China doesn't redraw map properly (broken ExGrafix?)
-no it needs to map RAM to 0x8000, there's a note in tha mapper docs
+no it needs to map RAM to 0x8000, there's a note in the mapper docs
+but I still can't get it working correctly.
 -Huge Insect depends on obscure behavior of modifying OAM address during rendering
 -figure out why chopped.nsf.nes works but zanzan-pull-over(chiptune)nes doesn't.
 (they're the same NSF made into a ROM w/ different drivers, but one goes all over and does illegal things
@@ -127,4 +128,13 @@ before it starts in on the song.)
 This has to do with PPU mirroring and the A12 address line.
 N163 scanline counter is completely broken (and may have been for a while)
 Fix MMC3 derivatives to use more accurate scan line counters (should be able to remove NotifyScanline entirely)
+-Lagrange Point has single scanline glitches in its text boxes. This is more
+important for me than important generally, the tranlation just came out and I
+don't want it to look bad after all the time I spent on YM2413.
+Might just be able to fix that by changing to new scanline counter.
+Well I tried that (on all 3 mappers) and it goes from glitched scanlines to shaky. Is that better?
+it does fix the Crisis Force intro a bit but makes Gradius 2 worse
+Akumajou Densetsu is fine either way, Esper Dream 2 loses the single scanline glitch with the status bar
+but gains occasional jittery line in text boxes.
+tiny toon adventures (j) actually lines up so I'll leave this in.
 
