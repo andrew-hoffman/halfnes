@@ -168,6 +168,10 @@ public class MMC3Mapper extends Mapper {
 
     @Override
     public void checkA12(int addr) {
+        //run on every PPU cycle (wasteful...)
+        //clocks scanline counter every time A12 line goes from low to high
+        //on PPU address bus, _except_ when it has been less than 8 PPU cycles 
+        //since the line last went low.
         boolean a12 = utils.getbit(addr, 12);
         if (a12 && (!lastA12)) {
             //rising edge
@@ -178,6 +182,7 @@ public class MMC3Mapper extends Mapper {
             //falling edge
             a12timer = 8;
         }
+
         --a12timer;
         lastA12 = a12;
     }

@@ -28,7 +28,7 @@ public class utils {
     }
 
     public static int getbitI(final long num, final int bitnum) {
-        //returns the nth bit of the int provided
+        //returns the nth bit of the long provided
         //as an int, instead. Speeds up things when what you want is an int not a boolean to switch off.
         return (int) ((num >> bitnum) & 1);
     }

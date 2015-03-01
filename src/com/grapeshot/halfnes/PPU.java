@@ -192,18 +192,18 @@ public class PPU {
                 if (even) {
                     // high byte
                     loopyT &= 0xc0ff;
-                    loopyT += ((data & 0x3f) << 8);
+                    loopyT |= ((data & 0x3f) << 8);
                     loopyT &= 0x3fff;
                     even = false;
                 } else {
-                    loopyT &= 0xff00;
-                    loopyT += data;
+                    loopyT &= 0x7f00;
+                    loopyT |= data;
                     loopyV = loopyT;
                     even = true;
                 }
                 break;
             case 7:
-                // PPUDATA
+                // PPUDATA             
                 mapper.ppuWrite((loopyV & 0x3fff), data);
                 if (!ppuIsOn() || (scanline > 240 && scanline < 261)) {
                     loopyV += vraminc;

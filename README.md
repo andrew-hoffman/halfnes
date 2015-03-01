@@ -59,8 +59,8 @@ will be Controller 2. Currently the buttons used are not configurable.
 At this point in 
 development, almost all US released games will start, but certain games 
 still have graphics corruption or freezing problems. Please report any 
-issues you encounter with the emulator or with games on the Google Code 
-page (http://code.google.com/p/halfnes/). 
+issues you encounter with the emulator or with games on the Github Issues page 
+(https://github.com/andrew-hoffman/halfnes/issues). 
 
 Building instructions
 ---------------------
