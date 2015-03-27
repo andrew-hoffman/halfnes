@@ -58,8 +58,10 @@ public class NSFMapper extends Mapper {
         if (!nsfBanking) {
             //no banking
             prg = new int[32768];
+            prgsize = Math.max(prgsize, 32768);
             //copy nsf into ram
-            System.arraycopy(loader.load(prgsize, prgoff), 0, prg, load - 0x8000, prgsize);
+            int[] toram = loader.load(prgsize, prgoff);
+            System.arraycopy(toram, 0, prg, load - 0x8000, Math.min(toram.length,32768-(load-0x8000)));
         } else {
             //has banking, so pad to 4k bank size and copy in starting
             //from where the load addr is in a 4k bank
