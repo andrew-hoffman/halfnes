@@ -20,7 +20,7 @@ public class FME7Mapper extends Mapper {
     private int[] prgbanks = new int[4]; //4 8k prg banks - PLUS 1 8k fixed one
     private boolean ramEnable = true;
     private boolean ramSelect = false;
-    private int irqcounter = 0xffff;
+    private int irqcounter = 0xffff; //really needs to be unsigned but we'll cheese it
     private boolean irqenabled;
     private boolean irqclock;
     private boolean hasInitSound = false;
@@ -124,11 +124,16 @@ public class FME7Mapper extends Mapper {
                 case 0xd:
                     //irq - let's put this in and hope it works
                     irqclock = utils.getbit(data, 7);
+                    //2015-05: test by Teppples says that any value written here
+                    //will acknowledge a pending interrupt
+
                     irqenabled = utils.getbit(data, 0);
-                    if (!irqenabled) {
-                        interrupted = false;
+
+                    if (interrupted && cpu.interrupt > 0) {
                         --cpu.interrupt;
                     }
+                    interrupted = false;
+                    //System.err.println(cpu.interrupt);
                     break;
                 case 0xe:
                     irqcounter &= 0xff00;
@@ -143,22 +148,24 @@ public class FME7Mapper extends Mapper {
             sndchip.write(soundCommand, data);
         }
 
-
     }
 
     @Override
-    public void notifyscanline(final int line) {
-        //irq counter, really should update every cpu cycle, but no efficient way to do that.
+    public void cpucycle(int cycles) {
         if (irqclock) {
-            irqcounter -= ((line % 3 == 0) ? 113 : 114);
-            if (irqcounter < 0 && irqenabled) {
-                if (!interrupted) {
-                    ++cpu.interrupt;
+            if (irqcounter == 0) {
+                irqcounter = 0xffff;
+                if (irqenabled) {
+                    if (!interrupted) {
+                        interrupted = true;
+                        ++cpu.interrupt;
+                    }
+                    //System.err.println("FME7 Interrupt");
                 }
-                //System.err.println("FME7 Interrupt");
+            } else {
+                --irqcounter;
             }
         }
-
     }
 
     private void setbanks() {
