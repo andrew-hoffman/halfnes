@@ -514,7 +514,8 @@ public class PPU {
                 //if more than 8 sprites, set overflow bit and STOP looking
                 //todo: add "no sprite limit" option back
                 ppuregs[2] |= 0x20;
-                break; //also the real PPU does strange stuff on sprite overflow.
+                break; //also the real PPU does strange stuff on sprite overflow
+                //todo: emulate register trashing that happens when overflow
             } else {
                 //set up ye sprite for rendering
                 final int oamextra = OAM[spritestart + 2];

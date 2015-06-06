@@ -14,15 +14,16 @@ Todo List For HalfNES:
 
 -Fix all of the single scanline errors, random horizontal
  glitches in Slalom, Rad Racer etc.
- Probably should move to a pixel based renderer for the very few games with mid 
- scanline effects - is this going to require too much synchronization overhead?
- Could at least update the PPU counters at correct times during scanline.
+ I did move to a pixel based renderer but the CPU is still only cycle accurate
+ and plenty of other things are still only approximate. 
 
 -Fix the frame limiter so that it won't underrun the audio buffer every time
  there's a lag spike - also deal with audio popping in fullscreen mode (I think
  this is caused by the framerate being fixed by the buffer waiting at 60.0 so
  not enough audio samples are generated but I'm not sure)
  This is dealt with by increasing the audio buffer size for now.
+
+-Figure out why everything is so laggy when monitor is not set to 60 fps
 
 -Add more graphics filters (HQ2x), develop an OpenGL rendering path, rewrite the
  NTSC shader in shader language for speed. Also try incl. scanline and CRT
@@ -107,10 +108,10 @@ Broken Games To Fix:
 *Battle Chess (fixed in 055, who knows why)
 -Laser Invasion (graphics corruption)
 -Metal Slader Glory
--Batman:ROTJ title screen (and other weirdness with the FME-7)
+-Batman:ROTJ title screen (FME-7 now has accurate scanline counter but this remains)
 -Caltron 6 in 1 (Very slow text scroll in Cosmo Cop)
 this has to do with reading $2002 in a loop and the NMI.
-it's high time i wrote a pixel accurate ppu to pass blargg's tests.
+it's high time i got the pixel accurate cpu to pass all of blargg's timing tests.
 Codemasters games broken by DMC IRQ:
 -Bee 52
 -MIG-29 Soviet Fighter (needs better dmc timing!)
@@ -137,4 +138,8 @@ it does fix the Crisis Force intro a bit but makes Gradius 2 worse
 Akumajou Densetsu is fine either way, Esper Dream 2 loses the single scanline glitch with the status bar
 but gains occasional jittery line in text boxes.
 tiny toon adventures (j) actually lines up so I'll leave this in.
+
+Maybe make a version of Chris Covell's Stars SE demo that uses the
+sweep workaround to change the high bits of the pitch during the arpeggios
+to get rid of the unwanted phasing effects?
 

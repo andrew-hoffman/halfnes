@@ -38,6 +38,8 @@ public class NTSCRenderer extends Renderer {
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},//0x0D
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},//0x0E
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};//0x0F
+    //i would like to replace these tables with logic but it's a tricky shape
+    //for a Karnaugh map
     private final static float[][][] lumas = genlumas();
     private final static int[][] coloremph = {
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -268,6 +270,11 @@ public class NTSCRenderer extends Renderer {
         for (int i : array) {
             c.update(i);
         }
+        //it's not immediately obvious, but this ONLY sets the CRC based on the
+        //blue channel of the output. Still works well though.
+        //You get some interesting compressiony effects if you only take the CRC
+        //of every 20th pixel to see if your line is the same.
+        //especially in sidescrolling things.
         c.update(offset);
         c.update(bgcolor);
         return c.getValue();
