@@ -14,13 +14,14 @@ import java.util.Arrays;
  */
 public class NSFMapper extends Mapper {
     //a nsf playing mapper. this is an embarrassing hack still, really.
+    //TODO: add the extra bankswitches required when playing FDS
 
     private int load, init, play, song, numSongs;
     public boolean nsfBanking;
     public int[] nsfBanks = new int[8];
     private int sndchip;
     boolean vrc6 = false, vrc7 = false, mmc5 = false,
-            n163 = false, s5b = false, hasInitSound = false;
+            n163 = false, s5b = false, hasInitSound = false, fds = false;
     private boolean n163autoincrement = false;
     private int n163soundAddr = 0;
     private int mmc5multiplier1, mmc5multiplier2;
@@ -32,6 +33,7 @@ public class NSFMapper extends Mapper {
     private Sunsoft5BSoundChip s5bAudio;
     private MMC5SoundChip mmc5Audio;
     private static final String trackstr = "Track --- / ---          <-B A->";
+    private FDSSoundChip fdsAudio;
 
     public void loadrom() throws BadMapperException {
         loader.parseHeader();
@@ -61,7 +63,7 @@ public class NSFMapper extends Mapper {
             prgsize = Math.min(prgsize, 32768);
             //copy nsf into ram
             int[] toram = loader.load(prgsize, prgoff);
-            System.arraycopy(toram, 0, prg, load - 0x8000, Math.min(toram.length,32768-(load-0x8000)));
+            System.arraycopy(toram, 0, prg, load - 0x8000, Math.min(toram.length, 32768 - (load - 0x8000)));
         } else {
             //has banking, so pad to 4k bank size and copy in starting
             //from where the load addr is in a 4k bank
@@ -197,7 +199,11 @@ public class NSFMapper extends Mapper {
             mmc5multiplier1 = data;
         } else if (mmc5 && (addr >= 0x5000) && (addr <= 0x5015)) {
             mmc5Audio.write(addr - 0x5000, data);
-        } else {
+        } else if(fds && (addr >= 0x4040) && (addr <= 0x4092)){
+            fdsAudio.write(addr, data);
+        }
+        
+        else {
             System.err.println("write to " + utils.hex(addr) + " goes nowhere");
         }
     }
@@ -352,6 +358,9 @@ public class NSFMapper extends Mapper {
         if (s5b) {
             chips += "Sunsoft 5B ";
         }
+        if (fds) {
+            chips += "FDS ";
+        }
         return ((chips.length() > 0) ? chips : "None");
     }
 
@@ -391,6 +400,11 @@ public class NSFMapper extends Mapper {
         }
         if (utils.getbit(sndchip, 2)) {
             //FDS audio, not yet implemented
+            fds = true;
+            fdsAudio = new FDSSoundChip();
+            if (fdsAudio != null) {
+                cpuram.apu.addExpnSound(fdsAudio);
+            }
         }
         if (utils.getbit(sndchip, 3)) {
             //MMC5 audio
