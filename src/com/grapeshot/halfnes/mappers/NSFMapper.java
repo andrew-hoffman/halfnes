@@ -18,7 +18,7 @@ public class NSFMapper extends Mapper {
 
     private int load, init, play, song, numSongs;
     public boolean nsfBanking;
-    public int[] nsfBanks = new int[8];
+    public int[] nsfBanks = new int[10];
     private int sndchip;
     boolean vrc6 = false, vrc7 = false, mmc5 = false,
             n163 = false, s5b = false, hasInitSound = false, fds = false;
@@ -89,6 +89,15 @@ public class NSFMapper extends Mapper {
         } else {
             //map according to mapping registers
             setBanks();
+            //additional headache for NSFs with FDS:
+            if (utils.getbit(sndchip, 2)) {
+                //got to copy some stuff into 6000 - 7fff just because
+                for (int i = 0x6000; i < 0x8000; ++i) {
+                    cartWrite(i, cartRead(i + 0x8000));
+                }
+                nsfBanks[8] = nsfBanks[6];
+                nsfBanks[9] = nsfBanks[7];
+            }
         }
         chr_map = new int[8];
         for (int i = 0; i < 8; ++i) {
@@ -191,6 +200,14 @@ public class NSFMapper extends Mapper {
             nsfBanks[addr - 0x5ff8] = data;
             //System.err.println(addr - 0x5ff8 + " " + data);
             setBanks();
+        } else if (fds && nsfBanking && (addr == 0x5ff6)) {
+            System.err.println("fds request bank " + data + " in ram0");
+            nsfBanks[8] = data;
+            doFDSBull(1);
+        } else if (fds && nsfBanking && (addr >= 0x5ff7)) {
+            System.err.println("fds request bank " + data + " in ram1");
+            nsfBanks[9] = data;
+            doFDSBull(2);
         } else if (mmc5 && (addr >= 0x5C00) && (addr <= 0x5FF5)) {
             prgram[addr - 0x5C00] = data; //RAM emulates ExRAM here
         } else if (mmc5 && (addr == 0x5206)) {
@@ -199,11 +216,9 @@ public class NSFMapper extends Mapper {
             mmc5multiplier1 = data;
         } else if (mmc5 && (addr >= 0x5000) && (addr <= 0x5015)) {
             mmc5Audio.write(addr - 0x5000, data);
-        } else if(fds && (addr >= 0x4040) && (addr <= 0x4092)){
+        } else if (fds && (addr >= 0x4040) && (addr <= 0x4092)) {
             fdsAudio.write(addr, data);
-        }
-        
-        else {
+        } else {
             System.err.println("write to " + utils.hex(addr) + " goes nowhere");
         }
     }
@@ -232,6 +247,10 @@ public class NSFMapper extends Mapper {
             return prgram[addr & 0x1fff];
         } else if (nsfBanking && (addr >= 0x5ff8)) {
             return nsfBanks[addr - 0x5ff8];
+        } else if (fds && nsfBanking && (addr == 0x5ff6)) {
+            return nsfBanks[8];
+        } else if (fds && nsfBanking && (addr == 0x5ff7)) {
+            return nsfBanks[9];
         } else if (mmc5 && addr >= 0x5C00) {
             return prgram[addr - 0x5C00]; //RAM emulates ExRAM here
         } else if (mmc5 && addr == 0x5206) {
@@ -247,7 +266,10 @@ public class NSFMapper extends Mapper {
                 n163soundAddr = ++n163soundAddr & 0x7f;
             }
             return retval;
+        }else if(fds && (addr >= 0x4040) && (addr < 0x4093)){
+            return fdsAudio.read(addr);
         }
+        System.err.println("reading open bus "+utils.hex(addr));
         return addr >> 8; //open bus
     }
 
@@ -436,6 +458,22 @@ public class NSFMapper extends Mapper {
         String cur = String.format("%3d / %-3d", song + 1, numSongs + 1);
         for (int i = 0; i < cur.length(); ++i) {
             pput0[i + (32 * 28) + 6] = cur.charAt(i);
+        }
+    }
+
+    private void doFDSBull(int argh) {
+        //copy stuff to WRAM as expected by fds, it's the way it wants it
+        //well it gets it
+        if (argh == 1) {
+            for (int i = 0x6000; i < 0x7000; ++i) {
+                prgram[i - 0x6000] = prg[(4096 * nsfBanks[8]) + i];
+
+            }
+        } else if (argh == 2) {
+            for (int i = 0x7000; i < 0x8000; ++i) {
+                prgram[i - 0x6000] = prg[(4096 * nsfBanks[9]) + i];
+
+            }
         }
     }
 }

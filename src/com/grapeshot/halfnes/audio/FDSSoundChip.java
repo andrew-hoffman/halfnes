@@ -62,11 +62,11 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 modout = 0;
             }
             //increment wave accumulator
-            if ((pitch + modout) > 0 && !waveWriteEnable && !haltWaveAndReset) {
+            if ((pitch + modout) > 0 && !haltWaveAndReset) {
                 waveAccum += (pitch + modout);
                 if ((waveAccum & 0xffff) != waveAccum) {
                     //increment wave position on overflow
-                    waveAccum &= 0xffff;
+                    waveAccum =0;
                     waveAddr = ++waveAddr & 63;
                 }
             }
@@ -75,7 +75,9 @@ public class FDSSoundChip implements ExpansionSoundChip {
         if (!haltWaveAndReset && !BothEnvDisable && (envClockMultiplier != 0)) {
             CalculateEnvelopes();
         }
-        waveOut = wavetable[waveAddr];
+        if (!waveWriteEnable) {
+            waveOut = wavetable[waveAddr];
+        }
     }
 
     private void CalculateModulator() {
@@ -168,6 +170,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
         }
 
         if (!volEnvDisable) {
+            ++volEnvAccum;
             if (volEnvAccum > (8 * envClockMultiplier * (volEnvSpeed + 1))) {
                 volEnvAccum = 0;
                 System.out.println("vol env clocked");
@@ -213,7 +216,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 //low 8 bits of wave frequency
                 pitch &= 0xf00;
                 pitch |= (data & 0xff);
-                System.out.println("pitch is "+pitch);
+                System.out.println("pitch is " + pitch);
             } else if (register == 0x4083) {
                 //frequency high, wave reset and phase
                 pitch &= 0xff;
@@ -234,12 +237,14 @@ public class FDSSoundChip implements ExpansionSoundChip {
                     modGain = data & 0x3f;
                 }
                 modEnvSpeed = data & 0x3f;
+                modAccum = 0;              
             } else if (register == 0x4085) {
                 //set modulator counter directly
-                System.out.println("baby "+ data);
+                System.out.println("baby " + data);
                 //Bio Miracle Bokutte Opa uses this but i don't get it right
                 //sign extend            
                 modCtr = ((data & 0x7f) << 25) >> 25;
+                //modTableAddr = 0;
             } else if (register == 0x4086) {
                 //low 8 bits of mod freq
                 modFreq &= 0xf00;
@@ -259,6 +264,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                         modTableAddr = (modTableAddr + 1) & 63;
                     }
                 }
+                modAccum = 0; //?
             } else if (register == 0x4089) {
                 //wave write protect and master vol
                 masterVol = data & 3;
@@ -273,30 +279,39 @@ public class FDSSoundChip implements ExpansionSoundChip {
         }
     }
 
-    //todo: register reads!
-    //these are read only - does anything read them??
-//            } else if (register == 0x4090) {
-//                //volume gain 
-//                return volGain;
-//            } else if (register == 0x4092) {
-//                //modulator gain
-//                return modGain;
+    public int read(int register) {
+        if ((register >= 0x4040) && (register < 0x4080)) {
+            return wavetable[register - 0x4040] | 0x40;
+        } else if (register == 0x4090) {
+            //volume gain 
+            return volGain;
+        } else if (register == 0x4092) {
+            //modulator gain
+            return modGain;
+        } else {
+            System.err.println("what goes here " + utils.hex(register));
+            return 0x40;
+        }
+    }
+
     @Override
     public int getval() {
-        int out = (waveOut * volGain) << 4;
+        int tmp = (volGain > 32) ? 32 : volGain;
+        int out = (waveOut * tmp);
         //apply master volume attenuator
         switch (masterVol) {
             case 0:
             default:
+                out *= 16;
                 break;
             case 1:
-                out *= (20. / 30.);
+                out *= 10;
                 break;
             case 2:
-                out *= (15. / 30.);
+                out *= 8;
                 break;
             case 3:
-                out *= (12. / 30.);
+                out *= 6;
                 break;
         }
         //do a little lowpass (about 2khz)
