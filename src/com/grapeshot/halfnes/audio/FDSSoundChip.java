@@ -25,7 +25,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
     //allows access to wavetable RAM. does NOT stop wave unit. 
 
     //envelopes
-    boolean volEnvDirection, volEnvEnable, modEnvDirection, modEnvEnable;
+    boolean volEnvDirection, volEnvDisable, modEnvDirection, modEnvDisable;
     int volEnvSpeed, modEnvSpeed, envClockMultiplier = 0xff;
     int pitch; //12 bits
     //modulation
@@ -40,6 +40,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
 
     //the lowpass
     int lpaccum;
+    int modout;
 
     boolean BothEnvDisable, haltWaveAndReset;
 
@@ -58,10 +59,11 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 }
             } else if (modDisable) {
                 modAccum = 0;
+                modout = 0;
             }
             //increment wave accumulator
-            if (pitch > 0 && !waveWriteEnable && !haltWaveAndReset) {
-                waveAccum += pitch;
+            if ((pitch + modout) > 0 && !waveWriteEnable && !haltWaveAndReset) {
+                waveAccum += (pitch + modout);
                 if ((waveAccum & 0xffff) != waveAccum) {
                     //increment wave position on overflow
                     waveAccum &= 0xffff;
@@ -77,7 +79,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
     }
 
     private void CalculateModulator() {
-        System.out.println("Modulator on!");
+        //System.out.println("Modulator on! " + modFreq);
         switch (modTable[modTableAddr]) {
             case 0:
             default:
@@ -106,7 +108,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 break;
         }
         //wrap mod counter to 7 bits signed again
-        System.err.println(modCtr);
+        //System.out.println(modCtr + "* " + modGain);
         modCtr = (modCtr << 25) >> 25;
 
         //apply modulator result (code pretty much from nesdev wiki)
@@ -139,20 +141,19 @@ public class FDSSoundChip implements ExpansionSoundChip {
             temp += 1;
         }
         // final mod result is in temp
-        System.err.println(temp + " " + pitch);
-        pitch = pitch + temp;
-        //clamp to sane pitch range
-        pitch = (pitch < 0) ? 0 : ((pitch > 65535) ? 65535 : pitch);
+        //System.out.println(temp + " " + pitch);
+        modout = temp;
     }
 
     int modEnvAccum, volEnvAccum;
 
     private void CalculateEnvelopes() {
-        if (modEnvEnable) {
+        if (!modEnvDisable) {
             ++modEnvAccum;
             if (modEnvAccum > (8 * envClockMultiplier * (modEnvSpeed + 1))) {
                 modEnvAccum = 0;
-                if (!modEnvDirection) {
+                System.out.println("mod env clocked");
+                if (modEnvDirection) {
                     //increase
                     if (modGain < 32) {
                         ++modGain;
@@ -166,11 +167,11 @@ public class FDSSoundChip implements ExpansionSoundChip {
             }
         }
 
-        if (volEnvEnable) {
+        if (!volEnvDisable) {
             if (volEnvAccum > (8 * envClockMultiplier * (volEnvSpeed + 1))) {
                 volEnvAccum = 0;
-                System.err.println("vol env clocked");
-                if (!volEnvDirection) {
+                System.out.println("vol env clocked");
+                if (volEnvDirection) {
                     //increase
                     if (volGain < 32) {
                         ++volGain;
@@ -189,7 +190,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
 
     @Override
     public void write(int register, int data) {
-        //System.err.println("R" + utils.hex(register) + " D" + utils.hex(data));
+        //System.out.println("R" + utils.hex(register) + " D" + utils.hex(data));
         if (register == 0x4023) {
             //enable register, must be 1 for anything else to work
             regEnable = utils.getbit(data, 0);
@@ -202,9 +203,9 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 }
             } else if (register == 0x4080) {
                 //volume envelope enable and speed
-                volEnvEnable = utils.getbit(data, 7); //ON when it's FALSE
+                volEnvDisable = utils.getbit(data, 7); //ON when it's FALSE
                 volEnvDirection = utils.getbit(data, 6);
-                if (volEnvEnable) {
+                if (volEnvDisable) {
                     volGain = (data & 63);
                 }
                 volEnvSpeed = (data & 63);
@@ -212,6 +213,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 //low 8 bits of wave frequency
                 pitch &= 0xf00;
                 pitch |= (data & 0xff);
+                System.out.println("pitch is "+pitch);
             } else if (register == 0x4083) {
                 //frequency high, wave reset and phase
                 pitch &= 0xff;
@@ -226,9 +228,9 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 BothEnvDisable = utils.getbit(data, 6);
             } else if (register == 0x4084) {
                 //modulator envelope enable and speed
-                modEnvEnable = utils.getbit(data, 7);
-                modEnvDirection = utils.getbit(data, 7);
-                if (modEnvEnable) {
+                modEnvDisable = utils.getbit(data, 7);
+                modEnvDirection = utils.getbit(data, 6);
+                if (modEnvDisable) {
                     modGain = data & 0x3f;
                 }
                 modEnvSpeed = data & 0x3f;
@@ -236,10 +238,8 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 //set modulator counter directly
                 System.out.println("baby "+ data);
                 //Bio Miracle Bokutte Opa uses this but i don't get it right
-                int temp = data & 0x7f;
-                //sign extend temp
-                temp = (data << 25) >> 25;
-                modCtr = temp;
+                //sign extend            
+                modCtr = ((data & 0x7f) << 25) >> 25;
             } else if (register == 0x4086) {
                 //low 8 bits of mod freq
                 modFreq &= 0xf00;
