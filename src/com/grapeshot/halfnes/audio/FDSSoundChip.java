@@ -154,7 +154,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
             ++modEnvAccum;
             if (modEnvAccum > (8 * envClockMultiplier * (modEnvSpeed + 1))) {
                 modEnvAccum = 0;
-                System.out.println("mod env clocked");
+                //System.out.println("mod env clocked");
                 if (modEnvDirection) {
                     //increase
                     if (modGain < 32) {
@@ -173,7 +173,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
             ++volEnvAccum;
             if (volEnvAccum > (8 * envClockMultiplier * (volEnvSpeed + 1))) {
                 volEnvAccum = 0;
-                System.out.println("vol env clocked");
+                //System.out.println("vol env clocked");
                 if (volEnvDirection) {
                     //increase
                     if (volGain < 32) {
@@ -216,7 +216,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 //low 8 bits of wave frequency
                 pitch &= 0xf00;
                 pitch |= (data & 0xff);
-                System.out.println("pitch is " + pitch);
+                //System.out.println("pitch " + pitch);
             } else if (register == 0x4083) {
                 //frequency high, wave reset and phase
                 pitch &= 0xff;
@@ -240,7 +240,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 modAccum = 0;              
             } else if (register == 0x4085) {
                 //set modulator counter directly
-                System.out.println("baby " + data);
+                //System.out.println("reset mod " + data);
                 //Bio Miracle Bokutte Opa uses this but i don't get it right
                 //sign extend            
                 modCtr = ((data & 0x7f) << 25) >> 25;
@@ -289,7 +289,8 @@ public class FDSSoundChip implements ExpansionSoundChip {
             //modulator gain
             return modGain;
         } else {
-            System.err.println("what goes here " + utils.hex(register));
+            //System.err.println("what goes here " + utils.hex(register));
+            //why are nsfs reading from 4080 and 4084? there's nothing there
             return 0x40;
         }
     }

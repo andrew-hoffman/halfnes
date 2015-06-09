@@ -56,6 +56,10 @@ public class NSFMapper extends Mapper {
         chrsize = 0;
         scrolltype = MirrorType.V_MIRROR;
         sndchip = loader.header[0x7B];
+        
+        if(load < 0x8000){
+            System.err.println("What do I do with this???");
+        }
 
         if (!nsfBanking) {
             //no banking
@@ -92,11 +96,10 @@ public class NSFMapper extends Mapper {
             //additional headache for NSFs with FDS:
             if (utils.getbit(sndchip, 2)) {
                 //got to copy some stuff into 6000 - 7fff just because
-                for (int i = 0x6000; i < 0x8000; ++i) {
-                    cartWrite(i, cartRead(i + 0x8000));
-                }
                 nsfBanks[8] = nsfBanks[6];
                 nsfBanks[9] = nsfBanks[7];
+                doFDSBull(1);
+                doFDSBull(2);
             }
         }
         chr_map = new int[8];
@@ -223,6 +226,7 @@ public class NSFMapper extends Mapper {
         }
     }
 
+    @Override
     public int cartRead(final int addr) {
         // by default has wram at 0x6000 and cartridge at 0x8000-0xfff
         // but some mappers have different so override for those
@@ -273,6 +277,7 @@ public class NSFMapper extends Mapper {
         return addr >> 8; //open bus
     }
 
+    @Override
     public int ppuRead(int addr) {
         if (addr < 0x2000) {
             return chr[chr_map[addr >> 10] + (addr & 1023)];
@@ -299,10 +304,12 @@ public class NSFMapper extends Mapper {
         }
     }
 
+    @Override
     public void ppuWrite(int addr, final int data) {
     }
     int control, prevcontrol;
 
+    @Override
     public void notifyscanline(final int scanline) {
         if (scanline == 240) {
             //set PPU registers to enable rendering
@@ -350,6 +357,7 @@ public class NSFMapper extends Mapper {
         }
     }
 
+    @Override
     public String getrominfo() {
         return "NSF INFO: \n"
                 + "Filename:     " + loader.name + "\n"
