@@ -47,30 +47,33 @@ public class FDSSoundChip implements ExpansionSoundChip {
     @Override
     public void clock(int cycles) {
         for (int i = 0; i < cycles; ++i) {
+            runUnits();
+        }
+    }
 
-            //increment modulator
-            if (modFreq > 0 && !modDisable) {
-                modAccum += modFreq;
-                if ((modAccum & 0xffff) != modAccum) {
-                    //and when that overflows run the rest of the modulation stuff
-                    modAccum &= 0xffff;
-                    modTableAddr = ++modTableAddr & 63;
-                    CalculateModulator();
-                }
-            } else if (modDisable) {
-                modAccum = 0;
-                modout = 0;
+    private void runUnits() {
+        //increment wave accumulator
+        if ((pitch + modout) > 0 && !haltWaveAndReset) {
+            waveAccum += (pitch + modout);
+            if ((waveAccum & 0xffff) != waveAccum) {
+                //increment wave position on overflow
+                waveAccum &= 0xffff;
+                waveAddr = ++waveAddr & 63;
             }
-            //increment wave accumulator
-            if ((pitch + modout) > 0 && !haltWaveAndReset) {
-                waveAccum += (pitch + modout);
-                if ((waveAccum & 0xffff) != waveAccum) {
-                    //increment wave position on overflow
-                    waveAccum =0;
-                    waveAddr = ++waveAddr & 63;
-                }
+        }
+        
+        //increment modulator
+        if (modFreq > 0 && !modDisable) {
+            modAccum += modFreq;
+            if ((modAccum & 0xffff) != modAccum) {
+                //and when that overflows run the rest of the modulation stuff
+                modAccum &= 0xffff;
+                modTableAddr = ++modTableAddr & 63;
+                CalculateModulator();
             }
-
+        } else if (modDisable) {
+            modAccum = 0;
+            modout = 0;
         }
         if (!haltWaveAndReset && !BothEnvDisable && (envClockMultiplier != 0)) {
             CalculateEnvelopes();
@@ -78,6 +81,28 @@ public class FDSSoundChip implements ExpansionSoundChip {
         if (!waveWriteEnable) {
             waveOut = wavetable[waveAddr];
         }
+        int tmp = (volGain > 32) ? 32 : volGain;
+        int out = (waveOut * tmp);
+        //apply master volume attenuator
+        switch (masterVol) {
+            case 0:
+            default:
+                out *= 8;
+                break;
+            case 1:
+                out *= 5;
+                break;
+            case 2:
+                out *= 4;
+                break;
+            case 3:
+                out *= 3;
+                break;
+        }
+        //do a little lowpass (about 2khz)
+        
+        out += lpaccum;
+        lpaccum -= out >> 6;
     }
 
     private void CalculateModulator() {
@@ -237,7 +262,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                     modGain = data & 0x3f;
                 }
                 modEnvSpeed = data & 0x3f;
-                modAccum = 0;              
+                modAccum = 0;
             } else if (register == 0x4085) {
                 //set modulator counter directly
                 //System.out.println("reset mod " + data);
@@ -297,29 +322,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
 
     @Override
     public int getval() {
-        int tmp = (volGain > 32) ? 32 : volGain;
-        int out = (waveOut * tmp);
-        //apply master volume attenuator
-        switch (masterVol) {
-            case 0:
-            default:
-                out *= 16;
-                break;
-            case 1:
-                out *= 10;
-                break;
-            case 2:
-                out *= 8;
-                break;
-            case 3:
-                out *= 6;
-                break;
-        }
-        //do a little lowpass (about 2khz)
-
-        out += lpaccum;
-        lpaccum -= out * (1 / 16.);
-
         return lpaccum;
     }
 

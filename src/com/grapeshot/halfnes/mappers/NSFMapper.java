@@ -94,7 +94,7 @@ public class NSFMapper extends Mapper {
             //map according to mapping registers
             setBanks();
             //additional headache for NSFs with FDS:
-            if (utils.getbit(sndchip, 2)) {
+            if (utils.getbit(sndchip, 2) && nsfBanking) {
                 //got to copy some stuff into 6000 - 7fff just because
                 nsfBanks[8] = nsfBanks[6];
                 nsfBanks[9] = nsfBanks[7];
@@ -221,10 +221,17 @@ public class NSFMapper extends Mapper {
             mmc5Audio.write(addr - 0x5000, data);
         } else if (fds && (addr >= 0x4040) && (addr <= 0x4092)) {
             fdsAudio.write(addr, data);
-        } else if (fds & addr >= 0x6000) {
+        } else if (fds && nsfBanking && addr >= 0x6000) {
             if (addr < 0x8000) {
                 int fuuu = prg_map[((addr - 0x6000) >> 10) + 32] + (addr & 1023);
                 prg[fuuu] = data;
+            } else {
+                int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
+                prg[fuuu] = data;
+            }
+        } else if (fds && !nsfBanking && addr >= 0x6000) {
+            if (addr < 0x8000) {
+                prgram[addr - 0x6000] = data;
             } else {
                 int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
                 prg[fuuu] = data;
@@ -257,7 +264,7 @@ public class NSFMapper extends Mapper {
             int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
             return prg[fuuu];
         } else if (addr >= 0x6000 && hasprgram) {
-            if (fds) {
+            if (fds && nsfBanking) {
                 int fuuu = prg_map[((addr - 0x6000) >> 10) + 32] + (addr & 1023);
                 return prg[fuuu];
             } else {
