@@ -35,6 +35,7 @@ public class NSFMapper extends Mapper {
     private static final String trackstr = "Track --- / ---          <-B A->";
     private FDSSoundChip fdsAudio;
 
+    @Override
     public void loadrom() throws BadMapperException {
         loader.parseHeader();
         prgsize = loader.prgsize;
@@ -56,13 +57,12 @@ public class NSFMapper extends Mapper {
         chrsize = 0;
         scrolltype = MirrorType.V_MIRROR;
         sndchip = loader.header[0x7B];
-        
-        if(load < 0x8000){
-            System.err.println("What do I do with this???");
-        }
 
         if (!nsfBanking) {
             //no banking
+            if (load < 0x8000) {
+                System.err.println("What do I do with this???");
+            }
             prg = new int[32768];
             prgsize = Math.min(prgsize, 32768);
             //copy nsf into ram
@@ -84,7 +84,7 @@ public class NSFMapper extends Mapper {
         haschrram = true;
         chrsize = 8192;
         chr = new int[8192];
-        prg_map = new int[32];
+        prg_map = new int[(utils.getbit(sndchip, 2)) ? 40 : 32];
         if (!nsfBanking) {
             //identity mapping
             for (int i = 0; i < 32; ++i) {
@@ -98,8 +98,7 @@ public class NSFMapper extends Mapper {
                 //got to copy some stuff into 6000 - 7fff just because
                 nsfBanks[8] = nsfBanks[6];
                 nsfBanks[9] = nsfBanks[7];
-                doFDSBull(1);
-                doFDSBull(2);
+                setBanks();
             }
         }
         chr_map = new int[8];
@@ -123,6 +122,7 @@ public class NSFMapper extends Mapper {
         chr = NSFPlayerFont.font;
     }
 
+    @Override
     public void init() {
         //now that we've set up the initial CPU state, do it all over again
         //in order to match the NSF spec.
@@ -204,13 +204,13 @@ public class NSFMapper extends Mapper {
             //System.err.println(addr - 0x5ff8 + " " + data);
             setBanks();
         } else if (fds && nsfBanking && (addr == 0x5ff6)) {
-            System.err.println("fds request bank " + data + " in ram0");
+            //System.err.println("fds request bank " + data + " in ram0");
             nsfBanks[8] = data;
-            doFDSBull(1);
+            setBanks();
         } else if (fds && nsfBanking && (addr >= 0x5ff7)) {
-            System.err.println("fds request bank " + data + " in ram1");
+            //System.err.println("fds request bank " + data + " in ram1");
             nsfBanks[9] = data;
-            doFDSBull(2);
+            setBanks();
         } else if (mmc5 && (addr >= 0x5C00) && (addr <= 0x5FF5)) {
             prgram[addr - 0x5C00] = data; //RAM emulates ExRAM here
         } else if (mmc5 && (addr == 0x5206)) {
@@ -221,13 +221,22 @@ public class NSFMapper extends Mapper {
             mmc5Audio.write(addr - 0x5000, data);
         } else if (fds && (addr >= 0x4040) && (addr <= 0x4092)) {
             fdsAudio.write(addr, data);
+        } else if (fds & addr >= 0x6000) {
+            if (addr < 0x8000) {
+                int fuuu = prg_map[((addr - 0x6000) >> 10) + 32] + (addr & 1023);
+                prg[fuuu] = data;
+            } else {
+                int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
+                prg[fuuu] = data;
+            }
         } else {
             System.err.println("write to " + utils.hex(addr) + " goes nowhere");
         }
     }
 
     @Override
-    public int cartRead(final int addr) {
+    public int cartRead(final int addr
+    ) {
         // by default has wram at 0x6000 and cartridge at 0x8000-0xfff
         // but some mappers have different so override for those
         if (addr >= 0x8000) {
@@ -248,7 +257,12 @@ public class NSFMapper extends Mapper {
             int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
             return prg[fuuu];
         } else if (addr >= 0x6000 && hasprgram) {
-            return prgram[addr & 0x1fff];
+            if (fds) {
+                int fuuu = prg_map[((addr - 0x6000) >> 10) + 32] + (addr & 1023);
+                return prg[fuuu];
+            } else {
+                return prgram[addr & 0x1fff];
+            }
         } else if (nsfBanking && (addr >= 0x5ff8)) {
             return nsfBanks[addr - 0x5ff8];
         } else if (fds && nsfBanking && (addr == 0x5ff6)) {
@@ -270,15 +284,16 @@ public class NSFMapper extends Mapper {
                 n163soundAddr = ++n163soundAddr & 0x7f;
             }
             return retval;
-        }else if(fds && (addr >= 0x4040) && (addr < 0x4093)){
+        } else if (fds && (addr >= 0x4040) && (addr < 0x4093)) {
             return fdsAudio.read(addr);
         }
-        System.err.println("reading open bus "+utils.hex(addr));
+        System.err.println("reading open bus " + utils.hex(addr));
         return addr >> 8; //open bus
     }
 
     @Override
-    public int ppuRead(int addr) {
+    public int ppuRead(int addr
+    ) {
         if (addr < 0x2000) {
             return chr[chr_map[addr >> 10] + (addr & 1023)];
         } else {
@@ -305,12 +320,14 @@ public class NSFMapper extends Mapper {
     }
 
     @Override
-    public void ppuWrite(int addr, final int data) {
+    public void ppuWrite(int addr, final int data
+    ) {
     }
     int control, prevcontrol;
 
     @Override
-    public void notifyscanline(final int scanline) {
+    public void notifyscanline(final int scanline
+    ) {
         if (scanline == 240) {
             //set PPU registers to enable rendering
             ppu.write(6, 0);
@@ -395,7 +412,7 @@ public class NSFMapper extends Mapper {
     }
 
     private void setBanks() {
-        for (int i = 0; i < 32; ++i) {
+        for (int i = 0; i < prg_map.length; ++i) {
             prg_map[i] = (4096 * nsfBanks[i / 4]) + (1024 * (i % 4));
             if ((prg_map[i]) > prg.length) {
                 //System.err.println("broken banks");
@@ -466,22 +483,6 @@ public class NSFMapper extends Mapper {
         String cur = String.format("%3d / %-3d", song + 1, numSongs + 1);
         for (int i = 0; i < cur.length(); ++i) {
             pput0[i + (32 * 28) + 6] = cur.charAt(i);
-        }
-    }
-
-    private void doFDSBull(int argh) {
-        //copy stuff to WRAM as expected by fds, it's the way it wants it
-        //well it gets it
-        if (argh == 1) {
-            for (int i = 0x6000; i < 0x7000; ++i) {
-                prgram[i - 0x6000] = prg[(4096 * nsfBanks[8]) + i];
-
-            }
-        } else if (argh == 2) {
-            for (int i = 0x7000; i < 0x8000; ++i) {
-                prgram[i - 0x6000] = prg[(4096 * nsfBanks[9]) + i];
-
-            }
         }
     }
 }
