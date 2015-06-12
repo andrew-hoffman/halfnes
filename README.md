@@ -1,3 +1,5 @@
+[DOWNLOAD HERE](https://github.com/andrew-hoffman/halfnes/releases)
+
 halfnes
 =======
 
