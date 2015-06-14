@@ -61,7 +61,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 waveAddr = ++waveAddr & 63;
             }
         }
-        
+
         //increment modulator
         if (modFreq > 0 && !modDisable) {
             modAccum += modFreq;
@@ -100,7 +100,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 break;
         }
         //do a little lowpass (about 2khz)
-        
+
         out += lpaccum;
         lpaccum -= out >> 6;
     }
@@ -237,6 +237,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                     volGain = (data & 63);
                 }
                 volEnvSpeed = (data & 63);
+                volEnvAccum = 0;
             } else if (register == 0x4082) {
                 //low 8 bits of wave frequency
                 pitch &= 0xf00;
@@ -261,13 +262,14 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 if (modEnvDisable) {
                     modGain = data & 0x3f;
                 }
-                modEnvSpeed = data & 0x3f;
-                modAccum = 0;
+                    modEnvSpeed = data & 0x3f;
+                //modAccum = 0;
+                modEnvAccum = 0;
             } else if (register == 0x4085) {
                 //set modulator counter directly
                 //System.out.println("reset mod " + data);
                 //Bio Miracle Bokutte Opa uses this but i don't get it right
-                //sign extend            
+                //sign extend    
                 modCtr = ((data & 0x7f) << 25) >> 25;
                 //modTableAddr = 0;
             } else if (register == 0x4086) {
@@ -277,7 +279,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
             } else if (register == 0x4087) {
                 //high 4 bits of mod freq, reset and phase
                 modFreq &= 0xff;
-                modFreq |= (data & 0xf) << 4;
+                modFreq |= (data & 0xf) << 8;
                 //setting frequency to 0 disables modulation too
                 //i think this is 1 to disable.
                 modDisable = utils.getbit(data, 7);
