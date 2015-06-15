@@ -105,7 +105,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
     }
 
     private void CalculateModulator() {
-        //System.err.println("Modulator on! f " + modFreq + " c " + modCtr + modDisable);
         switch (modTable[modTableAddr]) {
             case 0:
             default:
@@ -135,7 +134,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
         }
         modTableAddr = ++modTableAddr & 63;
         //wrap mod counter to 7 bits signed again
-        //System.out.println(modCtr + "* " + modGain);
         modCtr = (modCtr << 25) >> 25;
 
         //apply modulator result (code pretty much from nesdev wiki)
@@ -168,7 +166,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
             temp += 1;
         }
         // final mod result is in temp
-        //System.out.println(temp + " " + pitch);
         modout = temp;
     }
 
@@ -179,7 +176,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
             ++modEnvAccum;
             if (modEnvAccum > (8 * envClockMultiplier * (modEnvSpeed + 1))) {
                 modEnvAccum = 0;
-                //System.out.println("mod env clocked");
                 if (modEnvDirection) {
                     //increase
                     if (modGain < 32) {
@@ -198,7 +194,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
             ++volEnvAccum;
             if (volEnvAccum > (8 * envClockMultiplier * (volEnvSpeed + 1))) {
                 volEnvAccum = 0;
-                //System.out.println("vol env clocked");
                 if (volEnvDirection) {
                     //increase
                     if (volGain < 32) {
@@ -218,7 +213,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
 
     @Override
     public void write(int register, int data) {
-        //System.out.println("R" + utils.hex(register) + " D" + utils.hex(data));
         if (register == 0x4023) {
             //enable register, must be 1 for anything else to work
             regEnable = utils.getbit(data, 0);
@@ -242,7 +236,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 //low 8 bits of wave frequency
                 pitch &= 0xf00;
                 pitch |= (data & 0xff);
-                //System.out.println("pitch " + pitch);
             } else if (register == 0x4083) {
                 //frequency high, wave reset and phase
                 pitch &= 0xff;
@@ -267,7 +260,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 modEnvAccum = 0;
             } else if (register == 0x4085) {
                 //set modulator counter directly
-                //System.out.println("reset mod " + data);
                 //Bio Miracle Bokutte Opa uses this but i don't get it right
                 //sign extend    
                 modCtr = ((data & 0x7f) << 25) >> 25;
