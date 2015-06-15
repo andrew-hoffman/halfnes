@@ -26,7 +26,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
 
     //envelopes
     boolean volEnvDirection, volEnvDisable, modEnvDirection, modEnvDisable;
-    int volEnvSpeed, modEnvSpeed, envClockMultiplier = 0xff;
+    int volEnvSpeed, modEnvSpeed, envClockMultiplier = 0xe8;//bios sets it thus?
     int pitch; //12 bits
     //modulation
     boolean modDisable;
@@ -68,7 +68,6 @@ public class FDSSoundChip implements ExpansionSoundChip {
             if ((modAccum & 0xffff) != modAccum) {
                 //and when that overflows run the rest of the modulation stuff
                 modAccum &= 0xffff;
-                modTableAddr = ++modTableAddr & 63;
                 CalculateModulator();
             }
         } else if (modDisable) {
@@ -106,7 +105,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
     }
 
     private void CalculateModulator() {
-        //System.out.println("Modulator on! " + modFreq);
+        //System.err.println("Modulator on! f " + modFreq + " c " + modCtr + modDisable);
         switch (modTable[modTableAddr]) {
             case 0:
             default:
@@ -134,6 +133,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 modCtr -= 1;
                 break;
         }
+        modTableAddr = ++modTableAddr & 63;
         //wrap mod counter to 7 bits signed again
         //System.out.println(modCtr + "* " + modGain);
         modCtr = (modCtr << 25) >> 25;
@@ -262,8 +262,8 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 if (modEnvDisable) {
                     modGain = data & 0x3f;
                 }
-                    modEnvSpeed = data & 0x3f;
-                //modAccum = 0;
+                modEnvSpeed = data & 0x3f;
+                modAccum = 0;
                 modEnvAccum = 0;
             } else if (register == 0x4085) {
                 //set modulator counter directly
