@@ -52,8 +52,8 @@ public class ROMLoader {
             scrolltype = utils.getbit(header[6], 3)
                     ? Mapper.MirrorType.FOUR_SCREEN_MIRROR
                     : utils.getbit(header[6], 0)
-                    ? Mapper.MirrorType.V_MIRROR
-                    : Mapper.MirrorType.H_MIRROR;
+                            ? Mapper.MirrorType.V_MIRROR
+                            : Mapper.MirrorType.H_MIRROR;
             savesram = utils.getbit(header[6], 1);
             mappertype = (header[6] >> 4);
             if (header[11] + header[12] + header[13] + header[14]
@@ -64,9 +64,9 @@ public class ROMLoader {
             // calc offsets; header not incl. here
             prgoff = 0;
             chroff = 0 + prgsize;
-        } else if (header[0] == 'N' && header[1] == 'E'
-                && header[2] == 'S' && header[3] == 'M'
-                && header[4] == 0x1a) {
+        } else if (('N' == header[0]) && ('E' == header[1])
+                && ('S' == header[2]) && ('M' == header[3])
+                && (0x1a == header[4])) {
             //nsf file
             mappertype = -1;
             //reread header since it's 128 bytes
