@@ -104,6 +104,7 @@ Things I probably can't fix at all:
 
 
 Broken Games To Fix:
+WHAT WHY ARE GALAGA AND GALAXIAN BROKEN (and have been for a year!)
 -Don Doko Don 2 (actually header was incorrect, this should use mapper 48 not 33)
 *Battle Chess (fixed in 055, who knows why)
 -Laser Invasion (graphics corruption)

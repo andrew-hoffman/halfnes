@@ -27,8 +27,8 @@ public class PPU {
             spritepals = new int[8], bitmap = new int[240 * 256];
     int bgShiftRegH, bgShiftRegL, bgAttrShiftRegH, bgAttrShiftRegL;
     private final boolean[] spritebgflags = new boolean[8];
-    private boolean even = true, bgpattern = true, sprpattern = false;
-    private int PPUCTRL, PPUMASK, PPUSTATUS, OAMADDR;
+    private boolean even = true, bgpattern = true, sprpattern, spritesize, nmicontrol;
+    private int PPUMASK, PPUSTATUS, OAMADDR;
     public final int[] pal = {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D,
         0x08, 0x10, 0x08, 0x24, 0x00, 0x00, 0x04, 0x2C, 0x09, 0x01, 0x34, 0x03,
         0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, 0x00, 0x20, 0x2C, 0x08};
@@ -135,17 +135,30 @@ public class PPU {
         openbus = data;
         switch (regnum) {
             case 0:
-                PPUCTRL = data;
-                vraminc = (getbit(data, 2) ? 32 : 1);
                 //set 2 bits of vram address (nametable select)
+                //bits 0 and 1 affect loopyT to change nametable start by 0x400
+                System.err.println(data & 3);
                 loopyT &= ~0xc00;
-                loopyT += (data & 3) << 10;
+                loopyT |= (data & 3) << 10;
                 /*
                  SMB1 writes here at the end of its main loop and if this write
                  lands on one exact PPU clock, the address bits are set to 0.
                  This only happens on one CPU/PPU alignment of real hardware 
                  though so it only shows up ~33% of the time.
                  */
+                loopyT += (data & 3) << 10;
+                vraminc = (getbit(data, 2) ? 32 : 1);
+                sprpattern = getbit(data, 3);
+                bgpattern = getbit(data, 4);
+                spritesize = getbit(data, 5);
+                /*bit 6 is kind of a halt and catch fire situation since it outputs
+                 ppu color data on the EXT pins that are tied to ground if set
+                 and that'll make the PPU get very hot from sourcing the current. 
+                 Only really useful for the NESRGB interposer board, kind of
+                 useless for emulators. I will ignore it.
+                 */
+                nmicontrol = getbit(data, 7);
+
                 break;
             case 1:
                 PPUMASK = data;
@@ -261,8 +274,7 @@ public class PPU {
      * runs the emulation for one PPU clock cycle.
      */
     public final void clock() {
-        bgpattern = getbit(PPUCTRL, 4);
-        sprpattern = getbit(PPUCTRL, 3);
+
         //cycle based ppu stuff will go here
         if (cycles == 1) {
             if (scanline == 0) {
@@ -353,7 +365,7 @@ public class PPU {
             }
         }
         //handle nmi
-        if (vblankflag && getbit(PPUCTRL, 7)) {
+        if (vblankflag && nmicontrol) {
             //pull NMI line on when conditions are right
             mapper.cpu.setNMI(true);
         } else {
@@ -493,11 +505,9 @@ public class PPU {
      */
     private void evalSprites() {
         sprite0here = false;
-        bgpattern = getbit(PPUCTRL, 4);
-        sprpattern = getbit(PPUCTRL, 3);
         int ypos, offset, tilefetched;
         found = 0;
-        final boolean spritesize = getbit(PPUCTRL, 5);
+
         //primary evaluation
         //need to emulate behavior when OAM address is set to nonzero here
         for (int spritestart = 0; spritestart < 255; spritestart += 4) {
