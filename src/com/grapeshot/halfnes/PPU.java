@@ -147,7 +147,6 @@ public class PPU {
                  This only happens on one CPU/PPU alignment of real hardware 
                  though so it only shows up ~33% of the time.
                  */
-                loopyT += (data & 3) << 10;
                 vraminc = (getbit(data, 2) ? 32 : 1);
                 sprpattern = getbit(data, 3);
                 bgpattern = getbit(data, 4);
