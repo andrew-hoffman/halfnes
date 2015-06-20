@@ -27,8 +27,9 @@ public class PPU {
             spritepals = new int[8], bitmap = new int[240 * 256];
     int bgShiftRegH, bgShiftRegL, bgAttrShiftRegH, bgAttrShiftRegL;
     private final boolean[] spritebgflags = new boolean[8];
-    private boolean even = true, bgpattern = true, sprpattern, spritesize, nmicontrol;
-    private int PPUMASK, PPUSTATUS, OAMADDR;
+    private boolean even = true, bgpattern = true, sprpattern, spritesize, nmicontrol,
+            grayscale, bgClip, spriteClip, bgOn, spritesOn;
+    private int PPUSTATUS, emph;
     public final int[] pal = {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D,
         0x08, 0x10, 0x08, 0x24, 0x00, 0x00, 0x04, 0x2C, 0x09, 0x01, 0x34, 0x03,
         0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, 0x00, 0x20, 0x2C, 0x08};
@@ -134,7 +135,7 @@ public class PPU {
         //debugdraw();
         openbus = data;
         switch (regnum) {
-            case 0:
+            case 0: //PPUCONTROL (2000)
                 //set 2 bits of vram address (nametable select)
                 //bits 0 and 1 affect loopyT to change nametable start by 0x400
                 System.err.println(data & 3);
@@ -160,8 +161,13 @@ public class PPU {
                 nmicontrol = getbit(data, 7);
 
                 break;
-            case 1:
-                PPUMASK = data;
+            case 1: //PPUMASK (2001)
+                grayscale = getbit(data, 0);
+                bgClip = !getbit(data, 1); //clip left 8 pixels when its on
+                spriteClip = !getbit(data, 2);
+                bgOn = getbit(data, 3);
+                spritesOn = getbit(data, 4);
+                emph = (data & 0xe0) << 1;
                 break;
             case 3:
                 // PPUOAMADDR (2003)
@@ -239,7 +245,7 @@ public class PPU {
      * @return true
      */
     public boolean ppuIsOn() {
-        return getbit(PPUMASK, 3) || getbit(PPUMASK, 4);
+        return bgOn || spritesOn;
     }
 
     /**
@@ -261,7 +267,7 @@ public class PPU {
     public final void clockLine(int scanline) {
         //skip a PPU clock on line 0 of odd frames when rendering is on
         int skip = (scanline == 0
-                && getbit(PPUMASK, 3)
+                && ppuIsOn()
                 && !getbit(framecount, 1)) ? 1 : 0;
         for (cycles = skip; cycles < 341; ++cycles) {
             clock();
@@ -298,7 +304,7 @@ public class PPU {
 
             } else if (cycles > 257 && cycles <= 341) {
                 //clear the oam address from pxls 257-341 continuously
-                OAMADDR = 0;
+                oamaddr = 0;
             }
             if ((cycles == 340) && ppuIsOn()) {
                 //read the same nametable byte twice
@@ -338,12 +344,12 @@ public class PPU {
             if (cycles >= 1 && cycles <= 256) {
                 int bufferoffset = (scanline << 8) + (cycles - 1);
                 //bg drawing
-                if (getbit(PPUMASK, 3)) { //if background is on, draw a line of that
+                if (bgOn) { //if background is on, draw a line of that
                     final boolean isBG = drawBGPixel(bufferoffset);
                     //sprite drawing
                     drawSprites(scanline << 8, cycles - 1, isBG);
 
-                } else if (getbit(PPUMASK, 4)) {
+                } else if (spritesOn) {
                     //just the sprites then
                     int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
                     bitmap[bufferoffset] = bgcolor;
@@ -355,12 +361,11 @@ public class PPU {
                     bitmap[bufferoffset] = bgcolor;
                 }
                 //deal with the grayscale flag
-                if (getbit(PPUMASK, 0)) {
+                if (grayscale) {
                     bitmap[bufferoffset] &= 0x30;
                 }
                 //handle color emphasis
-                final int emph = (PPUMASK & 0xe0) << 1;
-                bitmap[bufferoffset] = bitmap[bufferoffset] & 0x3f | emph;
+                bitmap[bufferoffset] = (bitmap[bufferoffset] & 0x3f) | emph;
 
             }
         }
@@ -472,7 +477,7 @@ public class PPU {
         //background drawing
         //loopyX picks bits
         final boolean isBG;
-        if (!getbit(PPUMASK, 1) && (bufferoffset & 0xff) < 8) {
+        if (bgClip && (bufferoffset & 0xff) < 8) {
             //left hand of screen clipping
             //(needs to be marked as BG and not cause a sprite hit)
             bitmap[bufferoffset] = pal[0];
@@ -587,7 +592,7 @@ public class PPU {
      * draws appropriate lines of the sprites selected by sprite evaluation
      */
     private void drawSprites(int bufferoffset, int x, boolean bgflag) {
-        final int startdraw = getbit(PPUMASK, 2) ? 0 : 8;//sprite left 8 pixels clip
+        final int startdraw = !spriteClip ? 0 : 8;//sprite left 8 pixels clip
         sprpxl = 0;
         index = 7;
         //per pixel in de line that could have a sprite
@@ -602,7 +607,7 @@ public class PPU {
                 spriteshiftregL[y] >>= 1;
             }
         }
-        if (sprpxl == 0 || x < startdraw || !getbit(PPUMASK, 4)) {
+        if (sprpxl == 0 || x < startdraw || !spritesOn) {
             //no opaque sprite pixel here
             return;
         }
@@ -611,7 +616,6 @@ public class PPU {
                 && x < 255) {
             //sprite 0 hit!
             PPUSTATUS |= 0x40;
-            //PPUMASK |= 1;//debug
         }
         //now, FINALLY, drawing.
         if (!spritebgflags[index] || bgflag) {
