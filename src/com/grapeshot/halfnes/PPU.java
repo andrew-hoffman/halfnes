@@ -331,6 +331,11 @@ public class PPU {
                     //sprite drawing
                     drawSprites(scanline << 8, cycles - 1, isBG);
 
+                } else if (getbit(PPUMASK, 4)) {
+                    //just the sprites then
+                    int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
+                    bitmap[bufferoffset] = bgcolor;
+                    drawSprites(scanline << 8, cycles - 1, false);
                 } else {
                     //rendering is off, so draw either the background color OR
                     //if the PPU address points to the palette, draw that color instead.
@@ -701,9 +706,9 @@ public class PPU {
                 //per pixel(1 bit)
                 dat[8 * i + j]
                         = ((getbit(mapper.ppuRead(i + offset), 7 - j))
-                        ? 0x555555 : 0)
+                                ? 0x555555 : 0)
                         + ((getbit(mapper.ppuRead(i + offset + 8), 7 - j))
-                        ? 0xaaaaaa : 0);
+                                ? 0xaaaaaa : 0);
             }
         }
         return dat;
