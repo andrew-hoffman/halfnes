@@ -131,14 +131,17 @@ public class PPU {
      * @param data the value to write to the register (0x00 to 0xff valid)
      */
     public final void write(final int regnum, final int data) {
-        //System.err.println("PPU write - wrote " + data + " to reg " + regnum);
+//        if (regnum != 4 && regnum != 7) {
+//            System.err.println("PPU write - wrote " + utils.hex(data) + " to reg "
+//                    + utils.hex(regnum + 0x2000)
+//                    + " frame " + framecount + " scanline " + scanline);
+//        }
         //debugdraw();
         openbus = data;
         switch (regnum) {
             case 0: //PPUCONTROL (2000)
                 //set 2 bits of vram address (nametable select)
                 //bits 0 and 1 affect loopyT to change nametable start by 0x400
-                System.err.println(data & 3);
                 loopyT &= ~0xc00;
                 loopyT |= (data & 3) << 10;
                 /*
@@ -190,7 +193,7 @@ public class PPU {
                     // update horizontal scroll
                     loopyT &= ~0x1f;
                     loopyX = data & 7;
-                    loopyT += data >> 3;
+                    loopyT |= data >> 3;
 
                     even = false;
                 } else {
@@ -213,7 +216,7 @@ public class PPU {
                     loopyT &= 0x3fff;
                     even = false;
                 } else {
-                    loopyT &= 0x7f00;
+                    loopyT &= 0xfff00;
                     loopyT |= data;
                     loopyV = loopyT;
                     even = true;
@@ -437,20 +440,24 @@ public class PPU {
 
     private void incLoopyVVert() {
         //increment loopy_v to next row of tiles
-        int newfinescroll = (loopyV & 0x7000) + 0x1000;
-        loopyV &= ~0x7000;
-        if (newfinescroll > 0x7000) {
+        if ((loopyV & 0x7000) == 0x7000) {
             //reset the fine scroll bits and increment tile address to next row
-            loopyV += 32;
+            loopyV &= ~0x7000;
+            int y = (loopyV & 0x03E0) >> 5;
+            if (y == 29) {
+                //if row is 29 zero it and bump to next nametable
+                y = 0;
+                loopyV ^= 0x0800;
+            } else if (y == 31) {
+                //if row is already over 29 then don't bunp to next nt
+                y = 0;
+            } else {
+                y += 1;
+            }
+            loopyV = (loopyV & ~0x03E0) | (y << 5);
         } else {
             //increment the fine scroll
-            loopyV += newfinescroll;
-        }
-        if (((loopyV >> 5) & 0x1f) == 30) {
-            //if incrementing loopy_v to the next row pushes us into the next
-            //nametable, zero the "row" bits and go to next nametable
-            loopyV &= ~0x3e0;
-            loopyV ^= 0x800;
+            loopyV += 0x1000;
         }
     }
 
@@ -750,6 +757,6 @@ public class PPU {
      */
     private void setvblankflag(boolean b) {
         vblankflag = b;
-        PPUSTATUS = setbit(PPUSTATUS, 7, b);
+        PPUSTATUS = setbit(PPUSTATUS, 7, b); //hapax legomenon
     }
 }
