@@ -18,9 +18,9 @@ public final class CPU {
             previntflag = false, nmi = false, prevnmi = false;
     private int pb = 0;// set to 1 if access crosses page boundary
     public int interrupt = 0;
-    public boolean nmiNext = false;
-    private final static int ntscframe = 29780;
-    private final static boolean logging = false, decimalModeEnable = false;
+    public boolean nmiNext = false, idle = false;
+    private final static boolean logging = true, decimalModeEnable = false,
+            idleLoopSkip = true;
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;
     private final static String[] opcodes = opcodes();
@@ -129,6 +129,13 @@ public final class CPU {
         } else {
             interruptDelay = false;
         }
+
+        //Idle loop skipping
+        if (idle && idleLoopSkip) {
+            ++cycles; //not accurate should depend on type of instr we skip decoding
+            return;
+        }
+
         pb = 0;
         final int instr = ram.read(PC++);
         if (logging) {
@@ -535,11 +542,19 @@ public final class CPU {
                 break;
             // JMP
             case 0x4c:
+                int tempe = PC;
                 PC = abs();
+                if (PC == (tempe - 1)) {
+                    idle = true;
+                }
                 cycles += 3;
                 break;
             case 0x6c:
+                int tempf = PC;
                 PC = ind();
+                if (PC == (tempf - 1)) {
+                    idle = true;
+                }
                 cycles += 5;
                 break;
             // JSR
@@ -1205,6 +1220,7 @@ public final class CPU {
     }
 
     private void nmi() {
+        idle = false;
         if (logging) {
             try {
                 w.write("**NMI**");
@@ -1223,6 +1239,7 @@ public final class CPU {
     }
 
     private void interrupt() {
+        idle = false;
         if (logging) {
             try {
                 w.write("**INTERRUPT**");
@@ -1338,6 +1355,10 @@ public final class CPU {
                 pb = 2;//page crossing for branch takes 2 cycles
             } else {
                 cycles++;
+            }
+
+            if ((pcprev - 2) == PC) {
+                idle = true;
             }
         } else {
             rel();
@@ -1654,7 +1675,7 @@ public final class CPU {
         final int readloc = abs();
         return ram.read(readloc)
                 + (ram.read(((readloc & 0xff) == 0xff) ? readloc - 0xff
-                        : readloc + 1) << 8);
+                                : readloc + 1) << 8);
         //if reading from the last byte in a page, high bit of address
         //is taken from first byte on the page, not first byte on NEXT page.
     }
