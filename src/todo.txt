@@ -2,7 +2,7 @@ Todo List For HalfNES:
 
 -Add FDS support
 
--Add rest of the expansion sound for MMC5 (PCM out is missing)
+-Add rest of the expansion sound for MMC5 (PCM out is not working right)
 
 -Work on audio filtering (Yes it's better now, but could still use some work.)
  Need a FIR or IIR filter of some sort but also have to decimate by a non
@@ -12,8 +12,8 @@ Todo List For HalfNES:
  Real NES uses very simple RC lowpass and highpass filters, that's mostly
  what I do now but the amt of filtering is sample rate dependent/other problems etc.
 
--Fix all of the single scanline errors, random horizontal
- glitches in Slalom, Rad Racer etc.
+-Fix occasional single scanline errors, random horizontal
+ glitches in Slalom, Rad Racer, 3D World Runner etc.
  I did move to a pixel based renderer but the CPU is still only cycle accurate
  and plenty of other things are still only approximate. 
 
@@ -23,17 +23,14 @@ Todo List For HalfNES:
  not enough audio samples are generated but I'm not sure)
  This is dealt with by increasing the audio buffer size for now.
 
--Figure out why everything is so laggy when monitor is not set to 60 fps
+-Deal with non 60 hz display refresh rates (Every recent Intel laptop is set to
+50 hz on battery by default.)
 
 -Add more graphics filters (HQ2x), develop an OpenGL rendering path, rewrite the
- NTSC shader in shader language for speed. Also try incl. scanline and CRT
- phosphor effects.
+ NTSC shader in shader language for speed. Also try incl. scanlines and CRT
+ phosphor decay effects.
 
 -Add Savestates, someday (once class structure is pretty much settled).
-
--Need some better class segregation! Current structure does not represent how
- things are actually connected, and the NES class is the one that actually
- manipulates PPU regs on and off.
 
 -Also stuff with controller wiring and interrupts, and if there's a Zapper in use
  the controller ports need to have access to the display as it's being drawn,
@@ -57,18 +54,17 @@ Todo List For HalfNES:
  until the end of the frame.
  e: That's not actually it... most of the broken games are waiting on the DMC 
  interrupt, which does actually fire but not always at the correct time.
- Find out if the StarsSE demo ever worked on real hardware or not.
  e2: It's definitely the DMC interrupt... even when I force a sync with the APU
  before every CPU cycle it's still not happening at the right time. 
  e3: Now fixed DMC interrupt and a CPU bug, some still broken.
  I think there's problems with sprite 0 hits running ahead of the CPU
  and happening/not happening when the bank isn't switched by CPU in time.
 
--Improve scanline counter accuracy on several mappers, especially MMC5 and FME-7
+ Find out if the StarsSE demo ever worked on real hardware or not.
 
--Check that APU is correct pitch. I don't trust the timer code any more
+-Check scanline counters interrupt in exactly the right spot
 
--Make the NTSC filter usably fast!
+-Make the NTSC filter run on the GPU!
 
 Things that I can do with the pixel-at-a-time PPU:
 
@@ -90,6 +86,7 @@ Things I can't do without adding a CRC database:
 
 -Sorting out the mappers that are really multiple mappers in one number
  (codemasters one especially!)
+(can add iNES 2 support and that'll help some.)
 
 -UNIF
 
@@ -104,8 +101,6 @@ Things I probably can't fix at all:
 
 
 Broken Games To Fix:
--Don Doko Don 2 (actually header was incorrect, this should use mapper 48 not 33)
-*Battle Chess (fixed in 055, who knows why)
 -Laser Invasion (white screen on scrolling sometimes. otherwise looks better than it was)
 -Metal Slader Glory
 -Batman:ROTJ title screen (FME-7 now has accurate scanline counter but this remains)
@@ -123,22 +118,8 @@ Codemasters games broken by DMC IRQ:
 no it needs to map RAM to 0x8000, there's a note in the mapper docs
 but I still can't get it working correctly.
 -Huge Insect depends on obscure behavior of modifying OAM address during rendering
--figure out why chopped.nsf.nes works but zanzan-pull-over(chiptune)nes doesn't.
-(they're the same NSF made into a ROM w/ different drivers, but one goes all over and does illegal things
-before it starts in on the song.)
--Mickey's Safari in Letterland needs exact MMC3B behavior. 
-This has to do with PPU mirroring and the A12 address line.
 Fix MMC3 derivatives to use more accurate scan line counters (should be able to remove NotifyScanline entirely)
--Lagrange Point has single scanline glitches in its text boxes. This is more
-important for me than important generally, the tranlation just came out and I
-don't want it to look bad after all the time I spent on YM2413.
-Might just be able to fix that by changing to new scanline counter.
-Well I tried that (on all 3 mappers) and it goes from glitched scanlines to shaky. Is that better?
-it does fix the Crisis Force intro a bit but makes Gradius 2 worse
-Akumajou Densetsu is fine either way, Esper Dream 2 loses the single scanline glitch with the status bar
-but gains occasional jittery line in text boxes.
-tiny toon adventures (j) actually lines up so I'll leave this in.
-
+Occasional jittery line in VRC scanline ctr. games
 Maybe make a version of Chris Covell's Stars SE demo that uses the
 sweep workaround to change the high bits of the pitch during the arpeggios
 to get rid of the unwanted phasing effects?

@@ -130,9 +130,6 @@ public class NSFMapper extends Mapper {
         for (int i = 0; i <= 0x7ff; ++i) {
             cpuram.write(i, 0);
         }
-        for (int i = 0x6000; i <= 0x7fff; ++i) {
-            cpuram.write(i, 0);
-        }
         //initialize sound registers
         for (int i = 0x4000; i <= 0x4013; ++i) {
             cpuram.write(i, 0);
@@ -144,7 +141,7 @@ public class NSFMapper extends Mapper {
         cpu.push(0xff);
         cpu.push(0xfa);
 
-        cpu.PC = init;
+        cpu.setPC(init);
         cpu.interrupt = -99999; //no interrupts for you
         cpu.setRegA(song);
         cpu.setRegX(0x00);//ntsc only
@@ -162,13 +159,18 @@ public class NSFMapper extends Mapper {
             setSoundChip();
             hasInitSound = true;
         }
+        if (!fds) { //DON'T CLEAR THIS WHEN STUFF LOADS HERE
+            for (int i = 0x6000; i <= 0x7fff; ++i) {
+                cpuram.write(i, 0);
+            }
+        }
     }
 
     @Override
     public void reset() {
         song = loader.header[7] - 1;
         init();
-        cpu.PC = init;
+        cpu.setPC(init);
     }
 
     //write into the cartridge's address space
@@ -196,6 +198,21 @@ public class NSFMapper extends Mapper {
             vrc7regaddr = data;
         } else if (vrc6 && addr >= 0x9000 && addr <= 0x9002) {
             vrc6Audio.write((addr & 0xf000) + (addr & 3), data);
+        } else if (fds && nsfBanking && addr >= 0x6000) {
+            if (addr < 0x8000) {
+                int fuuu = prg_map[((addr - 0x6000) >> 10) + 32] + (addr & 1023);
+                prg[fuuu] = data;
+            } else {
+                int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
+                prg[fuuu] = data;
+            }
+        } else if (fds && !nsfBanking && addr >= 0x6000) {
+            if (addr < 0x8000) {
+                prgram[addr - 0x6000] = data;
+            } else {
+                int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
+                prg[fuuu] = data;
+            }
         } else if (addr >= 0x6000 && addr < 0x8000) {
             //default no-mapper operation just writes if in PRG RAM range
             prgram[addr & 0x1fff] = data;
@@ -221,21 +238,6 @@ public class NSFMapper extends Mapper {
             mmc5Audio.write(addr - 0x5000, data);
         } else if (fds && (addr >= 0x4040) && (addr <= 0x4092)) {
             fdsAudio.write(addr, data);
-        } else if (fds && nsfBanking && addr >= 0x6000) {
-            if (addr < 0x8000) {
-                int fuuu = prg_map[((addr - 0x6000) >> 10) + 32] + (addr & 1023);
-                prg[fuuu] = data;
-            } else {
-                int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
-                prg[fuuu] = data;
-            }
-        } else if (fds && !nsfBanking && addr >= 0x6000) {
-            if (addr < 0x8000) {
-                prgram[addr - 0x6000] = data;
-            } else {
-                int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
-                prg[fuuu] = data;
-            }
         } else {
             System.err.println("write to " + utils.hex(addr) + " goes nowhere");
         }
@@ -332,10 +334,32 @@ public class NSFMapper extends Mapper {
     }
     int control, prevcontrol;
 
+    int unfinishedcounter = 0;
+    int time = 4;
+
     @Override
     public void notifyscanline(final int scanline
     ) {
         if (scanline == 240) {
+            //make sure init isn't still running
+            if (cpu.PC != 0xFFFB) {
+                //if not in idle loop
+                if (unfinishedcounter < time) {
+                    ++unfinishedcounter;
+                    System.err.println("Init routine hasn't returned in "
+                            + unfinishedcounter + " frames");
+                    return;
+                } else if (unfinishedcounter == time) {
+                    ++unfinishedcounter;
+                    System.err.println("giving up");
+                }
+                //if we've given it a few frames
+                //and it still hasn't returned from init, then it probably
+                //isn't going to (supernsf)
+                //so we move blithely forward.
+            } else {
+                unfinishedcounter = 0;
+            }
             //set PPU registers to enable rendering
             ppu.write(6, 0);
             ppu.write(6, 0);
@@ -372,11 +396,13 @@ public class NSFMapper extends Mapper {
                 //System.err.println("previous song");
                 init();
             } else {
-                //fake a jsr to the play address from wherever
-                //(what do we do if the init routine is still running?)
-                cpu.push((cpu.PC - 1) >> 8);
-                cpu.push((cpu.PC - 1) & 0xff);
-                cpu.PC = play;
+                //fake a jsr to the play address from wherever 
+                //unless this is a supernsf
+                if (unfinishedcounter <= time) {
+                    cpu.push((cpu.PC - 1) >> 8);
+                    cpu.push((cpu.PC - 1) & 0xff);
+                    cpu.setPC(play);
+                }
             }
         }
     }
