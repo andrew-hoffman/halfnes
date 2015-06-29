@@ -3,6 +3,8 @@
 halfnes
 =======
 
+[![Join the chat at https://gitter.im/andrew-hoffman/halfnes](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/andrew-hoffman/halfnes?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 An accurate NES/Famicom emulator
 
 Current Features
