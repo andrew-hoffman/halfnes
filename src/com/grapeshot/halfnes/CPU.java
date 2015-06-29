@@ -19,7 +19,7 @@ public final class CPU {
     private int pb = 0;// set to 1 if access crosses page boundary
     public int interrupt = 0;
     public boolean nmiNext = false, idle = false;
-    private final static boolean logging = true, decimalModeEnable = false,
+    private final static boolean logging = false, decimalModeEnable = false,
             idleLoopSkip = true;
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;
@@ -2010,5 +2010,17 @@ public final class CPU {
 
     public void setRegX(int value) {
         X = value & 0xff;
+    }
+    public void setPC(int value){
+        PC = value & 0xffff;
+        idle = false;
+        if (logging) {
+            try {
+                w.write("**PC SET**");
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
     }
 }

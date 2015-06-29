@@ -1,6 +1,7 @@
 package com.grapeshot.halfnes;
 //HalfNES by Andrew Hoffman
 
+import static com.grapeshot.halfnes.PrefsSingleton.get;
 import com.grapeshot.halfnes.mappers.Mapper;
 import com.grapeshot.halfnes.ui.DebugUI;
 import com.grapeshot.halfnes.ui.GUIInterface;
@@ -9,7 +10,8 @@ import static com.grapeshot.halfnes.utils.getbitI;
 import static com.grapeshot.halfnes.utils.reverseByte;
 import static com.grapeshot.halfnes.utils.setbit;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
+import static java.awt.image.BufferedImage.TYPE_INT_BGR;
+import static java.util.Arrays.fill;
 
 public class PPU {
 
@@ -40,7 +42,7 @@ public class PPU {
      */
     private DebugUI debuggui;
     private int vraminc = 1;
-    private final static boolean PPUDEBUG = PrefsSingleton.get().getBoolean("ntView", false);
+    private final static boolean PPUDEBUG = get().getBoolean("ntView", false);
     private BufferedImage nametableView;
     private final int[] bgcolors = new int[256];
     private int openbus = 0; //the last value written to the PPU
@@ -51,9 +53,9 @@ public class PPU {
 
     public PPU(final Mapper mapper) {
         this.mapper = mapper;
-        Arrays.fill(OAM, 0xff);
+        fill(OAM, 0xff);
         if (PPUDEBUG) {
-            nametableView = new BufferedImage(512, 480, BufferedImage.TYPE_INT_BGR);
+            nametableView = new BufferedImage(512, 480, TYPE_INT_BGR);
             debuggui = new DebugUI(512, 480);
             debuggui.run();
         }
