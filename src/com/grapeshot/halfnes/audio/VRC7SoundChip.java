@@ -358,16 +358,19 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         switch (state[ch]) {
             default:
             case CUTOFF:
-                if (vol[ch] < ZEROVOL) {
-                    vol[ch] += 2; //the programmer's manual suggests that sound has to
+                if (key[ch]) {
+                    //the programmer's manual suggests that sound has to
                     //decay back to zero volume when keyed on, but other references don't say this
+                    //seems kind of wrong to me so I don't do that. 
+                    state[ch] = adsr.ATTACK;
+                    //phase[ch] = 0;
+                    //reset phase to avoid popping? can't tell if the chip does this.
                 } else {
-                    vol[ch] = ZEROVOL;
-                    if (key[ch]) {
-                        state[ch] = adsr.ATTACK;
-                        phase[ch] = 0;
-                        //reset phase to avoid popping? can't tell if the chip does this.
-                        //i think it doesn't, but it does sound better if I do.
+                    if (vol[ch] < ZEROVOL) {
+                        vol[ch] += 2;
+                    } else {
+                        vol[ch] = ZEROVOL;
+
                     }
                 }
                 break;
@@ -376,8 +379,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                     //((vol[ch] + 17) / 272)
                     //or
                     // (1 + (((int)vol[ch]) >> 4) )
-                    vol[ch] -= ((vol[ch] + 17) / 272) * attack_tbl[
-                            (instrument[(isCarrier ? 5 : 4)] >> 4) * 4
+                    vol[ch] -= ((vol[ch] + 17) / 272) * attack_tbl[(instrument[(isCarrier ? 5 : 4)] >> 4) * 4
                             + ksrShift];
                 } else {
                     state[ch] = adsr.DECAY;
@@ -391,8 +393,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                     //not entirely sure whether higher value = more attenuation 
                     //or more volume here. docs are unclear.
                     //opl3 site suggests it's more volume.
-                    vol[ch] += decay_tbl[
-                            (instrument[(isCarrier ? 5 : 4)] & 0xf) * 4
+                    vol[ch] += decay_tbl[(instrument[(isCarrier ? 5 : 4)] & 0xf) * 4
                             + ksrShift];
                 } else {
                     state[ch] = adsr.RELEASE;
