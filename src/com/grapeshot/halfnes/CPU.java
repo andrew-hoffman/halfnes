@@ -132,7 +132,7 @@ public final class CPU {
 
         //Idle loop skipping
         if (idle && idleLoopSkip) {
-            ++cycles; //not accurate should depend on type of instr we skip decoding
+            cycles += 3; //not accurate should depend on type of instr we skip decoding
             return;
         }
 

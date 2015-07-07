@@ -117,6 +117,8 @@ Codemasters games broken by DMC IRQ:
 -Bandit Kings of Ancient China doesn't redraw map properly (broken ExGrafix?)
 no it needs to map RAM to 0x8000, there's a note in the mapper docs
 but I still can't get it working correctly.
+-Just Breed freezes during intro (fine if you skip it)
+-Metal Slader Glory is all iknds of messed up.
 -Huge Insect depends on obscure behavior of modifying OAM address during rendering
 Fix MMC3 derivatives to use more accurate scan line counters (should be able to remove NotifyScanline entirely)
 Occasional jittery line in VRC scanline ctr. games

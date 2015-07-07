@@ -40,6 +40,14 @@ public abstract class Mapper {
 
         H_MIRROR, V_MIRROR, SS_MIRROR0, SS_MIRROR1, FOUR_SCREEN_MIRROR
     };
+    
+    
+    public static enum TVType {
+
+        NTSC,
+        PAL,
+        DENDY;
+    }
 
     public static long crc32(int[] array) {
         CRC32 c = new CRC32();
@@ -384,8 +392,8 @@ public abstract class Mapper {
     public CPURAM getCPURAM() {
         return cpuram;
     }
-    
-    public void checkA12(int addr){
+
+    public void checkA12(int addr) {
         //needed for mmc3 irq counter
     }
 
