@@ -53,6 +53,13 @@ public class NSFMapper extends Mapper {
         play = loader.header[0x0c] + (loader.header[0x0d] << 8);
         numSongs = loader.header[6] - 1;
         song = loader.header[7] - 1;
+        if (loader.header[0x7a] == 1) {
+            //pal only tune
+            this.region = TVType.PAL;
+            System.err.println("pal only tune");
+        } else {
+            this.region = TVType.NTSC;
+        }
         chroff = 0;
         chrsize = 0;
         scrolltype = MirrorType.V_MIRROR;

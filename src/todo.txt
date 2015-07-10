@@ -125,4 +125,6 @@ Maybe make a version of Chris Covell's Stars SE demo that uses the
 sweep workaround to change the high bits of the pitch during the arpeggios
 to get rid of the unwanted phasing effects?
 
--UI sometimes deadlocks (or game will crash) when changing regions while a game is running.
+- Inaccurate FPS in titlebar and somewhat jerky framerate when in PAL mode
+- Sometimes changing region while a game is running will freeze the UI thread
+- Region autodetect is not going to work on most iNES 1.0 ROMs unless I have a database

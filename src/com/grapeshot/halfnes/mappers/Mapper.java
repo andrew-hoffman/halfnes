@@ -25,7 +25,7 @@ public abstract class Mapper {
     //and these are pointers to the nametables, so  for singlescreen when we switch
     //and then switch back the data in the other singlescreen NT isn't gone.
     long crc;
-    private TVType region;
+    TVType region;
     Preferences prefs = PrefsSingleton.get();
 
     public boolean supportsSaves() {
