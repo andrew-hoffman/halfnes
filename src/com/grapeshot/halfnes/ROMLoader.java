@@ -92,14 +92,21 @@ public class ROMLoader {
                 }
                 chrsize = 8192 * header[5];
                 if (header[11] + header[12] + header[13] + header[14]
-                        + header[15] == 0) {// fix for DiskDude
+                        + header[15] == 0) {
+                    //only consider upper bytes of mapper # if the end bytes are zero
                     mappertype += ((header[7] >> 4) << 4);
-                }
-                if (utils.getbit(header[9], 0)) {
-                    //detect tv type though it's not really used
-                    tvtype = Mapper.TVType.PAL;
-                    System.err.println("pal header");
+                    if (utils.getbit(header[9], 0)) {
+                        //detect tv type though it's not really used
+                        tvtype = Mapper.TVType.PAL;
+                        System.err.println("pal header type 1");
+                    } else if ((header[10] & 3) == 2) {
+                        tvtype = Mapper.TVType.PAL;
+                        System.err.println("pal header type 2");
+                    } else {
+                        tvtype = Mapper.TVType.NTSC;
+                    }
                 } else {
+                    System.err.println("diskdude (please clean your roms)");
                     tvtype = Mapper.TVType.NTSC;
                 }
             }
