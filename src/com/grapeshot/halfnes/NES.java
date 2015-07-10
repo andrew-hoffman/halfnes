@@ -288,7 +288,7 @@ public class NES {
         if (ppu != null) {
             ppu.setParameters();
         }
-        if (limiter != null) {
+        if (limiter != null && mapper != null) {
             switch (mapper.getTVType()) {
                 case NTSC:
                 default:
