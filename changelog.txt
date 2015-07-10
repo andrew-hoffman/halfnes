@@ -1,4 +1,8 @@
 HalfNES Version Notes:
+059
+-Fixed certain FDS NSFs that wanted to write to bankswitched areas
+-Added PAL and Dendy (Hybrid PAL console that plays unmodified NTSC games) support
+-Fixed negative scroll values (Galaxian, TMNT)
 058 (6/14/2015)
 -Added FDS sound chip support (NSFs only)
 -Made more scanline counters cycle accurate (everything except 4 multicart mappers)
