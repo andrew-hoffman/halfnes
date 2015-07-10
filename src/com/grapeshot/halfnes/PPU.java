@@ -204,6 +204,15 @@ public class PPU {
                 bgOn = getbit(data, 3);
                 spritesOn = getbit(data, 4);
                 emph = (data & 0xe0) << 1;
+                if (numscanlines == 312) {
+                    //if PAL switch position of red and green emphasis bits (6 and 5)
+                    //red is bit 6 -> bit 7
+                    //green is bit 7 -> bit 6
+                    int red = getbitI(emph,6);
+                    int green = getbitI(emph,7);
+                    emph &= 0xf3f;
+                    emph |= (red << 7) | (green << 6);
+                }
                 break;
             case 3:
                 // PPUOAMADDR (2003)
@@ -302,7 +311,9 @@ public class PPU {
      */
     public final void clockLine(int scanline) {
         //skip a PPU clock on line 0 of odd frames when rendering is on
-        int skip = (scanline == 0
+        //and we are in NTSC mode (pal has no skip)
+        int skip = (numscanlines == 262
+                && scanline == 0
                 && ppuIsOn()
                 && !getbit(framecount, 1)) ? 1 : 0;
         for (cycles = skip; cycles < 341; ++cycles) {
