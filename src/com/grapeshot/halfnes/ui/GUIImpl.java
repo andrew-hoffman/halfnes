@@ -40,7 +40,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private int frametimeptr = 0;
     private boolean smoothScale, inFullScreen = false;
     private GraphicsDevice gd;
-    private int NES_HEIGHT = 224, NES_WIDTH;
+    private int NES_HEIGHT, NES_WIDTH;
     private Renderer renderer;
     private final ControllerImpl padController1, padController2;
 
@@ -67,6 +67,14 @@ public class GUIImpl extends JFrame implements GUIInterface {
             renderer = new RGBRenderer();
             NES_WIDTH = 256;
         }
+        if (PrefsSingleton.get().getInt("region", 0) > 1) {
+            NES_HEIGHT = 240;
+            renderer.setClip(0);
+        } else {
+            NES_HEIGHT = 224;
+            renderer.setClip(8);
+        }
+        
         // Create canvas for painting
         canvas = new Canvas();
         canvas.setSize(NES_WIDTH * screenScaleFactor, NES_HEIGHT * screenScaleFactor);
@@ -95,7 +103,6 @@ public class GUIImpl extends JFrame implements GUIInterface {
                 PrefsSingleton.get().getInt("windowY", 0));
         this.addWindowListener(listener);
         this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-
 
         this.setVisible(true);
         // Create BackBuffer
@@ -447,7 +454,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
         dialog.setVisible(true);
         if (dialog.okClicked()) {
             setRenderOptions();
-            nes.setApuVol();
+            nes.setParameters();
         }
     }
 

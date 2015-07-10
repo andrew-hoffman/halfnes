@@ -50,6 +50,8 @@ public class PPU {
     private int linelowbits;
     private int linehighbits;
     private int penultimateattr;
+    private int numscanlines;
+    private int vblankline;
 
     public PPU(final Mapper mapper) {
         this.mapper = mapper;
@@ -58,6 +60,21 @@ public class PPU {
             nametableView = new BufferedImage(512, 480, TYPE_INT_BGR);
             debuggui = new DebugUI(512, 480);
             debuggui.run();
+        }
+        setParameters();
+    }
+
+    final void setParameters() {
+        //set stuff to NTSC or PAL or Dendy values
+        switch (mapper.getTVType()) {
+            case NTSC:
+            default:
+                numscanlines = 262;
+                break;
+            case PAL:
+            case DENDY:
+                numscanlines = 312;
+                break;
         }
     }
 
@@ -107,7 +124,7 @@ public class PPU {
                     readbuffer = mapper.ppuRead((loopyV & 0x3fff) - 0x1000);
                     temp = mapper.ppuRead(loopyV);
                 }
-                if (!ppuIsOn() || (scanline > 240 && scanline < 261)) {
+                if (!ppuIsOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
                     loopyV += vraminc;
                 } else {
                     //if 2007 is read during rendering PPU increments both horiz
@@ -227,7 +244,7 @@ public class PPU {
             case 7:
                 // PPUDATA             
                 mapper.ppuWrite((loopyV & 0x3fff), data);
-                if (!ppuIsOn() || (scanline > 240 && scanline < 261)) {
+                if (!ppuIsOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
                     loopyV += vraminc;
                 } else {
                     //if 2007 is read during rendering PPU increments both horiz
@@ -294,7 +311,7 @@ public class PPU {
                 bgcolors[scanline] = pal[0];
             }
         }
-        if (scanline < 240 || scanline == 261) {
+        if (scanline < 240 || scanline == (numscanlines - 1)) {
             //on all rendering lines
             if (ppuIsOn()
                     && ((cycles >= 1 && cycles <= 256)
@@ -324,7 +341,7 @@ public class PPU {
                 //so this needs to be split into 2 parts, the eval and the data fetches
                 evalSprites();
             }
-            if (scanline == 261) {
+            if (scanline == (numscanlines - 1)) {
                 if (cycles == 0) {// turn off vblank, sprite 0, sprite overflow flags
                     setvblankflag(false);
                     PPUSTATUS &= 0x9F;
@@ -337,7 +354,7 @@ public class PPU {
             //handle vblank on / off
             setvblankflag(true);
         }
-        if (!ppuIsOn() || (scanline > 240 && scanline < 261)) {
+        if (!ppuIsOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
             //HACK ALERT
             //handle the case of MMC3 mapper watching A12 toggle
             //even when read or write aren't asserted on the bus
@@ -390,7 +407,7 @@ public class PPU {
         if (cycles == 257) {
             mapper.notifyscanline(scanline);
         } else if (cycles == 340) {
-            scanline = (scanline + 1) % 262;
+            scanline = (scanline + 1) % numscanlines;
             if (scanline == 0) {
                 ++framecount;
             }

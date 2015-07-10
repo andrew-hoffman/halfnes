@@ -3,6 +3,7 @@ package com.grapeshot.halfnes.mappers;
 
 import com.grapeshot.halfnes.*;
 import java.util.Arrays;
+import java.util.prefs.Preferences;
 import java.util.zip.CRC32;
 
 public abstract class Mapper {
@@ -24,7 +25,8 @@ public abstract class Mapper {
     //and these are pointers to the nametables, so  for singlescreen when we switch
     //and then switch back the data in the other singlescreen NT isn't gone.
     long crc;
-    // PPU pallette
+    private TVType region;
+    Preferences prefs = PrefsSingleton.get();
 
     public boolean supportsSaves() {
         return savesram;
@@ -40,8 +42,7 @@ public abstract class Mapper {
 
         H_MIRROR, V_MIRROR, SS_MIRROR0, SS_MIRROR1, FOUR_SCREEN_MIRROR
     };
-    
-    
+
     public static enum TVType {
 
         NTSC,
@@ -67,6 +68,7 @@ public abstract class Mapper {
         scrolltype = loader.scrolltype;
         savesram = loader.savesram;
         prg = loader.load(prgsize, prgoff);
+        region = loader.tvtype;
         crc = crc32(prg);
         //System.err.println(utils.hex(crc));
         //crc "database" for certain impossible-to-recognize games
@@ -440,6 +442,21 @@ public abstract class Mapper {
                 nt2 = pput2;
                 nt3 = pput3;
                 break;
+        }
+    }
+
+    public TVType getTVType() {
+        int prefsregion = prefs.getInt("region", 0);
+        switch (prefsregion) {
+            case 0:
+            default://auto detect
+                return region;
+            case 1: //ntsc
+                return TVType.NTSC;
+            case 2: //pal
+                return TVType.PAL;
+            case 3: //dendy
+                return TVType.DENDY;
         }
     }
 

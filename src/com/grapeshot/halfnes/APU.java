@@ -16,13 +16,49 @@ public class APU {
     CPURAM cpuram;
     public int sprdma_count;
     private int apucycle = 0, remainder = 0;
-    private static final int[] noiseperiod = {4, 8, 16, 32, 64, 96, 128,
-        160, 202, 254, 380, 508, 762, 1016, 2034, 4068};
+    private int[] noiseperiod;
     // different for PAL
     private long accum = 0;
     private final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<ExpansionSoundChip>();
     private boolean soundFiltering;
     private final int[] tnd_lookup, square_lookup;
+    private int framectrreload;
+    private int framectrdiv = 7456;
+    private int dckiller = 0;
+    private int lpaccum = 0;
+    private boolean apuintflag = true, statusdmcint = false, statusframeint = false;
+    private int framectr = 0, ctrmode = 4;
+    private final boolean[] lenCtrEnable = {true, true, true, true};
+    private final int[] volume = new int[4];
+    //dmc instance variables
+    private int[] dmcperiods;
+    private int dmcrate = 0x36, dmcpos = 0, dmcshiftregister = 0, dmcbuffer = 0,
+            dmcvalue = 0, dmcsamplelength = 1, dmcsamplesleft = 0,
+            dmcstartaddr = 0xc000, dmcaddr = 0xc000, dmcbitsleft = 8;
+    private boolean dmcsilence = true, dmcirq = false, dmcloop = false, dmcBufferEmpty = true;
+    //length ctr instance variables
+    private final int[] lengthctr = {0, 0, 0, 0};
+    private final static int[] lenctrload = {10, 254, 20, 2, 40, 4, 80, 6,
+        160, 8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22,
+        192, 24, 72, 26, 16, 28, 32, 30};
+    private final boolean[] lenctrHalt = {true, true, true, true};
+    //linear counter instance vars
+    private int linearctr = 0;
+    private int linctrreload = 0;
+    private boolean linctrflag = false;
+    //instance variables for envelope units
+    private final int[] envelopeValue = {15, 15, 15, 15};
+    private final int[] envelopeCounter = {0, 0, 0, 0};
+    private final int[] envelopePos = {0, 0, 0, 0};
+    private final boolean[] envConstVolume = {true, true, true, true};
+    private final boolean[] envelopeStartFlag = {false, false, false, false};
+    //instance variables for sweep unit
+    private final boolean[] sweepenable = {false, false},
+            sweepnegate = {false, false},
+            sweepsilence = {false, false},
+            sweepreload = {false, false};
+    private final int[] sweepperiod = {15, 15}, sweepshift = {0, 0}, sweeppos = {0, 0};
+
     private AudioOutInterface ai;
 
     public APU(final NES nes, final CPU cpu, final CPURAM cpuram) {
@@ -43,9 +79,31 @@ public class APU {
     }
 
     public final synchronized void setParameters() {
+        //pick the appropriate pitches and lengths for NTSC or PAL
+        switch (cpuram.mapper.getTVType()) {
+            case NTSC:
+            default:
+                this.dmcperiods = new int[]{428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54};
+                this.noiseperiod = new int[]{4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068};
+                this.framectrreload = 7456;
+                cyclespersample = 1789773.0 / samplerate;
+                break;
+
+            case DENDY:
+                this.dmcperiods = new int[]{428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54};
+                this.noiseperiod = new int[]{4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068};
+                this.framectrreload = 7456;
+                cyclespersample = 1773448.0 / samplerate;
+                break;
+            case PAL:
+                cyclespersample = 1662607.0 / samplerate;
+                this.dmcperiods = new int[]{398, 354, 316, 298, 276, 236, 210, 198, 176, 148, 132, 118, 98, 78, 66, 50};
+                this.noiseperiod = new int[]{4, 8, 14, 30, 60, 88, 118, 148, 188, 236, 354, 472, 708, 944, 1890, 3778};
+                this.framectrreload = 8312;
+                break;
+        }
         soundFiltering = PrefsSingleton.get().getBoolean("soundFiltering", true);
         samplerate = PrefsSingleton.get().getInt("sampleRate", 44100);
-        cyclespersample = 1789773.0 / samplerate;
         if (ai != null) {
             ai.destroy();
         }
@@ -302,7 +360,7 @@ public class APU {
                 apuintflag = utils.getbit(data, 6);
                 //set is no interrupt, clear is an interrupt
                 framectr = 0;
-                framectrdiv = 7456 + 8;
+                framectrdiv = framectrreload + 8; //Why +8?
                 if (apuintflag && statusframeint) {
                     statusframeint = false;
                     --cpu.interrupt;
@@ -320,7 +378,6 @@ public class APU {
                 break;
         }
     }
-    private int framectrdiv = 7456;
 
     public final synchronized void updateto(final int cpucycle) {
         //still have to run this even if sound is disabled, some games rely on DMC IRQ etc.
@@ -334,7 +391,7 @@ public class APU {
                 ++remainder;
                 clockdmc();
                 if (--framectrdiv <= 0) {
-                    framectrdiv = 7456;
+                    framectrdiv = framectrreload;
                     clockframecounter();
                 }
                 timers[0].clock();
@@ -364,7 +421,7 @@ public class APU {
                 ++remainder;
                 clockdmc();
                 if (--framectrdiv <= 0) {
-                    framectrdiv = 7456;
+                    framectrdiv = framectrreload;
                     clockframecounter();
                 }
                 if ((apucycle % cyclespersample) < 1) {
@@ -393,8 +450,7 @@ public class APU {
         int vol;
         vol = square_lookup[volume[0] * timers[0].getval()
                 + volume[1] * timers[1].getval()];
-        vol += tnd_lookup[
-                    3 * timers[2].getval()
+        vol += tnd_lookup[3 * timers[2].getval()
                 + 2 * volume[3] * timers[3].getval()
                 + dmcvalue];
         if (!expnSound.isEmpty()) {
@@ -405,7 +461,6 @@ public class APU {
         }
         return vol; //as usual, lack of unsigned types causes unending pain.
     }
-    private int dckiller = 0;
 
     private int highpass_filter(int sample) {
         //for killing the dc in the signal
@@ -414,7 +469,6 @@ public class APU {
         dckiller += (sample > 0 ? -1 : 1);//guarantees the signal decays to exactly zero
         return sample;
     }
-    int lpaccum = 0;
 
     private int lowpass_filter(int sample) {
         sample += lpaccum;
@@ -427,8 +481,6 @@ public class APU {
         apucycle = 0;
         ai.flushFrame(nes.isFrameLimiterOn());
     }
-    private boolean apuintflag = true, statusdmcint = false, statusframeint = false;
-    private int framectr = 0, ctrmode = 4;
 
     private void clockframecounter() {
         //System.err.println("frame ctr clock " + framectr + ' ' + cpu.cycles);
@@ -459,8 +511,6 @@ public class APU {
         framectr %= ctrmode;
         setvolumes();
     }
-    private final boolean[] lenCtrEnable = {true, true, true, true};
-    private final int[] volume = new int[4];
 
     private void setvolumes() {
         volume[0] = ((lengthctr[0] <= 0 || sweepsilence[0]) ? 0 : (((envConstVolume[0]) ? envelopeValue[0] : envelopeCounter[0])));
@@ -468,13 +518,6 @@ public class APU {
         volume[3] = ((lengthctr[3] <= 0) ? 0 : ((envConstVolume[3]) ? envelopeValue[3] : envelopeCounter[3]));
         //System.err.println("setvolumes " + volume[1]);
     }
-    //instance variables for dmc unit
-    private final static int[] dmcperiods = {428, 380, 340, 320, 286, 254,
-        226, 214, 190, 160, 142, 128, 106, 84, 72, 54};
-    private int dmcrate = 0x36, dmcpos = 0, dmcshiftregister = 0, dmcbuffer = 0,
-            dmcvalue = 0, dmcsamplelength = 1, dmcsamplesleft = 0,
-            dmcstartaddr = 0xc000, dmcaddr = 0xc000, dmcbitsleft = 8;
-    private boolean dmcsilence = true, dmcirq = false, dmcloop = false, dmcBufferEmpty = true;
 
     private void clockdmc() {
         if (dmcBufferEmpty && dmcsamplesleft > 0) {
@@ -543,11 +586,6 @@ public class APU {
         dmcsamplesleft = dmcsamplelength;
         dmcsilence = false;
     }
-    private final int[] lengthctr = {0, 0, 0, 0};
-    private final static int[] lenctrload = {10, 254, 20, 2, 40, 4, 80, 6,
-        160, 8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22,
-        192, 24, 72, 26, 16, 28, 32, 30};
-    private final boolean[] lenctrHalt = {true, true, true, true};
 
     private void setlength() {
         for (int i = 0; i < 4; ++i) {
@@ -559,9 +597,6 @@ public class APU {
             }
         }
     }
-    private int linearctr = 0;
-    private int linctrreload = 0;
-    private boolean linctrflag = false;
 
     private void setlinctr() {
         if (linctrflag) {
@@ -573,12 +608,6 @@ public class APU {
             linctrflag = false;
         }
     }
-    //instance variables for envelope units
-    private final int[] envelopeValue = {15, 15, 15, 15};
-    private final int[] envelopeCounter = {0, 0, 0, 0};
-    private final int[] envelopePos = {0, 0, 0, 0};
-    private final boolean[] envConstVolume = {true, true, true, true};
-    private final boolean[] envelopeStartFlag = {false, false, false, false};
 
     private void setenvelope() {
         //System.err.println("envelope");
@@ -600,12 +629,6 @@ public class APU {
             }
         }
     }
-    //instance variables for sweep unit
-    private final boolean[] sweepenable = {false, false},
-            sweepnegate = {false, false},
-            sweepsilence = {false, false},
-            sweepreload = {false, false};
-    private final int[] sweepperiod = {15, 15}, sweepshift = {0, 0}, sweeppos = {0, 0};
 
     private void setsweep() {
         //System.err.println("sweep");

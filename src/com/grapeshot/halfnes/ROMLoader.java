@@ -21,7 +21,7 @@ public class ROMLoader {
     public int prgoff, chroff;
     public boolean savesram = false;
     public int[] header;
-    private int[] therom;
+    private final int[] therom;
 
     public ROMLoader(String filename) {
         therom = FileUtils.readfromfile(filename);
@@ -52,6 +52,7 @@ public class ROMLoader {
             mappertype = (header[6] >> 4);
             //detect NES 2.0 format for the rest of the header
             if (((header[7] >> 2) & 3) == 2) {
+                System.err.println("NES 2 format");
                 //nes 2
                 //mapper buts 4-7 in byte 7
                 mappertype += ((header[7] >> 4) << 4);

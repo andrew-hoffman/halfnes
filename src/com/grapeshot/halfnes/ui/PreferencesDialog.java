@@ -50,6 +50,8 @@ public class PreferencesDialog extends javax.swing.JDialog {
         jSampleRateBox.setSelectedItem(Integer.toString(prefs.getInt("sampleRate", 44100)));
         jCheckBoxSmoothVideo.setSelected(prefs.getBoolean("smoothScaling", false));
         volumeSlider.setValue(prefs.getInt("outputvol", 13107));
+        jRegionBox.setSelectedIndex(prefs.getInt("region", 0));
+        //0-> auto, 1-> NTSC, 2-> PAL, 3-> Dendy
     }
 
     /**
@@ -83,6 +85,8 @@ public class PreferencesDialog extends javax.swing.JDialog {
         jCheckBoxSleep = new javax.swing.JCheckBox();
         jCheckBoxShowScope = new javax.swing.JCheckBox();
         jCheckBoxNTView = new javax.swing.JCheckBox();
+        jLabel3 = new javax.swing.JLabel();
+        jRegionBox = new javax.swing.JComboBox();
 
         setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
         setName("OptionsDialog"); // NOI18N
@@ -169,47 +173,65 @@ public class PreferencesDialog extends javax.swing.JDialog {
 
         jCheckBoxNTView.setText("Show Nametable Viewer");
 
+        jLabel3.setText("Console Region:");
+
+        jRegionBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Auto Detect", "NTSC", "PAL", "Dendy" }));
+        jRegionBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRegionBoxActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jSpinnerScale, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jLabel19)
-                    .addComponent(jCheckBoxNTSC)
-                    .addComponent(jCheckMaintainAspect)
-                    .addComponent(jCheckBoxSmoothVideo)
-                    .addComponent(jCheckBoxSleep)
-                    .addComponent(jCheckBoxShowScope)
-                    .addComponent(jCheckBoxNTView))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(jButtonOK)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButtonCancel))
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(volumeSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jLabel14)
-                        .addComponent(jCheckSoundEnable)
-                        .addComponent(jCheckSoundFiltering)
-                        .addGroup(layout.createSequentialGroup()
-                            .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(jSampleRateBox, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addComponent(jLabel15)
-                        .addGroup(layout.createSequentialGroup()
-                            .addComponent(jLabel17)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jLabel18))))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jLabel1)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jSpinnerScale, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(jLabel19)
+                                    .addComponent(jCheckBoxNTSC)
+                                    .addComponent(jCheckMaintainAspect)
+                                    .addComponent(jCheckBoxSmoothVideo)
+                                    .addComponent(jCheckBoxSleep)
+                                    .addComponent(jCheckBoxShowScope)
+                                    .addComponent(jCheckBoxNTView))
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(volumeSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel14)
+                                    .addComponent(jCheckSoundEnable)
+                                    .addComponent(jCheckSoundFiltering)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jSampleRateBox, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(jLabel15)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jLabel17)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jLabel18))))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel3)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jRegionBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -233,11 +255,7 @@ public class PreferencesDialog extends javax.swing.JDialog {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel17)
-                            .addComponent(jLabel18))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButtonOK)
-                            .addComponent(jButtonCancel)))
+                            .addComponent(jLabel18)))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel19)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -257,7 +275,15 @@ public class PreferencesDialog extends javax.swing.JDialog {
                         .addComponent(jCheckBoxShowScope)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jCheckBoxNTView)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel3)
+                    .addComponent(jRegionBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButtonOK)
+                    .addComponent(jButtonCancel))
+                .addContainerGap())
         );
 
         pack();
@@ -285,6 +311,7 @@ public class PreferencesDialog extends javax.swing.JDialog {
         prefs.putInt("screenScaling", screenScaling);
         prefs.putInt("sampleRate", Integer.parseInt(jSampleRateBox.getSelectedItem().toString()));
         prefs.putInt("outputvol", volumeSlider.getValue());
+        prefs.putInt("region", jRegionBox.getSelectedIndex());
         try {
             prefs.flush();
         } catch (BackingStoreException ex) {
@@ -316,6 +343,10 @@ public class PreferencesDialog extends javax.swing.JDialog {
     private void jCheckBoxSleepActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxSleepActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jCheckBoxSleepActionPerformed
+
+    private void jRegionBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRegionBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jRegionBoxActionPerformed
     /**
      * @param args the command line arguments
      */
@@ -339,6 +370,8 @@ public class PreferencesDialog extends javax.swing.JDialog {
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel20;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JComboBox jRegionBox;
     private javax.swing.JComboBox jSampleRateBox;
     private javax.swing.JSpinner jSpinnerScale;
     private javax.swing.JSlider volumeSlider;

@@ -21,6 +21,6 @@ public class RGBRenderer extends Renderer {
         for (int i = 0; i < nespixels.length; ++i) {
             nespixels[i] = NesColors.col[(nespixels[i] & 0x1c0) >> 6][nespixels[i] & 0x3f];
         }
-        return getImageFromArray(nespixels, 256 * 8, 256, 224);
+        return getImageFromArray(nespixels, 256 * clip, 256, 240 - 2 * clip);
     }
 }

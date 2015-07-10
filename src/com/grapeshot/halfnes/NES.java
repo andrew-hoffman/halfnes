@@ -26,7 +26,7 @@ public class NES {
     private boolean frameLimiterOn = true;
     private String curRomPath, curRomName;
     private final GUIInterface gui = new GUIImpl(this);
-    private final FrameLimiterInterface limiter = new FrameLimiterImpl(this);
+    private final FrameLimiterInterface limiter = new FrameLimiterImpl(this, 16639267);
     // Pro Action Replay device
     private ActionReplay actionReplay;
 
@@ -98,7 +98,6 @@ public class NES {
         cpu.modcycles();
 
         //run cpu, ppu for active drawing time
-
         //render the frame
         ppu.renderFrame(gui);
         if ((framecount & 2047) == 0) {
@@ -120,11 +119,7 @@ public class NES {
     }
 
     public void toggleFrameLimiter() {
-        if (frameLimiterOn) {
-            frameLimiterOn = false;
-        } else {
-            frameLimiterOn = true;
-        }
+        frameLimiterOn = !frameLimiterOn;
     }
 
     public synchronized void loadROM(final String filename) {
@@ -179,6 +174,7 @@ public class NES {
             //and start emulation
             cpu.init();
             mapper.init();
+            setParameters();
             runEmulation = true;
         } else {
             gui.messageBox("Could not load file:\nFile " + filename + "\n"
@@ -285,9 +281,23 @@ public class NES {
         return controller2;
     }
 
-    public void setApuVol() {
+    public void setParameters() {
         if (apu != null) {
             apu.setParameters();
+        }
+        if (ppu != null) {
+            ppu.setParameters();
+        }
+        if (limiter != null) {
+            switch (mapper.getTVType()) {
+                case NTSC:
+                default:
+                    limiter.setInterval(16639267);
+                    break;
+                case PAL:
+                case DENDY:
+                    limiter.setInterval(19997200);
+            }
         }
     }
 

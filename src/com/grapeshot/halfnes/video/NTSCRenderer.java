@@ -159,7 +159,6 @@ public class NTSCRenderer extends Renderer {
         //decodes one scan line of ntsc video and outputs as rgb packed in int
         //uses the cheap TV method, which is filtering the chroma from the luma w/o
         //combing or buffering previous lines
-
         box_filter(ntsc, luma, chroma, 12);
 
         for (int cbst = cbstphase[offset], j = 0; cbst < 2656 - 240 - 50; ++cbst, ++j, j %= 12) {
@@ -221,21 +220,19 @@ public class NTSCRenderer extends Renderer {
 //        for (int line = 0; line < 240; ++line) {
 //            cacheRender(nespixels, line, bgcolors, dotcrawl);
 //        }
-
         //new hotness range for lightweight multithreaded filter (using The Happy Java Library 1.3)
         //i will pull just the parts I need out of this later maybe. It's got a load of dependencies
         //todo: add intelligent code so it's possible to build w/o this!
-
         Parallel_1x0.For(0,//start 
                 240,//end
                 4,//grain (idk why lower grain works best)
                 new ForTask_1x0() {
-            public void iteration(int line) {
-                cacheRender(nespixels, line, bgcolors, dotcrawl);
-            }
-        });
+                    public void iteration(int line) {
+                        cacheRender(nespixels, line, bgcolors, dotcrawl);
+                    }
+                });
 
-        BufferedImage i = getImageFromArray(frame, frame_w * 8, frame_w, 224);
+        BufferedImage i = getImageFromArray(frame, frame_w * clip, frame_w, 240 - 2 * clip);
         ++frames;
         //i = op.filter(i, null); //sharpen
         return i;
@@ -251,7 +248,7 @@ public class NTSCRenderer extends Renderer {
         offset = (4 * line + offset) % 12; //3 line dot crawl
         final int[] inpixels = new int[256];
         System.arraycopy(nespixels, line << 8, inpixels, 0, 256);
-        final long crc = crc32(inpixels,offset,bgcolors[line]);
+        final long crc = crc32(inpixels, offset, bgcolors[line]);
         //you'd think crc32 would have too many collisions but i haven't seen a one
         int[] outpixels;
         outpixels = (int[]) cache.get(crc);

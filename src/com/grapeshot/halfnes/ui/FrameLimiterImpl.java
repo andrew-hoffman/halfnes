@@ -15,11 +15,16 @@ public class FrameLimiterImpl implements FrameLimiterInterface {
 
     NES nes;
     private long sleepingtest = 0;
-    final public static long FRAME_NS = 16639267;
+    public long FRAME_NS;
 
-    public FrameLimiterImpl(NES nes) {
+    public FrameLimiterImpl(NES nes, long framens) {
         this.nes = nes;
+        FRAME_NS = framens;
         forceHighResolutionTimer();
+    }
+
+    public void setInterval(long ns) {
+        FRAME_NS = ns;
     }
 
     @Override
@@ -78,4 +83,5 @@ public class FrameLimiterImpl implements FrameLimiterInterface {
         daemon.setDaemon(true);
         daemon.start();
     }
+
 }
