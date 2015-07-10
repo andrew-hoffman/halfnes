@@ -65,6 +65,8 @@ development, almost all US released games will start, but certain games
 still have graphics corruption or freezing problems. Please report any 
 issues you encounter with the emulator or with games on the Github Issues page 
 (https://github.com/andrew-hoffman/halfnes/issues). 
+PAL games are now supported as well but are likely to have more issues
+Please change the system type to PAL in preferences to run these. 
 
 Building instructions
 ---------------------
