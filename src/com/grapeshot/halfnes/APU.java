@@ -58,7 +58,7 @@ public class APU {
             sweepsilence = {false, false},
             sweepreload = {false, false};
     private final int[] sweepperiod = {15, 15}, sweepshift = {0, 0}, sweeppos = {0, 0};
-
+    private int cyclesperframe;
     private AudioOutInterface ai;
 
     public APU(final NES nes, final CPU cpu, final CPURAM cpuram) {
@@ -87,6 +87,7 @@ public class APU {
                 this.noiseperiod = new int[]{4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068};
                 this.framectrreload = 7456;
                 cyclespersample = 1789773.0 / samplerate;
+                cyclesperframe = 29781;
                 break;
 
             case DENDY:
@@ -94,12 +95,14 @@ public class APU {
                 this.noiseperiod = new int[]{4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068};
                 this.framectrreload = 7456;
                 cyclespersample = 1773448.0 / samplerate;
+                cyclesperframe = 35464;
                 break;
             case PAL:
                 cyclespersample = 1662607.0 / samplerate;
                 this.dmcperiods = new int[]{398, 354, 316, 298, 276, 236, 210, 198, 176, 148, 132, 118, 98, 78, 66, 50};
                 this.noiseperiod = new int[]{4, 8, 14, 30, 60, 88, 118, 148, 188, 236, 354, 472, 708, 944, 1890, 3778};
                 this.framectrreload = 8312;
+                cyclesperframe = 33248;
                 break;
         }
         soundFiltering = PrefsSingleton.get().getBoolean("soundFiltering", true);
@@ -477,7 +480,7 @@ public class APU {
     }
 
     public final void finishframe() {
-        updateto(29781);
+        updateto(cyclesperframe);
         apucycle = 0;
         ai.flushFrame(nes.isFrameLimiterOn());
     }
