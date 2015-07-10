@@ -52,6 +52,7 @@ public class PPU {
     private int penultimateattr;
     private int numscanlines;
     private int vblankline;
+    private int[] cpudivider;
 
     public PPU(final Mapper mapper) {
         this.mapper = mapper;
@@ -70,10 +71,18 @@ public class PPU {
             case NTSC:
             default:
                 numscanlines = 262;
+                vblankline = 241;
+                cpudivider = new int[]{3, 3, 3, 3, 3};
                 break;
             case PAL:
+                numscanlines = 312;
+                vblankline = 241;
+                cpudivider = new int[]{4, 3, 3, 3, 3};
+                break;
             case DENDY:
                 numscanlines = 312;
+                vblankline = 291;
+                cpudivider = new int[]{3, 3, 3, 3, 3};
                 break;
         }
     }
@@ -296,6 +305,7 @@ public class PPU {
     }
 
     private int tileAddr = 0;
+    private int cpudividerctr = 0;
 
     /**
      * runs the emulation for one PPU clock cycle.
@@ -350,7 +360,7 @@ public class PPU {
                     loopyV = loopyT;
                 }
             }
-        } else if (scanline == 241 && cycles == 1) {
+        } else if (scanline == vblankline && cycles == 1) {
             //handle vblank on / off
             setvblankflag(true);
         }
@@ -399,10 +409,11 @@ public class PPU {
         }
 
         //clock CPU, once every 3 ppu cycles
-        div = (div + 1) % 3;
+        div = (div + 1) % cpudivider[cpudividerctr];
         if (div == 0) {
             mapper.cpu.runcycle(scanline, cycles);
             mapper.cpucycle(1);
+            cpudividerctr = (cpudividerctr + 1) % cpudivider.length;
         }
         if (cycles == 257) {
             mapper.notifyscanline(scanline);

@@ -113,7 +113,6 @@ Codemasters games broken by DMC IRQ:
 -MIG-29 Soviet Fighter (needs better dmc timing!)
 -Fire Hawk (maybe this is freezing on Sprite 0 now.)
 -Big Nose Freaks Out (glitchy in 035, completely broken in 036, back to glitchy in 049.)
--Lion King (only works on PAL so I need PAL supprt)
 -Bandit Kings of Ancient China doesn't redraw map properly (broken ExGrafix?)
 no it needs to map RAM to 0x8000, there's a note in the mapper docs
 but I still can't get it working correctly.
@@ -126,3 +125,4 @@ Maybe make a version of Chris Covell's Stars SE demo that uses the
 sweep workaround to change the high bits of the pitch during the arpeggios
 to get rid of the unwanted phasing effects?
 
+-UI sometimes deadlocks (or game will crash) when changing regions while a game is running.

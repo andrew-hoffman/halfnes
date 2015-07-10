@@ -98,7 +98,7 @@ public class ROMLoader {
                 if (utils.getbit(header[9], 0)) {
                     //detect tv type though it's not really used
                     tvtype = Mapper.TVType.PAL;
-                    System.err.println("pal");
+                    System.err.println("pal header");
                 } else {
                     tvtype = Mapper.TVType.NTSC;
                 }

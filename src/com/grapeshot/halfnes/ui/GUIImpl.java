@@ -36,7 +36,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private static final long serialVersionUID = 6411494245530679723L;
     private final AL listener = new AL();
     private int screenScaleFactor;
-    private long[] frametimes = new long[60];
+    private final long[] frametimes = new long[60];
     private int frametimeptr = 0;
     private boolean smoothScale, inFullScreen = false;
     private GraphicsDevice gd;
@@ -74,7 +74,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
             NES_HEIGHT = 224;
             renderer.setClip(8);
         }
-        
+
         // Create canvas for painting
         canvas = new Canvas();
         canvas.setSize(NES_WIDTH * screenScaleFactor, NES_HEIGHT * screenScaleFactor);
@@ -272,8 +272,8 @@ public class GUIImpl extends JFrame implements GUIInterface {
             final File extractedFile = extractRomFromZip(zipName, romName);
             if (extractedFile != null) {
                 extractedFile.deleteOnExit();
+                nes.loadROM(extractedFile.getCanonicalPath());
             }
-            nes.loadROM(extractedFile.getCanonicalPath());
         }
     }
 
