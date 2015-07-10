@@ -87,6 +87,12 @@ public class PPU {
         }
     }
 
+    public void runFrame() {
+        for (int scanline = 0; scanline < numscanlines; ++scanline) {
+            clockLine(scanline);
+        }
+    }
+
     /**
      * Performs a read from a PPU register, as well as causes any side effects
      * of reading that specific register.

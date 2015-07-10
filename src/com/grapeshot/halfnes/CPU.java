@@ -20,7 +20,7 @@ public final class CPU {
     public int interrupt = 0;
     public boolean nmiNext = false, idle = false;
     private final static boolean logging = false, decimalModeEnable = false,
-            idleLoopSkip = true;
+            idleLoopSkip = false;
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;
     private final static String[] opcodes = opcodes();

@@ -79,14 +79,7 @@ public class NES {
     private synchronized void runframe() {
         //the main method sequencing everything that has to happen in the nes each frame
         //loops unrolled a bit to avoid some conditionals every cycle
-        for (int scanline = 0; scanline <= 240; ++scanline) {
-            runLine(scanline);
-        }
-
-        //run for scanlines of vblank
-        for (int scanline = 241; scanline < 262; ++scanline) {
-            runLine(scanline);
-        }
+        ppu.runFrame();
 
         //do end of frame stuff
         dontSleep = apu.bufferHasLessThan(1000);
@@ -108,10 +101,6 @@ public class NES {
         //System.err.println(framecount);
     }
 
-    private void runLine(int scanline) {
-        //System.err.println(scanline);
-        ppu.clockLine(scanline);
-    }
 
     public void setControllers(ControllerInterface controller1, ControllerInterface controller2) {
         this.controller1 = controller1;
