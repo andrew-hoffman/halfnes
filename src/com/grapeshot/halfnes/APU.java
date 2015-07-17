@@ -79,6 +79,15 @@ public class APU {
     }
 
     public final synchronized void setParameters() {
+        soundFiltering = PrefsSingleton.get().getBoolean("soundFiltering", true);
+        samplerate = PrefsSingleton.get().getInt("sampleRate", 44100);
+        if (ai != null) {
+            ai.destroy();
+        }
+        ai = new SwingAudioImpl(nes, samplerate);
+        if (PrefsSingleton.get().getBoolean("showScope", false)) {
+            ai = new Oscilloscope(ai);
+        }
         //pick the appropriate pitches and lengths for NTSC or PAL
         switch (cpuram.mapper.getTVType()) {
             case NTSC:
@@ -104,15 +113,6 @@ public class APU {
                 this.framectrreload = 8312;
                 cyclesperframe = 33252;
                 break;
-        }
-        soundFiltering = PrefsSingleton.get().getBoolean("soundFiltering", true);
-        samplerate = PrefsSingleton.get().getInt("sampleRate", 44100);
-        if (ai != null) {
-            ai.destroy();
-        }
-        ai = new SwingAudioImpl(nes, samplerate);
-        if (PrefsSingleton.get().getBoolean("showScope", false)) {
-            ai = new Oscilloscope(ai);
         }
 //        ai = new Reverberator(ai, 2,0.7,0.8,0.99);
 //        ai = new Reverberator(ai, 243,0.5,0.7,0.99);

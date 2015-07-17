@@ -175,7 +175,7 @@ public class PreferencesDialog extends javax.swing.JDialog {
 
         jLabel3.setText("Console Region:");
 
-        jRegionBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Auto Detect", "NTSC", "PAL", "Dendy" }));
+        jRegionBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Auto Detect", "NTSC", "PAL", "Dendy (Hybrid)" }));
         jRegionBox.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRegionBoxActionPerformed(evt);

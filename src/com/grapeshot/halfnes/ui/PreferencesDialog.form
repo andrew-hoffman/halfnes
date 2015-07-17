@@ -301,7 +301,7 @@
             <StringItem index="0" value="Auto Detect"/>
             <StringItem index="1" value="NTSC"/>
             <StringItem index="2" value="PAL"/>
-            <StringItem index="3" value="Dendy"/>
+            <StringItem index="3" value="Dendy (Hybrid)"/>
           </StringArray>
         </Property>
       </Properties>
