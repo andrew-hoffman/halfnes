@@ -367,6 +367,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         switch (state[ch]) {
             default:
             case CUTOFF:
+                //what exactly is this really doing here?
                 if (key[ch]) {
                     /*the programmer's manual suggests that sound has to
                      decay back to zero volume when keyed on before the attack
@@ -414,7 +415,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 break;
             case RELEASE:
                 //i'm just rewriting this whole dang thing.
-                
+
                 //there are 3 things we need to know:
                 //1. Is the key on?
                 //2. Is the channel sustain bit set?
@@ -424,7 +425,6 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 //in its respective register (ugh)
                 //for consistency with it though let's call the channel sustain SUS
                 //and the register 0 or 1 D5
-                
                 //release at std rate if key is off
                 boolean d5 = getbit(instrument[isCarrier ? 1 : 0], 5);
                 boolean SUS = chSust[ch];
@@ -447,8 +447,10 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                             //decay at rate of 1.2 seconds to cut off
                             vol[ch] += 0.001;
                         } else {
-                            //decay at release rate prime, 310ms to cutoff
-                            vol[ch] += .005;
+                            //decay at release rate
+                            vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
+                                    + ksrShift];
+
                         }
                     } else {
                         //percussive tone
@@ -456,9 +458,8 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                             //decay at rate of 1.2 seconds to cut off
                             vol[ch] += 0.001;
                         } else {
-                            //decay at release rate
-                            vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
-                                    + ksrShift];
+                            //decay at release rate prime, 310ms to cutoff
+                            vol[ch] += .005;
                         }
                     }
                 }
