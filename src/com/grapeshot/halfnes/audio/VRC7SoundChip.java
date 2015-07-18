@@ -364,6 +364,9 @@ public class VRC7SoundChip implements ExpansionSoundChip {
 
         //from docs on the OPL3: envelope starts at 511 (max attenuation)
         //and counts down to zero (no attenuation)
+        //on real HW the envelope out is probably the upper 9 bits of a 23 bit
+        //attenuation register (this would add 1 LSB per clock at slowest rate)
+        
         switch (state[ch]) {
             default:
             case CUTOFF:
@@ -374,10 +377,10 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                     if (key[ch]) {
                         /*the programmer's manual suggests that sound has to
                          decay back to zero volume when keyed on before the attack
-                         but other references don't say this
+                         happens, but other references don't say this
                         */
                         state[ch] = EnvState.ATTACK;
-                        //phase[ch] = 0;
+                        phase[ch] = 0;
                         //reset phase to avoid popping? can't tell if the chip does this.
                     }
                 }
@@ -398,9 +401,8 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 break;
             case DECAY:
                 if (vol[ch] < ((instrument[(isCarrier ? 7 : 6)] >> 4)) * 32) {
-                    //not entirely sure whether higher value = more attenuation 
-                    //or more volume here. docs are unclear.
-                    //opl3 site suggests it's more volume.
+                    //the higher the sustain value is, the lower the volume when
+                    //it switches to sustain.
                     vol[ch] += decay_tbl[(instrument[(isCarrier ? 5 : 4)] & 0xf) * 4
                             + ksrShift];
                 } else {
@@ -411,18 +413,17 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 }
                 break;
             case RELEASE:
-                //i'm just rewriting this whole dang thing.
 
                 //there are 3 things we need to know:
                 //1. Is the key on?
                 //2. Is the channel sustain bit set?
-                //3. Is bit 5 in register 0 or 1 set?
+                //3. Is bit 5 in patch register 0 or 1 set?
                 //What makes this especially confusing is that the sustain bit in the patch
                 //is bit 5 and the sustain bit in the channel is *also* a bit 5,
                 //in its respective register (ugh)
                 //for consistency with it though let's call the channel sustain SUS
-                //and the register 0 or 1 D5
-                //release at std rate if key is off
+                //and the patch register D5
+                
                 boolean d5 = getbit(instrument[isCarrier ? 1 : 0], 5);
                 boolean SUS = chSust[ch];
                 if (key[ch]) {
