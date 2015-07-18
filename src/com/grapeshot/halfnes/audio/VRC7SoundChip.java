@@ -20,7 +20,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     //this is the cut-down version from the vrc7. Only 6 channels, no percussion. 
     private static enum EnvState {
 
-        CUTOFF, ATTACK, DECAY, SUSTAIN, SUSTRELEASE, RELEASE;
+        CUTOFF, ATTACK, DECAY, RELEASE;
     }
     private final EnvState[] modenv_state = new EnvState[6], carenv_state = new EnvState[6];
     private final int[] vol = new int[6], freq = new int[6],
@@ -413,34 +413,53 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 }
                 break;
             case RELEASE:
+                //i'm just rewriting this whole dang thing.
+                
+                //there are 3 things we need to know:
+                //1. Is the key on?
+                //2. Is the channel sustain bit set?
+                //3. Is bit 5 in register 0 or 1 set?
+                //What makes this especially confusing is that the sustain bit in the patch
+                //is bit 5 and the sustain bit in the channel is *also* a bit 5,
+                //in its respective register (ugh)
+                //for consistency with it though let's call the channel sustain SUS
+                //and the register 0 or 1 D5
+                
                 //release at std rate if key is off
-                if (!key[ch] && vol[ch] < ZEROVOL) {
-                    if (chSust[ch]) {
-                        vol[ch] += 0.001; //where's this value from?
+                boolean d5 = getbit(instrument[isCarrier ? 1 : 0], 5);
+                boolean SUS = chSust[ch];
+                if (key[ch]) {
+                    //if we're keyed on
+                    if (d5) {
+                        //sustained tone
+                        //don't decay at all
                     } else {
-                        vol[ch] += .005;
+                        //percussive tone
+                        //decay at release rate
+                        vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
+                                + ksrShift];
                     }
-                } else if (vol[ch] < ZEROVOL) {
-                    if (getbit(instrument[isCarrier ? 1 : 0], 5)) {
-                        //sustain on, don't decay until keyed
-                        if (!key[ch]) {
-                            state[ch] = EnvState.SUSTRELEASE;
+                } else {
+                    //key is off
+                    if (d5) {
+                        //sustained tone
+                        if (SUS) {
+                            //decay at rate of 1.2 seconds to cut off
+                            vol[ch] += 0.001;
+                        } else {
+                            //decay at release rate prime, 310ms to cutoff
+                            vol[ch] += .005;
                         }
                     } else {
-                        //decay immediately
-                        vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
-                                + ksrShift];
-                    }
-
-                }
-                break;
-            case SUSTRELEASE:
-                if (vol[ch] < ZEROVOL) {
-                    if (chSust[ch]) {
-                        vol[ch] += 0.001; //where's this value from?
-                    } else {
-                        vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
-                                + ksrShift];
+                        //percussive tone
+                        if (SUS) {
+                            //decay at rate of 1.2 seconds to cut off
+                            vol[ch] += 0.001;
+                        } else {
+                            //decay at release rate
+                            vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
+                                    + ksrShift];
+                        }
                     }
                 }
                 break;
