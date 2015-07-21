@@ -1537,7 +1537,7 @@ public final class CPU {
     }
 
     private void axs(final int addr) {
-        X = (A & X) - ram.read(addr);
+        X = ((A & X) - ram.read(addr)) & 0xff;
         setflags(X);
         carryFlag = (X >= 0);
     }
@@ -1948,7 +1948,7 @@ public final class CPU {
         opcodes[0xC8] = "INY";
         opcodes[0xC9] = "CMP #$%1";
         opcodes[0xCA] = "DEX";
-        opcodes[0xCB] = "CMP #$%1";
+        opcodes[0xCB] = "AXS #$%1";
         opcodes[0xCC] = "CPY $%2%1";
         opcodes[0xCD] = "CMP $%2%1";
         opcodes[0xCE] = "DEC $%2%1";
