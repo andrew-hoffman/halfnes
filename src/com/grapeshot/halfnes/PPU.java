@@ -11,6 +11,7 @@ import static com.grapeshot.halfnes.utils.reverseByte;
 import static com.grapeshot.halfnes.utils.setbit;
 import java.awt.image.BufferedImage;
 import static java.awt.image.BufferedImage.TYPE_INT_BGR;
+import java.util.Arrays;
 import static java.util.Arrays.fill;
 
 public class PPU {
@@ -24,7 +25,8 @@ public class PPU {
     public int cycles = 0;
     private int framecount = 0;
     private int div = 2;
-    private final int[] OAM = new int[256], spriteshiftregH = new int[8],
+    private final int[] OAM = new int[256], secOAM = new int[32],
+            spriteshiftregH = new int[8],
             spriteshiftregL = new int[8], spriteXlatch = new int[8],
             spritepals = new int[8], bitmap = new int[240 * 256];
     int bgShiftRegH, bgShiftRegL, bgAttrShiftRegH, bgAttrShiftRegL;
@@ -126,6 +128,20 @@ public class PPU {
             case 4:
                 // reading this is NOT reliable but some games do it anyways
                 openbus = OAM[oamaddr];
+                //System.err.println("codemasters?");
+                if (ppuIsOn()) {
+                    if (cycles < 64) {
+                        return 0xFF;
+                    } else if (cycles <= 256) {
+                        return 0x00;
+                    } //Micro Machines relies on this:
+                    else if (cycles < 320) {
+                        return 0xFF;
+                    } //and this:
+                    else {
+                        return secOAM[0]; //is this the right value @ the time?
+                    }
+                }
                 break;
             case 7:
                 // PPUDATA
@@ -208,8 +224,8 @@ public class PPU {
                     //if PAL switch position of red and green emphasis bits (6 and 5)
                     //red is bit 6 -> bit 7
                     //green is bit 7 -> bit 6
-                    int red = getbitI(emph,6);
-                    int green = getbitI(emph,7);
+                    int red = getbitI(emph, 6);
+                    int green = getbitI(emph, 7);
                     emph &= 0xf3f;
                     emph |= (red << 7) | (green << 6);
                 }
@@ -563,9 +579,9 @@ public class PPU {
      */
     private void evalSprites() {
         sprite0here = false;
-        int ypos, offset, tilefetched;
+        int ypos, offset;
         found = 0;
-
+        Arrays.fill(secOAM, 0xff);
         //primary evaluation
         //need to emulate behavior when OAM address is set to nonzero here
         for (int spritestart = 0; spritestart < 255; spritestart += 4) {
@@ -590,7 +606,12 @@ public class PPU {
                 //todo: emulate register trashing that happens when overflow
             } else {
                 //set up ye sprite for rendering
+                secOAM[found * 4] = OAM[spritestart];
+//                secOAM[found * 4 + 1] = OAM[spritestart + 1];
+//                secOAM[found * 4 + 2] = OAM[spritestart + 2];
+//                secOAM[found * 4 + 3] = OAM[spritestart + 3];
                 final int oamextra = OAM[spritestart + 2];
+
                 //bg flag
                 spritebgflags[found] = getbit(oamextra, 5);
                 //x value
@@ -642,7 +663,7 @@ public class PPU {
     }
 
     /**
-     * draws appropriate lines of the sprites selected by sprite evaluation
+     * draws appropriate pixel of the sprites selected by sprite evaluation
      */
     private void drawSprites(int bufferoffset, int x, boolean bgflag) {
         final int startdraw = !spriteClip ? 0 : 8;//sprite left 8 pixels clip

@@ -130,3 +130,13 @@ to get rid of the unwanted phasing effects?
 
 -Until tonight I hadn't heard most of Strobe-Zberia or Strobe-Return to the Blip
 They break in Nestopia the way they do in my emu; in Nintendulator they are MUCH longer.
+
+-Madara sound test doesn't work unless I get ingame and reset (forgotten initialization?)
+
+-At least 3 Codemasters games depend on $2004 reads tracking internal sprite eval state
+ (Micro Machines, Dizzy the Adventurer, Bee 52, big nose freaks out)
+
+need to rewrite for Huge Insect anyway.
+
+Possibility of massive bugs when PC is zero (but how would you execute off the
+end of memory in any practical NES program?)

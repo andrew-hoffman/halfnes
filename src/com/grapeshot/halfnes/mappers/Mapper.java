@@ -2,6 +2,7 @@ package com.grapeshot.halfnes.mappers;
 //HalfNES, Copyright Andrew Hoffman, October 2010
 
 import com.grapeshot.halfnes.*;
+import com.grapeshot.halfnes.PPU;
 import java.util.Arrays;
 import java.util.prefs.Preferences;
 import java.util.zip.CRC32;
@@ -185,6 +186,7 @@ public abstract class Mapper {
                     }
                     break;
                 default:
+                    System.err.println("where?");
             }
         }
     }

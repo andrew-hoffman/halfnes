@@ -15,16 +15,16 @@ import java.util.Arrays;
 public class MMC5Mapper extends Mapper {
 
     //the infamous kitchen sink mapper
-    private int[] exram = new int[1024];
+    private final int[] exram = new int[1024];
     private int exramMode, chrMode, prgMode;
     private int wramWrite1, wramWrite2, multiplier1, multiplier2;
     private int prgpage, chrOr, wrambank;
     boolean scanctrEnable, irqPend;
-    private int[] chrregsA = new int[8];
-    private int[] chrregsB = new int[4];
-    private int[] prgregs = new int[4];
-    private int[] chrmapB = new int[4];
-    private boolean[] romHere = new boolean[3];
+    private final int[] chrregsA = new int[8];
+    private final int[] chrregsB = new int[4];
+    private final int[] prgregs = new int[4];
+    private final int[] chrmapB = new int[4];
+    private final boolean[] romHere = new boolean[3];
     private int prevaddr;
     private int scanctrLine, irqCounter = 20;
     private final int[] fillnt = new int[1024];
