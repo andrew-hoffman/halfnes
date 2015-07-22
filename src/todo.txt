@@ -1,10 +1,10 @@
 Todo List For HalfNES:
 
--Add FDS support
+ - Add FDS support
 
--Add rest of the expansion sound for MMC5 (PCM out is not working right)
+ - Add rest of the expansion sound for MMC5 (PCM out is not working right)
 
--Work on audio filtering (Yes it's better now, but could still use some work.)
+ - Work on audio filtering (Yes it's better now, but could still use some work.)
  Need a FIR or IIR filter of some sort but also have to decimate by a non
  integer amount WITHOUT upsampling, because 2 million samples a second is too hard
  to process as is. Not sure how to write one of those.
@@ -12,42 +12,42 @@ Todo List For HalfNES:
  Real NES uses very simple RC lowpass and highpass filters, that's mostly
  what I do now but the amt of filtering is sample rate dependent/other problems etc.
 
--Fix occasional single scanline errors, random horizontal
+ - Fix occasional single scanline errors, random horizontal
  glitches in Slalom, Rad Racer, 3D World Runner etc.
  I did move to a pixel based renderer but the CPU is still only cycle accurate
  and plenty of other things are still only approximate. 
 
--Fix the frame limiter so that it won't underrun the audio buffer every time
+ - Fix the frame limiter so that it won't underrun the audio buffer every time
  there's a lag spike - also deal with audio popping in fullscreen mode (I think
  this is caused by the framerate being fixed by the buffer waiting at 60.0 so
  not enough audio samples are generated but I'm not sure)
  This is dealt with by increasing the audio buffer size for now.
 
--Deal with non 60 hz display refresh rates (Every recent Intel laptop is set to
+ - Deal with non 60 hz display refresh rates (Every recent Intel laptop is set to
 50 hz on battery by default.)
 
--Add more graphics filters (HQ2x), develop an OpenGL rendering path, rewrite the
+ - Add more graphics filters (HQ2x), develop an OpenGL rendering path, rewrite the
  NTSC shader in shader language for speed. Also try incl. scanlines and CRT
  phosphor decay effects.
 
--Add Savestates, someday (once class structure is pretty much settled).
+ - Add Savestates, someday (once class structure is pretty much settled).
 
--Also stuff with controller wiring and interrupts, and if there's a Zapper in use
+ - Also stuff with controller wiring and interrupts, and if there's a Zapper in use
  the controller ports need to have access to the display as it's being drawn,
  and all of this needs to support catch up operation in some way.
 
--Some games freeze when reset with Ctrl+R (missing mapper reset function)
+ - Some games freeze when reset with Ctrl+R (missing mapper reset function)
  Action 52 needed this. What else?
 
--Use better synchronization with less method calls (options?), and fix the fact 
+ - Use better synchronization with less method calls (options?), and fix the fact 
  that frames are 1/3 of a cpu cycle too short.
 
--Add a different key listener for some of the menu options (like Pause and Fast 
+ - Add a different key listener for some of the menu options (like Pause and Fast 
  Forward) and also the toggles so they don't toggle on and off really quickly
- when I hold the key down. (why did you think fast forward was control-space?)
+ when I hold the key down. (why did you think fast forward was control - space?)
  Also fix inability to pause/single step in fullscreen nowadays
 
--Fix whatever is wrong with frame interrupts not happening at the right time or
+ - Fix whatever is wrong with frame interrupts not happening at the right time or
  at all that breaks a lot of games in the B's. (I think it's when the program is
  spinning waiting for the APU frame IRQ during the frame, because if nothing tries
  to write to the APU currently, it won't "catch up" to where the interrupt is 
@@ -57,42 +57,34 @@ Todo List For HalfNES:
  e2: It's definitely the DMC interrupt... even when I force a sync with the APU
  before every CPU cycle it's still not happening at the right time. 
  e3: Now fixed DMC interrupt and a CPU bug, some still broken.
- I think there's problems with sprite 0 hits running ahead of the CPU
- and happening/not happening when the bank isn't switched by CPU in time.
 
- Find out if the StarsSE demo ever worked on real hardware or not.
+ - Find out if the StarsSE demo ever worked on real hardware or not.
 
--Check scanline counters interrupt in exactly the right spot
+ - Check scanline counters interrupt in exactly the right spot
 
--Make the NTSC filter run on the GPU!
-
-Things that I can do with the pixel-at-a-time PPU:
-
--Zapper support
-
--fix the last of the timing problems (including prev.mentioned sprite 0)
+ - Make the NTSC filter run on the GPU!
 
 Things I can't do without adding a CRC database:
 
--implement the WRAM disable bit for Mapper 4 (three different implementations!)
+ - implement the WRAM disable bit for Mapper 4 (three different implementations!)
  (fixed for now: Low G Man is special cased to have no PRG RAM on the board,
  since it never did anyway. Everything else is probably fine since the main reason
  for WRAM write protection, which is the CPU overwriting SRAM when jumping off
  somewhere strange due to a bad connection on the cartridge slot, can't happen
  on the emulator.)
 
--Same for Mapper 1. Making SOROM work was hard enough.
+ - Same for Mapper 1. Making SOROM work was hard enough.
 
 
--Sorting out the mappers that are really multiple mappers in one number
+ - Sorting out the mappers that are really multiple mappers in one number
  (codemasters one especially!)
-(can add iNES 2 support and that'll help some.)
+ - Need to add iNES 2.0 submapper support
 
--UNIF
+ - UNIF
 
 Things I probably can't fix at all:
 
--DMC samples shouldn't always steal 4 cycles (depending on the current instruction
+ - DMC samples shouldn't always steal 4 cycles (depending on the current instruction
  being executed), and should only take 2 cycles during sprite DMA. (The belief
  used to be that it would read wrong data during sprite DMA, but it doesn't.)
  This is what's breaking The Guardian Legend when there are too many enemies on
@@ -101,39 +93,42 @@ Things I probably can't fix at all:
 
 
 Broken Games To Fix:
--Laser Invasion (white screen on scrolling sometimes. otherwise looks better than it was)
--Metal Slader Glory
--Batman:ROTJ title screen (FME-7 now has accurate scanline counter but this remains)
--Caltron 6 in 1 (Very slow text scroll in Cosmo Cop)
+ - Laser Invasion (white screen on scrolling sometimes. otherwise looks better than it was)
+ - Metal Slader Glory
+ - Batman:ROTJ title screen (FME - 7 now has accurate scanline counter but this remains)
+ - Caltron 6 in 1 (Very slow text scroll in Cosmo Cop)
 this has to do with reading $2002 in a loop and the NMI.
 it's high time i made the CPU pixel accurate to pass all of blargg's timing tests
  (as opposed to doing all reads the opcode needs on the same cycle.)
 Codemasters games broken by DMC IRQ:
--Bee 52
--MIG-29 Soviet Fighter (needs better dmc timing!)
--Fire Hawk (maybe this is freezing on Sprite 0 now.)
--Big Nose Freaks Out (glitchy in 035, completely broken in 036, back to glitchy in 049.)
--Bandit Kings of Ancient China doesn't redraw map properly (broken ExGrafix?)
+ - Bee 52
+ - MIG - 29 Soviet Fighter (needs better dmc timing!)
+ - Fire Hawk (maybe this is freezing on Sprite 0 now.)
+ - Big Nose Freaks Out (glitchy in 035, completely broken in 036, back to glitchy in 049.)
+ - Bandit Kings of Ancient China doesn't redraw map properly (broken ExGrafix?)
 no it needs to map RAM to 0x8000, there's a note in the mapper docs
 but I still can't get it working correctly.
--Just Breed freezes during intro (fine if you skip it)
--Metal Slader Glory is all iknds of messed up.
--Huge Insect depends on obscure behavior of modifying OAM address during rendering
-Fix MMC3 derivatives to use more accurate scan line counters (should be able to remove NotifyScanline entirely)
+ - Just Breed freezes during intro (fine if you skip it)
+ - Metal Slader Glory is all iknds of messed up.
+ - Huge Insect depends on obscure behavior of modifying OAM address during rendering
+Fix remaining MMC3 derivatives to use more accurate scan line counters 
+(should be able to remove NotifyScanline entirely including the NSF player)
 Occasional jittery line in VRC scanline ctr. games
 Maybe make a version of Chris Covell's Stars SE demo that uses the
 sweep workaround to change the high bits of the pitch during the arpeggios
 to get rid of the unwanted phasing effects?
 
-- Sometimes changing region while a game is running will freeze the UI thread
-- Region autodetect is not going to work on most iNES 1.0 ROMs unless I have a database
+ - Sometimes changing region while a game is running will freeze the UI thread
+ - Region autodetect is not going to work on most iNES 1.0 ROMs unless I have a database
 
--Until tonight I hadn't heard most of Strobe-Zberia or Strobe-Return to the Blip
+ - Until tonight I hadn't heard most of Strobe - Zberia or Strobe - Return to the Blip
 They break in Nestopia the way they do in my emu; in Nintendulator they are MUCH longer.
 
--Madara sound test doesn't work unless I get ingame and reset (forgotten initialization?)
+ - Emulate obscure sprite overflow behaviors
 
--At least 3 Codemasters games depend on $2004 reads tracking internal sprite eval state
+ - Madara sound test doesn't work unless I get ingame and reset (forgotten initialization?)
+
+ - At least 3 Codemasters games depend on $2004 reads tracking internal sprite eval state
  (Micro Machines, Dizzy the Adventurer, Bee 52, big nose freaks out)
 
 need to rewrite for Huge Insect anyway.
