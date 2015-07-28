@@ -28,3 +28,4 @@ nesdebug*.txt
 
 /dist/
 /HalfNES.exe
+proguard4.7

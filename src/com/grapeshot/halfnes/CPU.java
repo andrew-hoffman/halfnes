@@ -93,6 +93,23 @@ public final class CPU {
         ram.read(0x4000); //attempt to sync the APU every cycle and make dmc irqs work properly, which they still don't. Feh.
         ++clocks;
 
+        //guard against overflows
+//        if ((A & 0xff) != A) {
+//            System.err.println("houston we have A problem");
+//        }
+//        if ((X & 0xff) != X) {
+//            System.err.println("houston we have X problem");
+//        }
+//        if ((Y & 0xff) != Y) {
+//            System.err.println("houston we have Y problem");
+//        }
+//        if ((S & 0xff) != S) {
+//            System.err.println("houston we have S problem");
+//        }
+//        if ((PC & 0xffff) != PC) {
+//            System.err.println("houston we have PC problem");
+//        }
+
         if (ram.apu.sprdma_count > 0) {
             ram.apu.sprdma_count--;
             if (ram.apu.sprdma_count == 0) {
@@ -2011,7 +2028,8 @@ public final class CPU {
     public void setRegX(int value) {
         X = value & 0xff;
     }
-    public void setPC(int value){
+
+    public void setPC(int value) {
         PC = value & 0xffff;
         idle = false;
         if (logging) {

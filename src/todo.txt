@@ -131,6 +131,8 @@ They break in Nestopia the way they do in my emu; in Nintendulator they are MUCH
  - At least 3 Codemasters games depend on $2004 reads tracking internal sprite eval state
  (Micro Machines, Dizzy the Adventurer, Bee 52, big nose freaks out)
 
+Big nose also uses DPCM IRQs and some godawful mess of sprite 0 hit and writing to 2007 while rendering.
+
 need to rewrite for Huge Insect anyway.
 
 Possibility of massive bugs when PC is zero (but how would you execute off the

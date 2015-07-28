@@ -1,0 +1,4 @@
+SystemPrintln
+DoNotUseThreads
+BeanMembersShouldSerialize
+OnlyOneReturn

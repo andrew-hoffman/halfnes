@@ -220,10 +220,12 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     @Override
     public final void clock(final int cycle) {
         /*
-         chip runs at 3.58 mhz, but this operates at 1.789
+         real chip runs at ~3.6 mhz from a separate oscillator
+         but this emulation operates at NTSC NES clock freq of 1.789
+         this would be a problem if anyone wanted to use it on a PAL system
          real chip takes 72 cycles to advance through all ch (49716 hz)
-         I update all ch every 36 NES clocks (about the same speed but I do the
-         carrier and the modulator in the same cycle instead of separately)
+         I update all ch every 36 NES clocks (about the same speed) but I do the
+         carrier and the modulator in the same cycle instead of separately
          */
 
         for (int i = 0; i < cycle; ++i) {

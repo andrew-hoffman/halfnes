@@ -129,7 +129,7 @@ public class PPU {
                 // reading this is NOT reliable but some games do it anyways
                 openbus = OAM[oamaddr];
                 //System.err.println("codemasters?");
-                if (ppuIsOn()) {
+                if (ppuIsOn() && (scanline <= 240)) {
                     if (cycles < 64) {
                         return 0xFF;
                     } else if (cycles <= 256) {
@@ -181,7 +181,7 @@ public class PPU {
      * @param data the value to write to the register (0x00 to 0xff valid)
      */
     public final void write(final int regnum, final int data) {
-//        if (regnum != 4 && regnum != 7) {
+//        if (regnum != 4 /*&& regnum != 7*/) {
 //            System.err.println("PPU write - wrote " + utils.hex(data) + " to reg "
 //                    + utils.hex(regnum + 0x2000)
 //                    + " frame " + framecount + " scanline " + scanline);
@@ -287,11 +287,19 @@ public class PPU {
                 if (!ppuIsOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
                     loopyV += vraminc;
                 } else {
-                    //if 2007 is read during rendering PPU increments both horiz
-                    //and vert counters erroneously.
-                    if (((cycles - 1) & 7) != 7) {
-                        incLoopyVHoriz();
-                        incLoopyVVert();
+                    // while rendering, it seems to drop by 1 scanline, regardless of increment mode
+                    if ((loopyV & 0x7000) == 0x7000) {
+                        int YScroll = loopyV & 0x3E0;
+                        loopyV &= 0xFFF;
+                        if (YScroll == 0x3A0) {
+                            loopyV ^= 0xBA0;
+                        } else if (YScroll == 0x3E0) {
+                            loopyV ^= 0x3E0;
+                        } else {
+                            loopyV += 0x20;
+                        }
+                    } else {
+                        loopyV += 0x1000;
                     }
                 }
                 break;
