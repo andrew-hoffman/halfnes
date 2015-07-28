@@ -61,11 +61,13 @@ public class ROMLoader {
                 //submapper number is the high 4 bits of byte 8
                 submapper = (header[8] >> 4);
                 //extra prg and chr bits in byte 9
-                prgsize = 16384 * (header[4] + ((header[9] & 15) << 8));
+                prgsize = Math.min(therom.length - 16,
+                        16384 * (header[4] + ((header[9] & 15) << 8)));
                 if (prgsize == 0) {
                     throw new BadMapperException("No PRG ROM size in header");
                 }
-                chrsize = 8192 * (header[5] + ((header[9] >> 4) << 8));
+                chrsize = Math.min(therom.length - 16 - prgsize,
+                        8192 * (header[5] + ((header[9] >> 4) << 8)));
                 //prg ram size in header byte 10
                 //chr ram size byte 11
                 //tv type is byte 12
@@ -82,7 +84,7 @@ public class ROMLoader {
 
             } else {
                 //nes 1 format, with hacks
-                prgsize = 16384 * header[4];
+                prgsize = Math.min(therom.length - 16, 16384 * header[4]);
                 if (prgsize == 0) {
                     throw new BadMapperException("No PRG ROM size in header");
                     //someone made this field zero on a 4mb multicart ROM
@@ -90,7 +92,7 @@ public class ROMLoader {
                     //so if anyone gets this error make some heuristics to fix it.
                     //basically no multicarts > 2mb in iNES 1.0 format
                 }
-                chrsize = 8192 * header[5];
+                chrsize = Math.min(therom.length - 16 - prgsize, 8192 * header[5]);
                 if (header[11] + header[12] + header[13] + header[14]
                         + header[15] == 0) {
                     //only consider upper bytes of mapper # if the end bytes are zero
