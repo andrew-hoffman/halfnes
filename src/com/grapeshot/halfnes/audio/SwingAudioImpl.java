@@ -7,6 +7,7 @@ package com.grapeshot.halfnes.audio;
 import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.PrefsSingleton;
 import com.grapeshot.halfnes.audio.AudioOutInterface;
+import com.grapeshot.halfnes.mappers.Mapper;
 import javax.sound.sampled.*;
 
 /**
@@ -21,11 +22,22 @@ public class SwingAudioImpl implements AudioOutInterface {
     private int bufptr = 0;
     private float outputvol;
 
-    public SwingAudioImpl(final NES nes, final int samplerate) {
+    public SwingAudioImpl(final NES nes, final int samplerate, Mapper.TVType tvtype) {
         soundEnable = PrefsSingleton.get().getBoolean("soundEnable", true);
         outputvol = (float) (PrefsSingleton.get().getInt("outputvol", 13107) / 16384.);
+        double fps;
+        switch (tvtype) {
+            case NTSC:
+            default:
+                fps = 60.;
+                break;
+            case PAL:
+            case DENDY:
+                fps = 50.;
+                break;
+        }
         if (soundEnable) {
-            final int samplesperframe = (int) Math.ceil((samplerate * 2) / 60.);
+            final int samplesperframe = (int) Math.ceil((samplerate * 2) / fps);
             audiobuf = new byte[samplesperframe * 2];
             try {
                 AudioFormat af = new AudioFormat(
@@ -34,8 +46,8 @@ public class SwingAudioImpl implements AudioOutInterface {
                         1,//channel
                         true,//signed
                         false //little endian
-                        //(works everywhere, afaict, but macs need 44100 sample rate)
-                        );
+                //(works everywhere, afaict, but macs need 44100 sample rate)
+                );
                 sdl = AudioSystem.getSourceDataLine(af);
                 sdl.open(af, samplesperframe * 8); //create 4 frame audio buffer
                 sdl.start();
@@ -51,6 +63,7 @@ public class SwingAudioImpl implements AudioOutInterface {
         }
     }
 
+    @Override
     public final void flushFrame(final boolean waitIfBufferFull) {
         if (soundEnable) {
 
@@ -74,6 +87,7 @@ public class SwingAudioImpl implements AudioOutInterface {
     }
     int dckiller = 0;
 
+    @Override
     public final void outputSample(int sample) {
         if (soundEnable) {
             sample *= outputvol;
@@ -91,6 +105,7 @@ public class SwingAudioImpl implements AudioOutInterface {
         }
     }
 
+    @Override
     public void pause() {
         if (soundEnable) {
             sdl.flush();
@@ -98,12 +113,14 @@ public class SwingAudioImpl implements AudioOutInterface {
         }
     }
 
+    @Override
     public void resume() {
         if (soundEnable) {
             sdl.start();
         }
     }
 
+    @Override
     public final void destroy() {
         if (soundEnable) {
             sdl.stop();

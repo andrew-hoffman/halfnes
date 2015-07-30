@@ -2,6 +2,7 @@ package com.grapeshot.halfnes;
 
 import com.grapeshot.halfnes.ui.Oscilloscope;
 import com.grapeshot.halfnes.audio.*;
+import com.grapeshot.halfnes.mappers.Mapper;
 import java.util.ArrayList;
 
 //HalfNES, Copyright Andrew Hoffman, October 2010
@@ -79,17 +80,18 @@ public class APU {
     }
 
     public final synchronized void setParameters() {
+        Mapper.TVType tvtype = cpuram.mapper.getTVType();
         soundFiltering = PrefsSingleton.get().getBoolean("soundFiltering", true);
         samplerate = PrefsSingleton.get().getInt("sampleRate", 44100);
         if (ai != null) {
             ai.destroy();
         }
-        ai = new SwingAudioImpl(nes, samplerate);
+        ai = new SwingAudioImpl(nes, samplerate, tvtype);
         if (PrefsSingleton.get().getBoolean("showScope", false)) {
             ai = new Oscilloscope(ai);
         }
         //pick the appropriate pitches and lengths for NTSC or PAL
-        switch (cpuram.mapper.getTVType()) {
+        switch (tvtype) {
             case NTSC:
             default:
                 this.dmcperiods = new int[]{428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54};
