@@ -90,6 +90,11 @@ public class NES {
         apu.finishframe();
         cpu.modcycles();
 
+//        if (framecount == 13 * 60) {
+//            cpu.startLog();
+//            System.err.println("log on");
+//        }
+
         //run cpu, ppu for active drawing time
         //render the frame
         ppu.renderFrame(gui);
@@ -100,7 +105,6 @@ public class NES {
         ++framecount;
         //System.err.println(framecount);
     }
-
 
     public void setControllers(ControllerInterface controller1, ControllerInterface controller2) {
         this.controller1 = controller1;

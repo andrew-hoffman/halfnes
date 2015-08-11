@@ -19,7 +19,7 @@ public final class CPU {
     private int pb = 0;// set to 1 if access crosses page boundary
     public int interrupt = 0;
     public boolean nmiNext = false, idle = false;
-    private final static boolean logging = false, decimalModeEnable = false,
+    private boolean logging = false, decimalModeEnable = false,
             idleLoopSkip = false;
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;
@@ -35,12 +35,17 @@ public final class CPU {
         ram = cpuram;
         //ram is the ONLY thing the cpu tries to talk to.
         if (logging) {
-            try {
-                w = new FileWriter(new File("nesdebug2.txt"));
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            startLog();
+        }
+    }
+
+    public void startLog() {
+        logging = true;
+        try {
+            w = new FileWriter(new File("nesdebug2.txt"));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
     }
 
@@ -109,7 +114,6 @@ public final class CPU {
 //        if ((PC & 0xffff) != PC) {
 //            System.err.println("houston we have PC problem");
 //        }
-
         if (ram.apu.sprdma_count > 0) {
             ram.apu.sprdma_count--;
             if (ram.apu.sprdma_count == 0) {
