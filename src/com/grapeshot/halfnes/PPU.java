@@ -132,7 +132,7 @@ public class PPU {
                 // reading this is NOT reliable but some games do it anyways
                 openbus = OAM[oamaddr];
                 //System.err.println("codemasters?");
-                if (ppuIsOn() && (scanline <= 240)) {
+                if (renderingOn() && (scanline <= 240)) {
                     if (cycles < 64) {
                         return 0xFF;
                     } else if (cycles <= 256) {
@@ -158,7 +158,7 @@ public class PPU {
                     readbuffer = mapper.ppuRead((loopyV & 0x3fff) - 0x1000);
                     temp = mapper.ppuRead(loopyV);
                 }
-                if (!ppuIsOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
+                if (!renderingOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
                     loopyV += vraminc;
                 } else {
                     //if 2007 is read during rendering PPU increments both horiz
@@ -287,7 +287,7 @@ public class PPU {
             case 7:
                 // PPUDATA             
                 mapper.ppuWrite((loopyV & 0x3fff), data);
-                if (!ppuIsOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
+                if (!renderingOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
                     loopyV += vraminc;
                 } else {
                     // while rendering, it seems to drop by 1 scanline, regardless of increment mode
@@ -316,7 +316,7 @@ public class PPU {
      *
      * @return true
      */
-    public boolean ppuIsOn() {
+    public boolean renderingOn() {
         return bgOn || spritesOn;
     }
 
@@ -328,7 +328,7 @@ public class PPU {
      * pattern tables
      */
     public final boolean mmc3CounterClocking() {
-        return (bgpattern != sprpattern) && ppuIsOn();
+        return (bgpattern != sprpattern) && renderingOn();
     }
 
     /**
@@ -341,7 +341,7 @@ public class PPU {
         //and we are in NTSC mode (pal has no skip)
         int skip = (numscanlines == 262
                 && scanline == 0
-                && ppuIsOn()
+                && renderingOn()
                 && !getbit(framecount, 1)) ? 1 : 0;
         for (cycles = skip; cycles < 341; ++cycles) {
             clock();
@@ -359,7 +359,7 @@ public class PPU {
         //cycle based ppu stuff will go here
         if (cycles == 1) {
             if (scanline == 0) {
-                dotcrawl = ppuIsOn();
+                dotcrawl = renderingOn();
             }
             if (scanline < 240) {
                 bgcolors[scanline] = pal[0];
@@ -367,12 +367,12 @@ public class PPU {
         }
         if (scanline < 240 || scanline == (numscanlines - 1)) {
             //on all rendering lines
-            if (ppuIsOn()
+            if (renderingOn()
                     && ((cycles >= 1 && cycles <= 256)
                     || (cycles >= 321 && cycles <= 336))) {
                 //fetch background tiles, load shift registers
                 bgFetch();
-            } else if (cycles == 257 && ppuIsOn()) {
+            } else if (cycles == 257 && renderingOn()) {
                 //horizontal bits of loopyV = loopyT
                 loopyV &= ~0x41f;
                 loopyV |= loopyT & 0x41f;
@@ -381,13 +381,13 @@ public class PPU {
                 //clear the oam address from pxls 257-341 continuously
                 oamaddr = 0;
             }
-            if ((cycles == 340) && ppuIsOn()) {
+            if ((cycles == 340) && renderingOn()) {
                 //read the same nametable byte twice
                 //this signals the MMC5 to increment the scanline counter
                 fetchNTByte();
                 fetchNTByte();
             }
-            if (cycles == 260 && ppuIsOn()) {
+            if (cycles == 260 && renderingOn()) {
                 //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
                 //this does in fact happen on scanine 261 but it doesn't do anything useful
                 //it's cycle 260 because that's when the first important sprite byte is read
@@ -400,7 +400,7 @@ public class PPU {
                     vblankflag = false;
                     sprite0hit = false;
                     spriteoverflow = false;
-                } else if (cycles >= 280 && cycles <= 304 && ppuIsOn()) {
+                } else if (cycles >= 280 && cycles <= 304 && renderingOn()) {
                     //loopyV = (all of)loopyT for each of these cycles
                     loopyV = loopyT;
                 }
@@ -409,7 +409,7 @@ public class PPU {
             //handle vblank on / off
             vblankflag = true;
         }
-        if (!ppuIsOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
+        if (!renderingOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
             //HACK ALERT
             //handle the case of MMC3 mapper watching A12 toggle
             //even when read or write aren't asserted on the bus
