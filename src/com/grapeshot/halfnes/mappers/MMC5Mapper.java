@@ -185,7 +185,7 @@ public class MMC5Mapper extends Mapper {
                 //chr regs b
                 case 0x5130:
                     //chr bank high bits (CHR_OR)
-                    System.err.println(data);
+                    //System.err.println(data);
                     chrOr = (data & 3) << 8;
                     break;
                 case 0x5200:
@@ -195,9 +195,11 @@ public class MMC5Mapper extends Mapper {
                     }
                     break;
                 case 0x5201:
-                //splitscreen scroll
+                    //splitscreen scroll
+                    break;
                 case 0x5202:
-                //splitscreen chr page
+                    //splitscreen chr page
+                    break;
                 case 0x5203:
                     //irq trigger
                     scanctrLine = data;
@@ -236,7 +238,8 @@ public class MMC5Mapper extends Mapper {
             System.err.println("RAM write to 0xC000 area " + utils.hex(addr));
             prgram[((prgregs[2] & 7) * 8192) + (addr - 0xc000)] = data;
         } else {
-            System.err.println("unsupported mmc5 write");
+            System.err.println("unsupported mmc5 write " + utils.hex(addr)
+                    + romHere[0] + romHere[1] + romHere[2] + prgMode);
         }
     }
 
@@ -248,17 +251,16 @@ public class MMC5Mapper extends Mapper {
         }
         // by default has wram at 0x6000 and cartridge at 0x8000-0xfff
         // but some mappers have different so override for those
+
         if (addr >= 0x8000) {
             //rom or maybe wram
             if (prgMode == 0
                     || ((prgMode == 1) && (addr >= 0xc000 || romHere[1]))
                     || ((prgMode == 2) && ((addr >= 0xe000 || (addr >= 0xc000 && romHere[2]) || romHere[1]))
-                    || ((prgMode == 3) && 
-                        (addr >= 0xe000 
-                        || (addr >= 0xc000 && romHere[2]) 
-                        || (addr >= 0xa000 && romHere[1]) 
-                        || romHere[0])
-                    ))) {
+                    || ((prgMode == 3) && (addr >= 0xe000
+                    || (addr >= 0xc000 && romHere[2])
+                    || (addr >= 0xa000 && romHere[1])
+                    || romHere[0])))) {
                 return prg[prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023)];
             } else {
                 //don't know quite how to deal with this yet
@@ -413,11 +415,11 @@ public class MMC5Mapper extends Mapper {
                     if (exlatch == 2) {
                         //fetch 3: tile bitmap a
                         ++exlatch;
-                        return chr[((chrOr*1024) | ((exram[lastfetch] & 0x3f) * 4096) | (addr & 4095)) % chr.length];
+                        return chr[((chrOr * 1024) | ((exram[lastfetch] & 0x3f) * 4096) | (addr & 4095)) % chr.length];
                     } else if (exlatch == 3) {
                         //fetch 4: tile bitmap b (+ 8 bytes from tile bitmap a)
                         exlatch = 0;
-                        return chr[((chrOr*1024) | ((exram[lastfetch] & 0x3f) * 4096) | (addr & 4095)) % chr.length];
+                        return chr[((chrOr * 1024) | ((exram[lastfetch] & 0x3f) * 4096) | (addr & 4095)) % chr.length];
                     }
                 }
                 return chr[chrmapB[(addr >> 10) & 3] + (addr & 1023)];
