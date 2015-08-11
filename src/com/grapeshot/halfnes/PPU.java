@@ -32,8 +32,9 @@ public class PPU {
     int bgShiftRegH, bgShiftRegL, bgAttrShiftRegH, bgAttrShiftRegL;
     private final boolean[] spritebgflags = new boolean[8];
     private boolean even = true, bgpattern = true, sprpattern, spritesize, nmicontrol,
-            grayscale, bgClip, spriteClip, bgOn, spritesOn;
-    private int PPUSTATUS, emph;
+            grayscale, bgClip, spriteClip, bgOn, spritesOn,
+            vblankflag, sprite0hit, spriteoverflow;
+    private int emph;
     public final int[] pal = {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D,
         0x08, 0x10, 0x08, 0x24, 0x00, 0x00, 0x04, 0x2C, 0x09, 0x01, 0x34, 0x03,
         0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, 0x00, 0x20, 0x2C, 0x08};
@@ -109,7 +110,7 @@ public class PPU {
                 even = true;
                 if (scanline == 241) {
                     if (cycles == 1) {//suppress NMI flag if it was just turned on this same cycle
-                        setvblankflag(false);
+                        vblankflag = false;
                     }
                     //OK, uncommenting this makes blargg's NMI suppression test
                     //work but breaks Antarctic Adventure.
@@ -121,9 +122,11 @@ public class PPU {
 //                        mapper.cpu.nmiNext = false;
 //                    }
                 }
-                final int tmp = (PPUSTATUS & ~0x1f) + (openbus & 0x1f);
-                setvblankflag(false);
-                openbus = tmp;
+                openbus = (vblankflag ? 0x80 : 0)
+                        | (sprite0hit ? 0x40 : 0)
+                        | (spriteoverflow ? 0x20 : 0)
+                        | (openbus & 0x1f);
+                vblankflag = false;
                 break;
             case 4:
                 // reading this is NOT reliable but some games do it anyways
@@ -394,8 +397,9 @@ public class PPU {
             }
             if (scanline == (numscanlines - 1)) {
                 if (cycles == 0) {// turn off vblank, sprite 0, sprite overflow flags
-                    setvblankflag(false);
-                    PPUSTATUS &= 0x9F;
+                    vblankflag = false;
+                    sprite0hit = false;
+                    spriteoverflow = false;
                 } else if (cycles >= 280 && cycles <= 304 && ppuIsOn()) {
                     //loopyV = (all of)loopyT for each of these cycles
                     loopyV = loopyT;
@@ -403,7 +407,7 @@ public class PPU {
             }
         } else if (scanline == vblankline && cycles == 1) {
             //handle vblank on / off
-            setvblankflag(true);
+            vblankflag = true;
         }
         if (!ppuIsOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
             //HACK ALERT
@@ -425,7 +429,7 @@ public class PPU {
                     //just the sprites then
                     int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
                     bitmap[bufferoffset] = bgcolor;
-                    drawSprites(scanline << 8, cycles - 1, false);
+                    drawSprites(scanline << 8, cycles - 1, true);
                 } else {
                     //rendering is off, so draw either the background color OR
                     //if the PPU address points to the palette, draw that color instead.
@@ -609,7 +613,7 @@ public class PPU {
             if (found >= 8) {
                 //if more than 8 sprites, set overflow bit and STOP looking
                 //todo: add "no sprite limit" option back
-                PPUSTATUS |= 0x20;
+                spriteoverflow = true;
                 break; //also the real PPU does strange stuff on sprite overflow
                 //todo: emulate register trashing that happens when overflow
             } else {
@@ -697,7 +701,7 @@ public class PPU {
         if (sprite0here && (index == 0) && !bgflag
                 && x < 255) {
             //sprite 0 hit!
-            PPUSTATUS |= 0x40;
+            sprite0hit = true;
         }
         //now, FINALLY, drawing.
         if (!spritebgflags[index] || bgflag) {
@@ -823,16 +827,5 @@ public class PPU {
         }
         gui.setFrame(bitmap, bgcolors, dotcrawl);
 
-    }
-    private boolean vblankflag = false;
-
-    /**
-     * Sets both the internal PPU vblank flag and the one visible to the NES
-     *
-     * @param b value of the flag
-     */
-    private void setvblankflag(boolean b) {
-        vblankflag = b;
-        PPUSTATUS = setbit(PPUSTATUS, 7, b); //hapax legomenon
     }
 }
