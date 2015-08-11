@@ -69,45 +69,37 @@ public class NSFMapper extends Mapper {
             //no banking
             if (load < 0x8000) {
                 System.err.println("What do I do with this???");
+                throw new BadMapperException("NSF with no banking loading low");
             }
-            prg = new int[32768];
-            prgsize = Math.min(prgsize, 32768);
-            //copy nsf into ram
-            int[] toram = loader.load(prgsize, prgoff);
-            System.arraycopy(toram, 0, prg, load - 0x8000, Math.min(toram.length, 32768 - (load - 0x8000)));
-        } else {
-            //has banking, so pad to 4k bank size and copy in starting
-            //from where the load addr is in a 4k bank
-            //to the end of the file, padding the end to a 4k bank as well
-            //so total number of banks can be 2 more than # of 4k
-            //chunks in the file.
-            int paddingLen = load & 0x0fff;
-            prg = new int[1024 * 1024];
-            System.arraycopy(loader.load(loader.romlen(), prgoff), 0, prg, paddingLen, loader.romlen());
         }
-
-        prgsize = 32768;
+        // pad to 4k bank size and copy in starting
+        //from where the load addr is in a 4k bank
+        //to the end of the file, padding the end to a 4k bank as well
+        //so total number of banks can be 2 more than # of 4k
+        //chunks in the file.
+        int paddingLen = (nsfBanking) ? load & 0x0fff : load - 0x8000;
+        prg = new int[1024 * 1024];
+        System.arraycopy(loader.load(loader.romlen(), prgoff), 0, prg, paddingLen, loader.romlen());
         crc = crc32(prg);
         haschrram = true;
         chrsize = 8192;
         chr = new int[8192];
         prg_map = new int[(utils.getbit(sndchip, 2)) ? 40 : 32];
         if (!nsfBanking) {
-            //identity mapping
-            for (int i = 0; i < 32; ++i) {
-                prg_map[i] = (1024 * i) & 32767;
+            //identity mapping from 1st loaded bank
+            for (int i = 0; i < 8; ++i) {
+                nsfBanks[i] = i;
             }
-        } else {
-            //map according to mapping registers
-            setBanks();
-            //additional headache for NSFs with FDS:
-            if (utils.getbit(sndchip, 2) && nsfBanking) {
-                //got to copy some stuff into 6000 - 7fff just because
-                nsfBanks[8] = nsfBanks[6];
-                nsfBanks[9] = nsfBanks[7];
-                setBanks();
-            }
+
         }
+        //additional headache for NSFs with FDS:
+        if (utils.getbit(sndchip, 2)) {
+            //got to copy some stuff into 6000 - 7fff just because
+            nsfBanks[8] = nsfBanks[6];
+            nsfBanks[9] = nsfBanks[7];
+
+        }
+        setBanks();
         chr_map = new int[8];
         for (int i = 0; i < 8; ++i) {
             chr_map[i] = (1024 * i) & (chrsize - 1);
@@ -223,7 +215,7 @@ public class NSFMapper extends Mapper {
         } else if (addr >= 0x6000 && addr < 0x8000) {
             //default no-mapper operation just writes if in PRG RAM range
             prgram[addr & 0x1fff] = data;
-        } else if (nsfBanking && (addr >= 0x5ff8) && (addr < 0x6000)) {
+        } else if ((addr >= 0x5ff8) && (addr < 0x6000)) {
             nsfBanks[addr - 0x5ff8] = data;
             //System.err.println(addr - 0x5ff8 + " " + data);
             setBanks();
@@ -279,7 +271,7 @@ public class NSFMapper extends Mapper {
             } else {
                 return prgram[addr & 0x1fff];
             }
-        } else if (nsfBanking && (addr >= 0x5ff8)) {
+        } else if ((addr >= 0x5ff8)) {
             return nsfBanks[addr - 0x5ff8];
         } else if (fds && nsfBanking && (addr == 0x5ff6)) {
             return nsfBanks[8];
@@ -336,11 +328,10 @@ public class NSFMapper extends Mapper {
     }
 
     @Override
-    public void ppuWrite(int addr, final int data
-    ) {
+    public void ppuWrite(int addr, final int data) {
     }
-    int control, prevcontrol;
 
+    int control, prevcontrol;
     int unfinishedcounter = 0;
     int time = 4;
 
@@ -455,7 +446,7 @@ public class NSFMapper extends Mapper {
         for (int i = 0; i < prg_map.length; ++i) {
             prg_map[i] = (4096 * nsfBanks[i / 4]) + (1024 * (i % 4));
             if ((prg_map[i]) > prg.length) {
-                //System.err.println("broken banks");
+                System.err.println("broken banks");
                 prg_map[i] %= prg.length; //probably a bad idea in general though
                 //but who knows what a NSF wants when it tries
                 //to switch a bank not in the file?
