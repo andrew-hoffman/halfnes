@@ -274,7 +274,7 @@ public class NES {
         return controller2;
     }
 
-    public void setParameters() {
+    public synchronized void setParameters() {
         if (apu != null) {
             apu.setParameters();
         }
