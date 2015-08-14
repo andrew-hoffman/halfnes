@@ -15,11 +15,11 @@ public final class CPU {
     private boolean carryFlag = false, zeroFlag = false,
             interruptsDisabled = true, decimalModeFlag = false;
     private boolean overflowFlag = false, negativeFlag = false,
-            previntflag = false, nmi = false, prevnmi = false;
+            previntflag = false, nmi = false, prevnmi = false, logging = false;
     private int pb = 0;// set to 1 if access crosses page boundary
     public int interrupt = 0;
     public boolean nmiNext = false, idle = false;
-    private boolean logging = false, decimalModeEnable = false,
+    private final boolean decimalModeEnable = false,
             idleLoopSkip = false;
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;
@@ -47,6 +47,11 @@ public final class CPU {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    public void stopLog() {
+        logging = false;
+        flushLog();
     }
 
     public void init() {// different than reset
@@ -92,6 +97,7 @@ public final class CPU {
 
     public void stealcycles(int cyclestosteal) {
         cycles += cyclestosteal;
+        //log("**STEAL " + cyclestosteal + "**");
     }
 
     public final void runcycle(final int scanline, final int pixel) {
@@ -159,19 +165,17 @@ public final class CPU {
 
         pb = 0;
         final int instr = ram.read(PC++);
+        //note: logging *might* trigger side effects if logging while executing
+        //code from i/o registers. So don't do that.
         if (logging) {
-            try {
-                //note: this *might* trigger side effects if logging while executing
-                //code from i/o registers. So don't do that.
-                w.write(utils.hex(PC - 1) + " " + utils.hex(instr)
-                        + String.format(" %-14s ", opcodes[instr].replaceFirst("%1", utils.hex(ram.read(PC))).replaceFirst("%2", utils.hex(ram.read(PC + 1))).replaceFirst("%3", utils.hex(PC + (byte) (ram.read(PC)) + 1)))
-                        + status() + " CYC:" + pixel + " SL:" + scanline + "\n");
-                if (cycles == 0) {
-                    w.flush();
-                }
-            } catch (IOException e) {
-                System.err.println("Cannot write to debug log");
-            }
+            //that looks redundant, but this is a really expensive operation to create the log string
+            //TODO: Optimize this! It gets called a LOT
+            log(utils.hex(PC - 1) + " " + utils.hex(instr)
+                    + String.format(" %-14s ", opcodes[instr].replace("%1", utils.hex(ram.read(PC))).replace("%2", utils.hex(ram.read(PC + 1))).replace("%3", utils.hex(PC + (byte) (ram.read(PC)) + 1)))
+                    + status() + " CYC:" + pixel + " SL:" + scanline + "\n");
+        }
+        if (cycles == 0) {
+            flushLog();
         }
 
         switch (instr) {
@@ -597,6 +601,7 @@ public final class CPU {
             case 0xd2:
             case 0xf2:
                 System.err.println("KIL - CPU locked");
+                flushLog();
                 ram.apu.nes.runEmulation = false;
                 break;
             // LAS (unofficial)
@@ -1242,14 +1247,7 @@ public final class CPU {
 
     private void nmi() {
         idle = false;
-        if (logging) {
-            try {
-                w.write("**NMI**");
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
+        log("**NMI**");
         //System.err.println("  NMI");
         push(PC >> 8); // high bit 1st
         push((PC) & 0xFF);// check that this pushes right address
@@ -1261,14 +1259,7 @@ public final class CPU {
 
     private void interrupt() {
         idle = false;
-        if (logging) {
-            try {
-                w.write("**INTERRUPT**");
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
+        log("**INTERRUPT**");
         //System.err.println("IRQ " + interrupt);
         push(PC >> 8); // high bit 1st
         push(PC & 0xFF);// check that this pushes right address
@@ -1280,14 +1271,7 @@ public final class CPU {
 
     private void breakinterrupt() {
         //same as interrupt but BRK flag is turned on
-        if (logging) {
-            try {
-                w.write("**BREAK**");
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
+        log("**BREAK**");
         ram.read(PC++); //dummy fetch
         push(PC >> 8); // high bit 1st
         push(PC & 0xFF);// check that this pushes right address
@@ -2036,12 +2020,25 @@ public final class CPU {
     public void setPC(int value) {
         PC = value & 0xffff;
         idle = false;
+        log("**PC SET**");
+    }
+
+    public final void log(String tolog) {
         if (logging) {
             try {
-                w.write("**PC SET**");
+                w.write(tolog);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                System.err.println("Cannot write to debug log" + e.getLocalizedMessage());
+            }
+        }
+    }
+
+    private final void flushLog() {
+        if (logging) {
+            try {
+                w.flush();
+            } catch (IOException e) {
+                System.err.println("Cannot write to debug log" + e.getLocalizedMessage());
             }
         }
     }
