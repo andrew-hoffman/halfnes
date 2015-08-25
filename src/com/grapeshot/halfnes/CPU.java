@@ -53,8 +53,7 @@ public final class CPU {
         try {
             w = new FileWriter(new File("nesdebug2.txt"));
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.err.println("Cannot create debug log" + e.getLocalizedMessage());
         }
     }
 
@@ -134,16 +133,19 @@ public final class CPU {
             if (ram.apu.sprdma_count == 0) {
                 cycles += 513;
             }
+            //this doesn't look right any more
+            //who patched this in and when? (wasn't me, it was for some bug...)
+        }
+        
+        if (dirtyBattletoadsHack && cycles == 1) {
+            ram.write(hackAddr, hackData);
+            dirtyBattletoadsHack = false;
         }
 
         if (cycles-- > 0) { //count down cycles until there is work to do again
             return;
         }
 
-        if (dirtyBattletoadsHack) {
-            ram.write(hackAddr, hackData);
-            dirtyBattletoadsHack = false;
-        }
         //handle nmi requests (NMI line is edge sensitive not level sensitive)
         if (nmiNext) {
             nmi();
