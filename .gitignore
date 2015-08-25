@@ -30,3 +30,4 @@ nesdebug*.txt
 /HalfNES.exe
 proguard4.7
 /HalfNES.app
+/*.app
