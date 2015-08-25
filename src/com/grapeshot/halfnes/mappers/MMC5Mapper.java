@@ -246,7 +246,7 @@ public class MMC5Mapper extends Mapper {
     @Override
     public final int cartRead(final int addr) {
         //hook for turning off PPU in frame flag since idk how the real thing works
-        if (!ppu.ppuIsOn() || ppu.scanline > 241) {
+        if (!ppu.renderingOn() || ppu.scanline > 241) {
             inFrame = false;
         }
         // by default has wram at 0x6000 and cartridge at 0x8000-0xfff

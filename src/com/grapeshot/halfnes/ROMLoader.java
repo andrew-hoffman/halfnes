@@ -122,7 +122,7 @@ public class ROMLoader {
             mappertype = -1;
             //reread header since it's 128 bytes
             ReadHeader(128);
-            prgsize = Math.min(32768, therom.length - 128);
+            prgsize = therom.length - 128;
         } else if (header[0] == 'U') {
             throw new BadMapperException("This is a UNIF file with the wrong extension");
         } else {

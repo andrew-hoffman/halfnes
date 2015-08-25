@@ -17,7 +17,7 @@ import static java.util.Arrays.fill;
 public class PPU {
 
     public Mapper mapper;
-    private int oamaddr, readbuffer = 0;
+    private int oamaddr, oamstart, readbuffer = 0;
     private int loopyV = 0x0;//ppu memory pointer
     private int loopyT = 0x0;//temp pointer
     private int loopyX = 0;//fine x scroll
@@ -373,6 +373,7 @@ public class PPU {
                 //fetch background tiles, load shift registers
                 bgFetch();
             } else if (cycles == 257 && renderingOn()) {
+                //x scroll reset
                 //horizontal bits of loopyV = loopyT
                 loopyV &= ~0x41f;
                 loopyV |= loopyT & 0x41f;
@@ -386,6 +387,9 @@ public class PPU {
                 //this signals the MMC5 to increment the scanline counter
                 fetchNTByte();
                 fetchNTByte();
+            }
+            if(cycles == 65 && renderingOn()){
+                oamstart = oamaddr;
             }
             if (cycles == 260 && renderingOn()) {
                 //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
@@ -596,7 +600,7 @@ public class PPU {
         Arrays.fill(secOAM, 0xff);
         //primary evaluation
         //need to emulate behavior when OAM address is set to nonzero here
-        for (int spritestart = 0; spritestart < 255; spritestart += 4) {
+        for (int spritestart = oamstart; spritestart < 255; spritestart += 4) {
             //for each sprite, first we cull the non-visible ones
             ypos = OAM[spritestart];
             offset = scanline - ypos;
