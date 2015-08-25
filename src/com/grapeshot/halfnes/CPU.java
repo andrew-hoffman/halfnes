@@ -15,7 +15,7 @@ public final class CPU {
     private boolean carryFlag = false, zeroFlag = false,
             interruptsDisabled = true, decimalModeFlag = false;
     private boolean overflowFlag = false, negativeFlag = false,
-            previntflag = false, nmi = false, prevnmi = false, logging = true;
+            previntflag = false, nmi = false, prevnmi = false, logging = false;
     private int pb = 0;// set to 1 if access crosses page boundary
     public int interrupt = 0;
     public boolean nmiNext = false, idle = false;
