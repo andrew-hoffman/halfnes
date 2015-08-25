@@ -24,6 +24,15 @@ public final class CPU {
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;
     private final static String[] opcodes = opcodes();
+    
+    //Battletoads Hack until I get around to making a truly cycle accurate CPU core.
+    //Delays the write of a STA, STX, or STY until the first cycle of the NEXT instruction
+    //which is enough to move it a few PPU clocks after the scroll is changed
+    //making sure that Battletoads gets its sprite 0 hit. 
+    final private boolean battletoadsHackOn = true;
+    private boolean dirtyBattletoadsHack = false;
+    private int hackAddr = 0;
+    private int hackData = 0;
 
     private static enum dummy {
 
@@ -129,6 +138,11 @@ public final class CPU {
 
         if (cycles-- > 0) { //count down cycles until there is work to do again
             return;
+        }
+
+        if (dirtyBattletoadsHack) {
+            ram.write(hackAddr, hackData);
+            dirtyBattletoadsHack = false;
         }
         //handle nmi requests (NMI line is edge sensitive not level sensitive)
         if (nmiNext) {
@@ -1205,6 +1219,21 @@ public final class CPU {
         PC &= 0xffff;
     }
 
+    /*
+     really every instruction should be reading from or writing something to memory every cycle.
+     Even when all that's happening that cycle is the processor updating state internally
+     Fetching the next opcode cn overlap with last cycle of prev instruction
+     if that last cycle is purely internal.
+     but since the second cycle of all instructions (even single byte ones)
+     is reading the nest byte after the PC, the fastest we can do even a single
+     byte NOP instruction is still 2 cycles. 
+     that's where the dummy reads+writes come from.
+     how to represent this in the smallest space possible?
+     probably the way they did it on the real chip:
+     using a PLA that does certain things conditionally based on bits of the current
+     opcode and the current cycle (up to 7 i suppose)
+     Bisqwit did some really nifty template stuff with his C==10 emu that I can't match.
+     */
     private void delayInterrupt() {
         interruptDelay = true;
         previntflag = interruptsDisabled;
@@ -1508,15 +1537,33 @@ public final class CPU {
     }
 
     private void sta(final int addr) {
-        ram.write(addr, A);
+        if (!battletoadsHackOn) {
+            ram.write(addr, A);
+        } else {
+            hackAddr = addr;
+            hackData = A;
+            dirtyBattletoadsHack = true;
+        }
     }
 
     private void stx(final int addr) {
-        ram.write(addr, X);
+        if (!battletoadsHackOn) {
+            ram.write(addr, X);
+        } else {
+            hackAddr = addr;
+            hackData = X;
+            dirtyBattletoadsHack = true;
+        }
     }
 
     private void sty(final int addr) {
-        ram.write(addr, Y);
+        if (!battletoadsHackOn) {
+            ram.write(addr, Y);
+        } else {
+            hackAddr = addr;
+            hackData = Y;
+            dirtyBattletoadsHack = true;
+        }
     }
 
     // Unofficial opcodes
@@ -2039,7 +2086,7 @@ public final class CPU {
         }
     }
 
-    private final void flushLog() {
+    private void flushLog() {
         if (logging) {
             try {
                 w.flush();
