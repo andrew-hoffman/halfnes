@@ -3,9 +3,10 @@
 halfnes
 =======
 
-[![Join the chat at https://gitter.im/andrew-hoffman/halfnes](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/andrew-hoffman/halfnes?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 An accurate NES/Famicom emulator
+
+[![Join the chat at https://gitter.im/andrew-hoffman/halfnes](https://badges.gitter.im/Join%20Chat.svg)]
+(https://gitter.im/andrew-hoffman/halfnes?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Current Features
 ----------------
@@ -65,14 +66,16 @@ development, almost all US released games will start, but certain games
 still have graphics corruption or freezing problems. Please report any 
 issues you encounter with the emulator or with games on the Github Issues page 
 (https://github.com/andrew-hoffman/halfnes/issues). 
-PAL games are now supported as well but are likely to have more issues
+PAL games are now supported as well but are likely to have more issues.
 Please change the system type to PAL in preferences to run these. 
 
 Building instructions
 ---------------------
 
 The project requires two libraries to build: JInput (gamepad support) and The Happy Java Library 1.3 (parallel for loops). 
-Sorry there's no decent build script included with this package, at this point you might as well just create a new Netbeans project, import all the src files, and add those two libraries in the project properties.
+Sorry there's no decent build script included with the source, just the
+Netbeans auto-generated one. You might want to create a new Netbeans project,
+import all the src files, and add those two libraries in the project properties.
 
 Do NOT ask me where to find ROM files of commercial games. Some public 
 domain homebrew ROMs are available at www.pdroms.de for testing 

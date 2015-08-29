@@ -249,8 +249,6 @@ public class MMC5Mapper extends Mapper {
         if (!ppu.renderingOn() || ppu.scanline > 241) {
             inFrame = false;
         }
-        // by default has wram at 0x6000 and cartridge at 0x8000-0xfff
-        // but some mappers have different so override for those
 
         if (addr >= 0x8000) {
             //rom or maybe wram

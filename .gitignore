@@ -31,3 +31,5 @@ nesdebug*.txt
 proguard4.7
 /HalfNES.app
 /*.app
+/battletoads double dragon.txt
+/justbreedbug.txt

@@ -1,4 +1,9 @@
 HalfNES Version Notes:
+060 (8/29/2015)
+-Fixed Battletoads and Battletoads: Double Dragon freezes on certain levels
+-Reduced jerkiness of scrolling in 50 fps games
+ (not eliminated entirely unless your monitor is also set to 50 FPS)
+-Improved performance a bit, there was some slow cheat engine code constantly running
 059 (7/28/2015)
 -Fixed certain FDS NSFs that wanted to write to bankswitched areas
 -Added PAL and Dendy (Hybrid PAL console that plays unmodified NTSC games) support

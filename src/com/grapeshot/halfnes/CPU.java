@@ -24,7 +24,7 @@ public final class CPU {
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;
     private final static String[] opcodes = opcodes();
-    
+
     //Battletoads Hack until I get around to making a truly cycle accurate CPU core.
     //Delays the write of a STA, STX, or STY until the first cycle of the NEXT instruction
     //which is enough to move it a few PPU clocks after the scroll is changed
@@ -136,7 +136,7 @@ public final class CPU {
             //this doesn't look right any more
             //who patched this in and when? (wasn't me, it was for some bug...)
         }
-        
+
         if (dirtyBattletoadsHack && cycles == 1) {
             ram.write(hackAddr, hackData);
             dirtyBattletoadsHack = false;
