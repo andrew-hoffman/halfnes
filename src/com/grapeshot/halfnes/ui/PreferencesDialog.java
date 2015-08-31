@@ -37,7 +37,7 @@ public class PreferencesDialog extends javax.swing.JDialog {
         //set all of the text boxes
         //aand the sound enable checkbox.
         jCheckSoundEnable.setSelected(prefs.getBoolean("soundEnable", true));
-        jCheckSoundFiltering.setSelected(prefs.getBoolean("soundFiltering", true));
+        jCheckSoundFiltering.setSelected(prefs.getBoolean("soundFiltering", false));
         jCheckMaintainAspect.setSelected(prefs.getBoolean("maintainAspect", true));
         jCheckBoxNTSC.setSelected(prefs.getBoolean("TVEmulation", false));
         jCheckBoxNTView.setSelected(prefs.getBoolean("ntView", false));

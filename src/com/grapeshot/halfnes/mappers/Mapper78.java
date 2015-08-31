@@ -35,10 +35,10 @@ public class Mapper78 extends Mapper {
         int chrselect = (data >> 4) & 0xf;
         if (crc == 0x42392440) //Cosmo Carrier
         {
-            setmirroring(utils.getbit(data, 3) ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
+            setmirroring((data & utils.BIT3) != 0 ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
         } else //Holy Diver
         {
-            setmirroring(utils.getbit(data, 3) ? MirrorType.V_MIRROR : MirrorType.H_MIRROR);
+            setmirroring((data & utils.BIT3) != 0 ? MirrorType.V_MIRROR : MirrorType.H_MIRROR);
         }
 
         //remap CHR bank

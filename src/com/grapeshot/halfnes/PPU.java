@@ -8,7 +8,7 @@ import com.grapeshot.halfnes.mappers.Mapper;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
-public class PPU {
+public final class PPU {
 
     public Mapper mapper;
     private int oamaddr, sprite0x, readbuffer = 0;
@@ -16,7 +16,7 @@ public class PPU {
     private int loopyT = 0x0;//temp pointer
     private int loopyX = 0;//fine x scroll
     private int scanline = 0;
-    private int cycles = 0;
+    private boolean firstcycle;
     private int framecount = 0;
     private int div = 2;
     private final int[] OAM = new int[256], spriteshiftregH = new int[8],
@@ -24,11 +24,12 @@ public class PPU {
             spritepals = new int[8], bitmap = new int[240 * 256];
     private final boolean[] spritebgflags = new boolean[8];
     private boolean sprite0hit = false, even = true, bgpattern = true, sprpattern = false;
-    private final int[] ppuregs = new int[0x8];
+    private int ppureg0, ppureg1, ppureg2, ppureg3;
     public final int[] pal = //power-up pallette verified by Blargg's power_up_palette test 
             {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D, 0x08, 0x10, 0x08, 0x24, 0x00, 0x00, //palette *might* be different on every NES
                 0x04, 0x2C, 0x09, 0x01, 0x34, 0x03, 0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, //but some emulators (nesemu1, BizHawk, RockNES, MyNes)
                 0x00, 0x20, 0x2C, 0x08};    //use it anyway
+    public final int[] packedpal = new int[8];
     private DebugUI debuggui;
     private int vraminc = 1;
     private final static boolean PPUDEBUG = PrefsSingleton.get().getBoolean("ntView", false);
@@ -39,7 +40,6 @@ public class PPU {
     public PPU(final Mapper mapper) {
         this.mapper = mapper;
         Arrays.fill(OAM, 0xff);
-        Arrays.fill(ppuregs, 0x00);
         if (PPUDEBUG) {
             nametableView = new BufferedImage(512, 480, BufferedImage.TYPE_INT_BGR);
             debuggui = new DebugUI(512, 480);
@@ -60,8 +60,8 @@ public class PPU {
             case 2:
                 even = true;
                 if (scanline == 241) {
-                    if (cycles == 1) {//suppress NMI flag if it was just turned on this same cycle
-                        setvblankflag(false);
+                    if (firstcycle) {//suppress NMI flag if it was just turned on this same cycle
+                        clearvblankflag();
                     }
                     //OK, uncommenting this makes blargg's NMI suppression test
                     //work but breaks Antarctic Adventure.
@@ -73,14 +73,12 @@ public class PPU {
 //                        mapper.cpu.nmiNext = false;
 //                    }
                 }
-                final int tmp = (ppuregs[2] & ~0x1f) + (openbus & 0x1f);
-                setvblankflag(false);
-                openbus = tmp;
-                break;
+                final int tmp = (ppureg2 & ~0x1f) + (openbus & 0x1f);
+                clearvblankflag();
+                return openbus = tmp;
             case 4:
                 // reading this is NOT reliable but some games do it anyways
-                openbus = OAM[oamaddr];
-                break;
+                return openbus = OAM[oamaddr];
             case 7:
                 // PPUDATA
                 // correct behavior. read is delayed by one
@@ -89,21 +87,18 @@ public class PPU {
                     final int temp = readbuffer;
                     readbuffer = mapper.ppuRead(loopyV & 0x3fff);
                     loopyV += vraminc;
-                    openbus = temp;
-                    break;
+                    return openbus = temp;
                 } else {
                     readbuffer = mapper.ppuRead((loopyV & 0x3fff) - 0x1000);
                     final int temp = mapper.ppuRead(loopyV);
                     loopyV += vraminc;
-                    openbus = temp;
-                    break;
+                    return openbus = temp;
                 }
 
             // and don't increment on read
             default:
                 return openbus; // last value written to ppu 
         }
-        return openbus;
     }
 
     /**
@@ -119,15 +114,15 @@ public class PPU {
         openbus = data;
         switch (regnum) {
             case 0:
-                ppuregs[0] = data;
-                vraminc = (getbit(data, 2) ? 32 : 1);
+                ppureg0 = data;
+                vraminc = ((data & BIT2) != 0 ? 32 : 1);
                 //set 2 bits of vram address (nametable select)
                 loopyT &= ~0xc00;
                 loopyT += (data & 3) << 10;
-                //ppuregs[1] ^= 0xe0; //DEBUG: why does SMB write $2000 in midframe?
+                //ppureg1 ^= 0xe0; //DEBUG: why does SMB write $2000 in midframe?
                 break;
             case 1:
-                ppuregs[1] = data;
+                ppureg1 = data;
                 break;
             case 3:
                 // PPUOAMADDR (2003)
@@ -198,7 +193,7 @@ public class PPU {
      * @return true
      */
     private boolean ppuIsOn() {
-        return getbit(ppuregs[1], 3) || getbit(ppuregs[1], 4);
+        return (ppureg1 & (BIT3 | BIT4)) != 0;
     }
 
     /**
@@ -213,69 +208,59 @@ public class PPU {
     }
 
     /**
-     * Runs the PPU emulation for one NES scan line.
+     * Runs the PPU emulation for the entire screen.
      *
      * @param scanline
      */
-    public final void clockLine(int scanline) {
-        //skip a PPU clock on line 0 of odd frames when rendering is on
-        int skip = (scanline == 0
-                && getbit(ppuregs[1], 3)
-                && !getbit(framecount, 1)) ? 1 : 0;
-        for (cycles = skip; cycles < 341; ++cycles) {
-            clock();
-        }
-    }
+    public final void draw(boolean render) {
+        firstcycle = true;
+        for (scanline = 0; scanline < 262; ++scanline) {
+            //skip a PPU clock on line 0 of odd frames when rendering is on
+            final int skip = scanline == 0
+                    && (ppureg1 & BIT3) != 0
+                    && (framecount & BIT1) == 0 ? 1 : 0;
+            drawLine(render);
+            for (int cycle = skip; cycle < 341; ++cycle) {
+                //handle sprite 0
+                if (sprite0hit && sprite0x == (cycle + 1)) {
+                    sprite0hit = false;
+                    ppureg2 |= 0x40;
+                }
+                //handle vblank on / off
+                if (scanline < 240 || scanline == 261) {
+                    //on all rendering lines
+                    if (cycle >= 257 && cycle <= 341) {
+                        //clear the oam address from pxls 257-341 continuously
+                        ppureg3 = 0;
+                    }
+                    if (scanline == 261 && cycle == 0) {
+                        // turn off vblank, sprite 0, sprite overflow flags
+                        clearvblankflag();
+                        ppureg2 &= 0x9F;
+                    }
+                } else if (scanline == 241 && cycle == 1) {
+                    markvblankflag();
+                }
+                //handle nmi
+                if (vblankflag && (ppureg0 & utils.BIT7) != 0) {
+                    //pull NMI line on when conditions are right
+                    mapper.cpu.setNMI(true);
+                } else {
+                    mapper.cpu.setNMI(false);
+                }
 
-    /**
-     * runs the emulation for one PPU clock cycle.
-     */
-    public final void clock() {
-        //cycle based ppu stuff will go here
-        if (cycles == 1) {
-            drawLine();
-        }
-        //handle sprite 0
-        if (sprite0hit && sprite0x == (cycles + 1)) {
-            sprite0hit = false;
-            ppuregs[2] |= 0x40;
-        }
-        //handle vblank on / off
-        if (scanline < 240 || scanline == 261) {
-            //on all rendering lines
-            if (cycles >= 257 && cycles <= 341) {
-                //clear the oam address from pxls 257-341 continuously
-                ppuregs[3] = 0;
-            }
-            if (scanline == 261 && cycles == 0) {
-                // turn off vblank, sprite 0, sprite overflow flags
-                setvblankflag(false);
-                ppuregs[2] &= 0x9F;
-            }
-        } else if (scanline == 241 && cycles == 1) {
-            setvblankflag(true);
-        }
-        //handle nmi
-        if (vblankflag && getbit(ppuregs[0], 7)) {
-            //pull NMI line on when conditions are right
-            mapper.cpu.setNMI(true);
-        } else {
-            mapper.cpu.setNMI(false);
-        }
-
-        //clock CPU, once every 3 ppu cycles
-        div = (div + 1) % 3;
-        if (div == 0) {
-            mapper.cpu.runcycle(scanline, cycles);
-        }
-        if (cycles == 257) {
-            mapper.notifyscanline(scanline);
-        } else if (cycles == 340) {
-            scanline = (scanline + 1) % 262;
-            if (scanline == 0) {
-                ++framecount;
+                //clock CPU, once every 3 ppu cycle
+                if (++div == 3) {
+                    div = 0;
+                    mapper.cpu.runcycle(scanline, cycle);
+                }
+                if (cycle == 257) {
+                    mapper.notifyscanline(scanline);
+                }
+                firstcycle = false;
             }
         }
+        ++framecount;
     }
 
     int bgcolor;
@@ -284,7 +269,7 @@ public class PPU {
     /**
      * Causes the PPU to draw one line of video.
      */
-    private void drawLine() {
+    private void drawLine(boolean render) {
         //System.err.println("SCANLINE " + scanline);
         //this contains probably more magic numbers than the rest of the program combined.
         //TODO: define some static bitmasks to manipulate the address through, instead
@@ -294,37 +279,42 @@ public class PPU {
         if (scanline >= 240) {
             return;
         }
-        bgpattern = getbit(ppuregs[0], 4);
-        sprpattern = getbit(ppuregs[0], 3);
         final int bufferoffset = scanline << 8;
-        //TODO: Simplify Logic
-        bgcolor = pal[0] + 256; //plus 256 is to give indication it IS the bgcolor
-        //because bg color is special
-        bgcolors[scanline] = pal[0];
-        if (getbit(ppuregs[1], 3)) { //if background is on, draw a line of that
-            drawBG(bufferoffset);
-        } else {
-            //rendering is off, so draw either the background color OR
-            //if the PPU address points to the palette, draw that color instead.
-            bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
-            Arrays.fill(bitmap, bufferoffset, bufferoffset + 256, bgcolor);
-        }
-        //draw sprites on top of whatever we had
-        drawSprites();
-        //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
-        if (ppuIsOn()) {
-            evalSprites();
-        }
-        //deal with the grayscale flag
-        if (getbit(ppuregs[1], 0)) {
-            for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
-                bitmap[i] &= 0x30;
+        if (render) {
+            bgpattern = (ppureg0 & utils.BIT4) != 0;
+            sprpattern = (ppureg0 & utils.BIT3) != 0;
+            //TODO: Simplify Logic
+            bgcolor = pal[0] + 256; //plus 256 is to give indication it IS the bgcolor
+            //because bg color is special
+            bgcolors[scanline] = pal[0];
+            computePackedpal();
+            if ((ppureg1 & utils.BIT3) != 0) { //if background is on, draw a line of that
+                drawBG(bufferoffset);
+            } else {
+                //rendering is off, so draw either the background color OR
+                //if the PPU address points to the palette, draw that color instead.
+                bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
+                Arrays.fill(bitmap, bufferoffset, bufferoffset + 256, bgcolor);
             }
         }
-        //handle color emphasis
-        final int emph = (ppuregs[1] & 0xe0) << 1;
-        for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
-            bitmap[i] = bitmap[i] & 0x3f | emph;
+        //draw sprites on top of whatever we had
+        drawSprites(render);
+        //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
+        if (ppuIsOn()) {
+            evalSprites(render);
+        }
+        if (render) {
+            //deal with the grayscale flag
+            if ((ppureg1 & utils.BIT0) != 0) {
+                for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
+                    bitmap[i] &= 0x30;
+                }
+            }
+            //handle color emphasis
+            final int emph = (ppureg1 & 0xe0) << 1;
+            for (int i = bufferoffset; i < (bufferoffset + 256); ++i) {
+                bitmap[i] = bitmap[i] & 0x3f | emph;
+            }
         }
     }
 
@@ -335,7 +325,6 @@ public class PPU {
      * multiple of 256)
      */
     private void drawBG(final int bufferoffset) {
-        //System.err.println(" BG ON!");
         // if bg is on, draw tiles.
         if (scanline == 0) {
             //update whole scroll
@@ -350,9 +339,14 @@ public class PPU {
         int ntoffset = (loopyV & 0xc00) | 0x2000;
         int attroffset = ntoffset + 0x3c0;
         boolean horizWrap = false;
-        for (int tilenum = 0; tilenum < 33; ++tilenum) {
+        int xpos = -loopyX;
+        final int ntcheckoff = (((loopyV & 0x1f) << 3) + loopyX);
+        final int bgpatternoff = (bgpattern ? 0x1000 : 0);
+        final int numtiles = loopyX == 0 ? 32 : 33;
+        final int loopyVOff = (loopyV & 0x7000) >> 12;
+        for (int tilenum = 0; tilenum < numtiles; ++tilenum, xpos += 8) {
             //for each tile in row
-            if ((tilenum * 8 + (((loopyV & 0x1f) << 3) + loopyX)) > 255
+            if ((tilenum * 8 + ntcheckoff) > 255
                     && !horizWrap) {
                 //if scrolling off the side of the nametable, bump address to next nametable
                 ntoffset ^= 0x400;
@@ -360,20 +354,20 @@ public class PPU {
                 attroffset ^= 0x400;
                 horizWrap = true;
             }
-            //get palette number from attribute table byte
             final int tileaddr = mapper.ppuRead(ntoffset
                     + (loopyV & 0x3ff) + tilenum) * 16
-                    + (bgpattern ? 0x1000 : 0);
+                    + bgpatternoff;
+            //get palette number from attribute table byte
             final int palettenum = getAttribute(attroffset, (loopyV + tilenum) & 0x1f,
                     (((ntoffset + loopyV + tilenum) & 0x3e0) >> 5));
-            final int[] tile = getTile(tileaddr, palettenum * 4,
-                    (loopyV & 0x7000) >> 12);
+            final int[] tile = getTile(tileaddr, palettenum, loopyVOff);
             //now put inna buffer
-            final int xpos = tilenum * 8 - loopyX;
-            for (int pxl = 0; pxl < 8; ++pxl) {
-                if ((pxl + xpos) < 256 && (pxl + xpos) >= 0) { //it's not off the screen
-                    bitmap[pxl + xpos + bufferoffset] = tile[pxl];
-                }
+            if (tilenum == 0 && loopyX > 0) {
+                System.arraycopy(tile, loopyX, bitmap, xpos + bufferoffset + loopyX, 8 - loopyX);
+            } else if (tilenum == 32 && loopyX > 0) {
+                System.arraycopy(tile, 0, bitmap, xpos + bufferoffset, loopyX);
+            } else {
+                System.arraycopy(tile, 0, bitmap, xpos + bufferoffset, 8);
             }
         }
         //increment loopy_v to next row of tiles
@@ -396,7 +390,7 @@ public class PPU {
             //attroffset += 0x7c0;
         }
         //hide leftmost 8 pixels if that flag is on
-        if (!getbit(ppuregs[1], 1)) {
+        if ((ppureg1 & BIT1) == 0) {
             for (int i = 0; i < 8; ++i) {
                 bitmap[i + bufferoffset] = bgcolor;
             }
@@ -408,13 +402,13 @@ public class PPU {
     /**
      * evaluates PPU sprites for the NEXT scanline
      */
-    private void evalSprites() {
+    private void evalSprites(boolean render) {
         sprite0here = false;
-        bgpattern = getbit(ppuregs[0], 4);
-        sprpattern = getbit(ppuregs[0], 3);
+        bgpattern = (ppureg0 & BIT4) != 0;
+        sprpattern = (ppureg0 & BIT3) != 0;
         int ypos, offset, tilefetched;
         found = 0;
-        final boolean spritesize = getbit(ppuregs[0], 5);
+        final boolean spritesize = (ppureg0 & BIT5) != 0;
         //primary evaluation
         //need to emulate behavior when OAM address is set to nonzero here
         for (int spritestart = 0; spritestart < 255; spritestart += 4) {
@@ -434,17 +428,17 @@ public class PPU {
             if (found >= 8) {
                 //if more than 8 sprites, set overflow bit and STOP looking
                 //todo: add "no sprite limit" option back
-                ppuregs[2] |= 0x20;
+                ppureg2 |= 0x20;
                 break; //also the real PPU does strange stuff on sprite overflow.
             } else {
                 //set up ye sprite for rendering
                 final int oamextra = OAM[spritestart + 2];
                 //bg flag
-                spritebgflags[found] = getbit(oamextra, 5);
+                spritebgflags[found] = (oamextra & BIT5) != 0;
                 //x value
                 spriteXlatch[found] = OAM[spritestart + 3];
                 spritepals[found] = ((oamextra & 3) + 4) * 4;
-                if (getbit(oamextra, 7)) {
+                if ((oamextra & BIT7) != 0) {
                     //if sprite is flipped vertically, reverse the offset
                     offset = (spritesize ? 15 : 7) - offset;
                 }
@@ -463,7 +457,7 @@ public class PPU {
                 }
                 tilefetched += offset;
                 //now load up the shift registers for said sprite
-                final boolean hflip = getbit(oamextra, 6);
+                final boolean hflip = (oamextra & BIT6) != 0;
                 if (!hflip) {
                     spriteshiftregL[found] = reverseByte(mapper.ppuRead(tilefetched));
                     spriteshiftregH[found] = reverseByte(mapper.ppuRead(tilefetched + 8));
@@ -476,22 +470,22 @@ public class PPU {
         }
         for (int i = found; i < 8; ++i) {
             //fill unused sprite registers with zeros
-            spriteshiftregL[found] = 0;
-            spriteshiftregH[found] = 0;
+            spriteshiftregL[i] = 0;
+            spriteshiftregH[i] = 0;
         }
     }
 
     /**
      * draws appropriate lines of the sprites selected by sprite evaluation
      */
-    private void drawSprites() {
+    private void drawSprites(boolean render) {
         //profiler doesn't see how slow it is though. fix that!
         if (found == 0) {
             //no sprites to draw on line.
             return;
         }
         final int bufferoffset = scanline << 8;
-        final int startdraw = getbit(ppuregs[1], 2) ? 0 : 8;//sprite left 8 pixels clip
+        final int startdraw = (ppureg1 & BIT2) != 0 ? 0 : 8;//sprite left 8 pixels clip
         for (int x = 0; x < 256; ++x) {
             sprpxl = 0;
             index = 7;
@@ -507,7 +501,7 @@ public class PPU {
                     spriteshiftregL[y] >>= 1;
                 }
             }
-            if (sprpxl == 0 || x < startdraw || !getbit(ppuregs[1], 4)) {
+            if (sprpxl == 0 || x < startdraw || (ppureg1 & BIT4) == 0) {
                 //no opaque sprite pixel here
                 continue;
             }
@@ -517,10 +511,10 @@ public class PPU {
                 //sprite 0 hit!
                 sprite0hit = true;
                 sprite0x = x;
-                // ppuregs[1] |= 1;//debug
+                // ppureg1 |= 1;//debug
             }
             //now, FINALLY, drawing.
-            if (!spritebgflags[index] || (bitmap[bufferoffset + x] == bgcolor)) {
+            if ((!spritebgflags[index] || (bitmap[bufferoffset + x] == bgcolor)) && render) {
                 bitmap[bufferoffset + x] = pal[spritepals[index] + sprpxl];
             }
         }
@@ -538,14 +532,14 @@ public class PPU {
      */
     private int getAttribute(final int ntstart, final int tileX, final int tileY) {
         final int base = mapper.ppuRead(ntstart + (tileX >> 2) + 8 * (tileY >> 2));
-        if (getbit(tileY, 1)) {
-            if (getbit(tileX, 1)) {
+        if ((tileY & utils.BIT1) != 0) {
+            if ((tileX & utils.BIT1) != 0) {
                 return (base >> 6) & 3;
             } else {
                 return (base >> 4) & 3;
             }
         } else {
-            if (getbit(tileX, 1)) {
+            if ((tileX & utils.BIT1) != 0) {
                 return (base >> 2) & 3;
             } else {
                 return base & 3;
@@ -660,30 +654,49 @@ public class PPU {
      * @param off PPU base address
      * @return int array with 8 NES color numbers
      */
-    private int[] getTile(final int tileptr, final int paletteindex, final int off) {
-        tilepal[0] = bgcolor;
-        System.arraycopy(pal, paletteindex + 1, tilepal, 1, 3);
-        // per line of tile ( 1 byte)
-        int linelowbits = mapper.ppuRead(off + tileptr);
-        int linehighbits = mapper.ppuRead(off + tileptr + 8);
-        for (int j = 7; j >= 0; --j) {
-            // per pixel(1 bit)
-            tiledata[j] = tilepal[((linehighbits & 1) << 1) + (linelowbits & 1)];
-            linehighbits >>= 1;
-            linelowbits >>= 1;
-        }
+    private int[] getTile(final int tileptr, final int palettenum, final int off) {
+        final int tilepal = packedpal[palettenum];
+        final int linelowbits = mapper.ppuRead(off + tileptr);
+        final int linehighbits = mapper.ppuRead(off + tileptr + 8) << 1;
+        tiledata[7] = tilepal >>> ((linehighbits & 0x2 | linelowbits & 0x1) << 3) & 0xFF;
+        tiledata[6] = tilepal >>> ((linehighbits & 0x4 | linelowbits & 0x2) << 2) & 0xFF;
+        tiledata[5] = tilepal >>> ((linehighbits & 0x8 | linelowbits & 0x4) << 1) & 0xFF;
+        tiledata[4] = tilepal >>> ((linehighbits & 0x10 | linelowbits & 0x8)) & 0xFF;
+        tiledata[3] = tilepal >>> ((linehighbits & 0x20 | linelowbits & 0x10) >> 1) & 0xFF;
+        tiledata[2] = tilepal >>> ((linehighbits & 0x40 | linelowbits & 0x20) >> 2) & 0xFF;
+        tiledata[1] = tilepal >>> ((linehighbits & 0x80 | linelowbits & 0x40) >> 3) & 0xFF;
+        tiledata[0] = tilepal >>> ((linehighbits & 0x100 | linelowbits & 0x80) >> 4) & 0xFF;
         return tiledata;
     }
 
     private boolean vblankflag = false;
 
     /**
-     * Sets both the internal PPU vblank flag and the one visible to the NES
+     * Marks both the internal PPU vblank flag and the one visible to the NES
      *
      * @param b value of the flag
      */
-    private void setvblankflag(boolean b) {
-        vblankflag = b;
-        ppuregs[2] = setbit(ppuregs[2], 7, b);
+    private void markvblankflag() {
+        vblankflag = true;
+        ppureg2 |= BIT7;
+    }
+
+    /**
+     * Clears both the internal PPU vblank flag and the one visible to the NES
+     *
+     * @param b value of the flag
+     */
+    private void clearvblankflag() {
+        vblankflag = false;
+        ppureg2 &= ~BIT7;
+    }
+
+    private void computePackedpal() {
+        for (int i=0; i<8; i++) {
+            packedpal[i] = pal[0]
+                | pal[i*4 + 1] << 8
+                | pal[i*4 + 2] << 16
+                | pal[i*4 + 3] << 24;
+        }
     }
 }

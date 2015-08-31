@@ -53,7 +53,7 @@ public class ActionReplay {
      * Patches the memory with Pro Action Replay codes.
      */
     public void applyPatches() {
-        cpuram.setPatches(patches);
+        cpuram.setPatches(patches.isEmpty() ? null : patches);
     }
 
     /**

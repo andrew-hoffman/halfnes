@@ -35,18 +35,18 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
     private int latchbyte = 0, controllerbyte = 0, prevbyte = 0, outbyte = 0, gamepadbyte = 0;
     private final HashMap<Integer, Integer> m = new HashMap<Integer, Integer>(10);
     private final int controllernum;
+    private GpioControllerImpl gpioController;
 
     public ControllerImpl(final java.awt.Component parent, final int controllernum) {
-        if (parent == null) {
-            throw new NullPointerException("parent");
-        }
         if ((controllernum != 0) && (controllernum != 1)) {
             throw new IllegalArgumentException("controllerNum must be 0 or 1");
         }
         this.controllernum = controllernum;
         setButtons();
         this.parent = parent;
-        parent.addKeyListener(this);
+        if (parent != null) {
+          parent.addKeyListener(this);
+        }
     }
 
     @Override
@@ -60,12 +60,12 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
         //enable the corresponding bit to the key
         controllerbyte |= m.get(kepressed);
         //special case: if up and down are pressed at once, use whichever was pressed previously
-        if (getbit(controllerbyte, 4) && getbit(controllerbyte, 5)) {
+        if ((controllerbyte & (BIT4 | BIT5)) == (BIT4 | BIT5)) {
             controllerbyte &= ~(BIT4 | BIT5);
             controllerbyte |= (prevbyte & ~(BIT4 | BIT5));
         }
         //same for left and right
-        if (getbit(controllerbyte, 6) && getbit(controllerbyte, 7)) {
+        if ((controllerbyte & (BIT6 | BIT7)) == (BIT6 | BIT7)) {
             controllerbyte &= ~(BIT6 | BIT7);
             controllerbyte |= (prevbyte & ~(BIT6 | BIT7));
         }
@@ -98,7 +98,11 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
     }
 
     public void output(final boolean state) {
+      if (gpioController == null) {
         latchbyte = gamepadbyte | controllerbyte;
+      } else {
+        latchbyte = gamepadbyte | controllerbyte | gpioController.getByte();
+      }
     }
 
     /**
@@ -275,6 +279,11 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
                 m.put(prefs.getInt("keyB1", KeyEvent.VK_Z), BIT1);
                 m.put(prefs.getInt("keySelect1", KeyEvent.VK_SHIFT), BIT2);
                 m.put(prefs.getInt("keyStart1", KeyEvent.VK_ENTER), BIT3);
+                try {
+                  gpioController = new GpioControllerImpl();
+                } catch (java.lang.UnsatisfiedLinkError e) {
+                  // No GPIO on this platform, skip it...
+                }
                 break;
             case 1:
             default:

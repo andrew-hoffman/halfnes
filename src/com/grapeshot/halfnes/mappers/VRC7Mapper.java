@@ -41,8 +41,8 @@ public class VRC7Mapper extends Mapper {
             notifyscanline(999);
         }
 
-        final boolean bit0 = utils.getbit(addr, 4) | utils.getbit(addr, 3);
-        final boolean bit1 = utils.getbit(addr, 5);
+        final boolean bit0 = (addr & (utils.BIT4 | utils.BIT3)) != 0;
+        final boolean bit1 = (addr & utils.BIT5) != 0;
         switch (addr >> 12) {
             case 0x8:
                 if (bit0) {
@@ -119,9 +119,9 @@ public class VRC7Mapper extends Mapper {
                     firedinterrupt = false;
                 } else {
                     //irq control
-                    irqack = utils.getbit(data, 0);
-                    irqenable = utils.getbit(data, 1);
-                    irqmode = utils.getbit(data, 2);
+                    irqack = (data & utils.BIT0) != 0;
+                    irqenable = (data & utils.BIT1) != 0;
+                    irqmode = (data & utils.BIT2) != 0;
                     if (irqenable) {
                         irqcounter = irqreload;
                     }

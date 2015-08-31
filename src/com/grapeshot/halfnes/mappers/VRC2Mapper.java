@@ -28,8 +28,8 @@ public class VRC2Mapper extends Mapper {
             super.cartWrite(addr, data);
             return;
         }
-        boolean bit0 = utils.getbit(addr, 1);
-        boolean bit1 = utils.getbit(addr, 0);
+        boolean bit0 = (addr & utils.BIT1) != 0;
+        boolean bit1 = (addr & utils.BIT0) != 0;
         switch (addr >> 12) {
             case 0x8:
                 prgbank0 = data & 0xf;

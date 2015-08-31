@@ -29,7 +29,7 @@ public class AnromMapper extends Mapper {
         for (int i = 0; i < 32; ++i) {
             prg_map[i] = (1024 * (i + (32 * (data & 15)))) & (prgsize - 1);
         }
-        setmirroring(utils.getbit(data, 4) ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
+        setmirroring((data & utils.BIT4) != 0 ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
 
     }
 }

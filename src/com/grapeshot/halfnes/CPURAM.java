@@ -6,8 +6,12 @@ package com.grapeshot.halfnes;
 
 import com.grapeshot.halfnes.cheats.Patch;
 import com.grapeshot.halfnes.mappers.Mapper;
+import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.HashMap;
+import sun.misc.Unsafe;
 
 /**
  *
@@ -15,10 +19,34 @@ import java.util.HashMap;
  *
  *
  */
-public class CPURAM {
+public final class CPURAM {
+
+    static final Unsafe unsafe;
+    static final int INTEGER_ARRAY_BASE_OFFSET;
+
+    static {
+        unsafe = (Unsafe) AccessController.doPrivileged(
+            new PrivilegedAction<Object>() {
+              @Override
+              public Object run() {
+                try {
+                  Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                  f.setAccessible(true);
+                  return f.get(null);
+                } catch (Exception e) {
+                  throw new Error();
+                }
+              }
+            });
+
+        INTEGER_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(int[].class);
+        if (unsafe.arrayIndexScale(int[].class) != 4) {
+          throw new AssertionError();
+        }
+    }
 
     private boolean hasprgram = true;
-    private final int[] wram = new int[2048];
+    final int[] wram = new int[2048];
     Mapper mapper;
     public APU apu;
     PPU ppu; //need these to call their write handlers from here.
@@ -30,26 +58,27 @@ public class CPURAM {
         Arrays.fill(wram, 0xff);
     }
 
-    public final int read(final int addr) {
-        if (patches != null) {
-            int retval = _read(addr);
-            Patch p = patches.get(addr);
-            if (p != null) {
-                if (p.getAddress() == addr && p.matchesData(retval)) {
-                    return p.getData();
-                }
-            }
-            return retval;
-        } else {
-            return _read(addr);
-        }
-    }
+//    public final int read(final int addr) {
+//        if (patches != null) {
+//            int retval = _read(addr);
+//            Patch p = patches.get(addr);
+//            if (p != null) {
+//                if (p.getAddress() == addr && p.matchesData(retval)) {
+//                    return p.getData();
+//                }
+//            }
+//            return retval;
+//        } else {
+//            return _read(addr);
+//        }
+//    }
 
-    public final int _read(final int addr) {
+    public final int read(final int addr) {
         if (addr > 0x4018) {
             return mapper.cartRead(addr);
         } else if (addr <= 0x1fff) {
             return wram[addr & 0x7FF];
+//            return unsafe.getInt(wram, INTEGER_ARRAY_BASE_OFFSET + (addr & 0x7FF) * 4);
         } else if (addr <= 0x3fff) {
             // 8 byte ppu regs; mirrored lots
             return ppu.read(addr & 7);

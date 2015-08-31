@@ -26,7 +26,7 @@ public class SwingAudioImpl implements AudioOutInterface {
         outputvol = (float) (PrefsSingleton.get().getInt("outputvol", 13107) / 16384.);
         if (soundEnable) {
             final int samplesperframe = (int) Math.ceil((samplerate * 2) / 60.);
-            audiobuf = new byte[samplesperframe * 2];
+            audiobuf = new byte[samplesperframe * 15];
             try {
                 AudioFormat af = new AudioFormat(
                         samplerate,
@@ -37,7 +37,7 @@ public class SwingAudioImpl implements AudioOutInterface {
                         //(works everywhere, afaict, but macs need 44100 sample rate)
                         );
                 sdl = AudioSystem.getSourceDataLine(af);
-                sdl.open(af, samplesperframe * 8); //create 4 frame audio buffer
+                sdl.open(af, samplesperframe * 15); //create 15 frame audio buffer
                 sdl.start();
             } catch (LineUnavailableException a) {
                 System.err.println(a);
@@ -53,24 +53,12 @@ public class SwingAudioImpl implements AudioOutInterface {
 
     public final void flushFrame(final boolean waitIfBufferFull) {
         if (soundEnable) {
-
-//            if (sdl.available() == sdl.getBufferSize()) {
-//                System.err.println("Audio is underrun");
-//            }
-            if (sdl.available() < bufptr) {
-//                System.err.println("Audio is blocking");
-                if (waitIfBufferFull) {
-
-                    //write to audio buffer and don't worry if it blocks
-                    sdl.write(audiobuf, 0, bufptr);
-                }
-                //else don't bother to write if the buffer is full
-            } else {
+            if (sdl.available() >= bufptr || waitIfBufferFull) {
+                //write to audio buffer and don't worry if it blocks
                 sdl.write(audiobuf, 0, bufptr);
             }
         }
         bufptr = 0;
-
     }
     int dckiller = 0;
 

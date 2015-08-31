@@ -71,9 +71,9 @@ public class AltNTSCRenderer extends Renderer {
         for (int i = 0; i < SAMPLESPERPIXEL; ++i, ++phase) {
             double signal = inColorPhase(color, phase) ? high : low;
             if (emphasis != 0) {
-                if ((utils.getbit(emphasis, 0) && inColorPhase(0, phase))
-                        || (utils.getbit(emphasis, 1) && inColorPhase(4, phase))
-                        || (utils.getbit(emphasis, 2) && inColorPhase(8, phase))) {
+                if (((emphasis & utils.BIT0) != 0 && inColorPhase(0, phase))
+                        || ((emphasis & utils.BIT1) != 0 && inColorPhase(4, phase))
+                        || ((emphasis & utils.BIT2) != 0 && inColorPhase(8, phase))) {
                     signal *= attenuation;
                 }
             }

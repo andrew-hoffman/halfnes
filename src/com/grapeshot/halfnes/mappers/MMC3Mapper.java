@@ -46,7 +46,7 @@ public class MMC3Mapper extends Mapper {
         }
         //bankswitches here
         //different register for even/odd writes
-        if (utils.getbit(addr, 0)) {
+        if ((addr & utils.BIT0) != 0) {
             //odd registers
             if ((addr >= 0x8000) && (addr <= 0x9fff)) {
                 //bank change
@@ -65,7 +65,7 @@ public class MMC3Mapper extends Mapper {
                 }
             } else if ((addr >= 0xA000) && (addr <= 0xbfff)) {
                 //prg ram write protect
-                //cpuram.setPrgRAMEnable(!utils.getbit(data, 7));
+                //cpuram.setPrgRAMEnable((data & utils.BIT7) == 0);
             } else if ((addr >= 0xc000) && (addr <= 0xdfff)) {
                 //any value here reloads irq counter
                 irqreload = true;
@@ -79,10 +79,10 @@ public class MMC3Mapper extends Mapper {
             if ((addr >= 0x8000) && (addr <= 0x9fff)) {
                 //bank select
                 whichbank = data & 7;
-                prgconfig = utils.getbit(data, 6);
+                prgconfig = (data & utils.BIT6) != 0;
                 //if bit is false, 8000-9fff swappable and c000-dfff fixed to 2nd to last bank
                 //if bit is true, c000-dfff swappable and 8000-9fff fixed to 2nd to last bank
-                chrconfig = utils.getbit(data, 7);
+                chrconfig = (data & utils.BIT7) != 0;
                 //if false: 2 2k banks @ 0000-0fff, 4 1k banks in 1000-1fff
                 //if true: 4 1k banks @ 0000-0fff, 2 2k banks @ 1000-1fff
                 setupchr();
@@ -90,7 +90,7 @@ public class MMC3Mapper extends Mapper {
             } else if ((addr >= 0xA000) && (addr <= 0xbfff)) {
                 //mirroring setup
                 if (scrolltype != MirrorType.FOUR_SCREEN_MIRROR) {
-                    setmirroring(utils.getbit(data, 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+                    setmirroring((data & utils.BIT0) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
                 }
             } else if ((addr >= 0xc000) && (addr <= 0xdfff)) {
                 //value written here used to reload irq counter _@ end of scanline_

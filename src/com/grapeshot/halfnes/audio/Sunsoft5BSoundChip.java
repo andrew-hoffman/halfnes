@@ -52,15 +52,15 @@ public class Sunsoft5BSoundChip implements ExpansionSoundChip {
                 break;
             case 8:
                 volume[0] = data & 0xf;
-                useenvelope[0] = utils.getbit(data, 4);
+                useenvelope[0] = (data & utils.BIT4) != 0;
                 break;
             case 9:
                 volume[1] = data & 0xf;
-                useenvelope[1] = utils.getbit(data, 4);
+                useenvelope[1] = (data & utils.BIT4) != 0;
                 break;
             case 10:
                 volume[2] = data & 0xf;
-                useenvelope[2] = utils.getbit(data, 4);
+                useenvelope[2] = (data & utils.BIT4) != 0;
                 break;
             case 13:
                 enval = 15;

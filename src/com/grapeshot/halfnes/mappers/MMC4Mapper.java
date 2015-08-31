@@ -47,14 +47,14 @@ public class MMC4Mapper extends Mapper {
             chrbankR2 = data & 0x1f;
             setupPPUBanks();
         } else if (addr >= 0xf000 && addr <= 0xffff) {
-            setmirroring((utils.getbit(data, 0)) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+            setmirroring(((data & utils.BIT0) != 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
         }
     }
 
     @Override
     public int ppuRead(final int addr) {
         int retval = super.ppuRead(addr);
-        if (utils.getbit(addr, 3)) {
+        if ((addr & utils.BIT3) != 0) {
             //latch fires after 2nd read from pattern table
             //A3 will be on for 2nd read b/c it's tile low bytes
             switch (addr >> 4) {

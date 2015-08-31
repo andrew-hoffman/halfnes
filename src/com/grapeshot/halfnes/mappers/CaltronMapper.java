@@ -28,7 +28,7 @@ public class CaltronMapper extends Mapper {
                 prg_map[i] = (1024 * (i + 32 * (addr & 7))) & (prgsize - 1);
             }
 
-            setmirroring(utils.getbit(addr, 5) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+            setmirroring((addr & utils.BIT5) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
         } else if (addr >= 0x8000 && addr <= 0xFFFF) {
             if ((reg & 4) != 0) {
                 //remap CHR bank

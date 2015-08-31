@@ -25,7 +25,7 @@ public class Mapper62 extends Mapper {
             super.cartWrite(addr, data);
             return;
         }
-        prg_mode = utils.getbit(addr, 5);
+        prg_mode = (addr & utils.BIT5) != 0;
         prgselect = (addr & 0x40) | ((addr >> 8) & 0x3F);
         chrselect = (addr << 2) | (data & 3);
 
@@ -47,6 +47,6 @@ public class Mapper62 extends Mapper {
             }
         }
 
-        setmirroring(utils.getbit(addr, 7) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+        setmirroring((addr & utils.BIT7) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
     }
 }

@@ -32,11 +32,14 @@ public class NoiseTimer extends Timer {
 
     @Override
     public final void clock() {
-        --divider;
-        while (divider <= 0) {
-            divider += period + periodadd;
-            position = ++position % values.length;
+        ++divider;
+        // note: stay away from negative division to avoid rounding problems
+        int periods = (divider + period + periodadd) / (period + periodadd);
+        if (periods < 0) {
+            periods = 0; // can happen if period or periodadd were made smaller
         }
+        position = (position + periods) % values.length;
+        divider -= (period + periodadd) * periods;
     }
 
     @Override
@@ -51,11 +54,14 @@ public class NoiseTimer extends Timer {
 
     @Override
     public final void clock(final int cycles) {
-        divider -= cycles;
-        while (divider <= 0) {
-            divider += period + periodadd;
-            position = ++position % values.length;
+        divider += cycles;
+        // note: stay away from negative division to avoid rounding problems
+        int periods = (divider + period + periodadd) / (period + periodadd);
+        if (periods < 0) {
+            periods = 0; // can happen if period or periodadd were made smaller
         }
+        position = (position + periods) % values.length;
+        divider -= (period + periodadd) * periods;
     }
 
     @Override
@@ -68,7 +74,7 @@ public class NoiseTimer extends Timer {
         for (int i = 0; i < tehsuck.length; ++i) {
             seed = (seed >> 1)
                     | ((utils.getbit(seed, whichbit)
-                    ^ utils.getbit(seed, 0))
+                    ^ (seed & utils.BIT0) != 0)
                     ? 16384 : 0);
             tehsuck[i] = seed;
         }

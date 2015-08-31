@@ -5,13 +5,14 @@ import com.grapeshot.halfnes.cheats.ActionReplay;
 import com.grapeshot.halfnes.mappers.BadMapperException;
 import com.grapeshot.halfnes.mappers.Mapper;
 
-import java.util.prefs.Preferences;
-
 /**
  *
  * @author Andrew Hoffman
  */
 public class NES {
+
+    public final static int frameskip = 0;
+    public final static int soundskip = 3;
 
     private Mapper mapper;
     private APU apu;
@@ -25,29 +26,22 @@ public class NES {
     public long frameStartTime, framecount, frameDoneTime;
     private boolean frameLimiterOn = true;
     private String curRomPath, curRomName;
-    private final GUIInterface gui = new GUIImpl(this);
+    private final GUIInterface gui;
     private final FrameLimiterInterface limiter = new FrameLimiterImpl(this);
     // Pro Action Replay device
     private ActionReplay actionReplay;
-
-    public NES() {
-        try {
-            java.awt.EventQueue.invokeAndWait(gui);
-        } catch (InterruptedException e) {
-            System.err.println("Could not initialize GUI. Exiting.");
-            System.exit(-1);
-        } catch (java.lang.reflect.InvocationTargetException f) {
-            System.err.println(f.getCause().toString());
-            //not sure how this could happen (thrown if run method causes exception)
-            System.exit(-1);
-        }
+    
+    public NES(GUIInterface gui) {
+      this.gui = gui;
+      gui.setNES(this);
+      gui.run();
     }
 
     public void run(final String romtoload) {
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
         //set thread priority higher than the interface thread
         curRomPath = romtoload;
-        loadROM(romtoload);
+        gui.loadROM(romtoload);
         run();
     }
 
@@ -76,17 +70,9 @@ public class NES {
         }
     };
 
-    private synchronized void runframe() {
-        //the main method sequencing everything that has to happen in the nes each frame
-        //loops unrolled a bit to avoid some conditionals every cycle
-        for (int scanline = 0; scanline <= 240; ++scanline) {
-            runLine(scanline);
-        }
-
-        //run for scanlines of vblank
-        for (int scanline = 241; scanline < 262; ++scanline) {
-            runLine(scanline);
-        }
+    private void runframe() {
+        final boolean draw = framecount % (frameskip + 1) == 0;
+        ppu.draw(draw);
 
         //do end of frame stuff
         dontSleep = apu.bufferHasLessThan(1000);
@@ -94,25 +80,22 @@ public class NES {
         //this is to prevent the emulator from getting stuck sleeping too much
         //on a slow system or when the audio buffer runs dry.
 
-        apu.finishframe();
+        apu.finishframe(framecount % (soundskip + 1) == 0);
         cpu.modcycles();
 
         //run cpu, ppu for active drawing time
 
         //render the frame
-        ppu.renderFrame(gui);
+        if (draw) {
+            ppu.renderFrame(gui);
+        }
         if ((framecount & 2047) == 0) {
             //save sram every 30 seconds or so
             saveSRAM(true);
         }
         ++framecount;
-        //System.err.println(framecount);
     }
 
-    private void runLine(int scanline) {
-        //System.err.println(scanline);
-        ppu.clockLine(scanline);
-    }
 
     public void setControllers(ControllerInterface controller1, ControllerInterface controller2) {
         this.controller1 = controller1;

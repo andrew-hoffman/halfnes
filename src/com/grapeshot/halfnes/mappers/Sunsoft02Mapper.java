@@ -40,7 +40,7 @@ public class Sunsoft02Mapper extends Mapper {
             prgselect = (data >> 4) & 15;
         } else {
             prgselect = (data >> 4) & 7;
-            setmirroring(utils.getbit(data, 3) ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
+            setmirroring((data & utils.BIT3) != 0 ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
 
             int chrselect = ((data & 7) | (data >> 7) * 8);
 

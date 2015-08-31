@@ -32,7 +32,7 @@ public class Mapper33 extends Mapper {
             switch (addr & 3) {
                 case 0:
                     prgbank0 = data;
-                    setmirroring(utils.getbit(data, 6) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+                    setmirroring((data & utils.BIT6) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
                     setbanks();
                     break;
                 case 1:

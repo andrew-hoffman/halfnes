@@ -4,11 +4,15 @@
  */
 package com.grapeshot.halfnes.ui;
 
+import com.grapeshot.halfnes.NES;
+
 /**
  *
  * @author Andrew
  */
 public interface GUIInterface extends Runnable {
+
+    public void setNES(NES nes);
 
     public void setFrame(int[] frame, int[] bgcolor, boolean dotcrawl);
     //Frame is now a 256x240 array with NES color numbers from 0-3F
@@ -20,4 +24,6 @@ public interface GUIInterface extends Runnable {
     public void run();
 
     public void render();
+    
+    public void loadROM(String path);
 }

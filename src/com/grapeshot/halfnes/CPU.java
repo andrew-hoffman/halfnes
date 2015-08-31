@@ -1,6 +1,7 @@
 package com.grapeshot.halfnes;
 //HalfNES, Copyright Andrew Hoffman, October 2010
 
+import static com.grapeshot.halfnes.CPURAM.unsafe;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -90,7 +91,7 @@ public final class CPU {
     }
 
     public final void runcycle(final int scanline, final int pixel) {
-        ram.read(0x4000); //attempt to sync the APU every cycle and make dmc irqs work properly, which they still don't. Feh.
+//        ram.read(0x4000); //attempt to sync the APU every cycle and make dmc irqs work properly, which they still don't. Feh.
         ++clocks;
 
         if (ram.apu.sprdma_count > 0) {
@@ -131,21 +132,53 @@ public final class CPU {
         }
         pb = 0;
         final int instr = ram.read(PC++);
-        if (logging) {
-            try {
-                //note: this *might* trigger side effects if logging while executing
-                //code from i/o registers. So don't do that.
-                w.write(utils.hex(PC - 1) + " " + utils.hex(instr)
-                        + String.format(" %-14s ", opcodes[instr].replaceFirst("%1", utils.hex(ram.read(PC))).replaceFirst("%2", utils.hex(ram.read(PC + 1))).replaceFirst("%3", utils.hex(PC + (byte) (ram.read(PC)) + 1)))
-                        + status() + " CYC:" + pixel + " SL:" + scanline + "\n");
-                if (cycles == 0) {
-                    w.flush();
-                }
-            } catch (IOException e) {
-                System.err.println("Cannot write to debug log");
-            }
+//        if (logging) {
+//            try {
+//                //note: this *might* trigger side effects if logging while executing
+//                //code from i/o registers. So don't do that.
+//                w.write(utils.hex(PC - 1) + " " + utils.hex(instr)
+//                        + String.format(" %-14s ", opcodes[instr].replaceFirst("%1", utils.hex(ram.read(PC))).replaceFirst("%2", utils.hex(ram.read(PC + 1))).replaceFirst("%3", utils.hex(PC + (byte) (ram.read(PC)) + 1)))
+//                        + status() + " CYC:" + pixel + " SL:" + scanline + "\n");
+//                if (cycles == 0) {
+//                    w.flush();
+//                }
+//            } catch (IOException e) {
+//                System.err.println("Cannot write to debug log");
+//            }
+//        }
+        switch (instr) {
+            case 0xa5:
+                lda(zpg());
+                cycles += 3;
+                break;
+            case 0xD0:
+                branch(!zeroFlag);
+                cycles += 2 + pb;
+                break;
+                // JMP
+            case 0x4c:
+                PC = abs();
+                cycles += 3;
+                break;
+            case 0xe8:
+                X++;
+                X &= 0xFF;
+                setflags(X);
+                cycles += 2;
+                break;
+            case 0x10:
+                branch(!negativeFlag);
+                cycles += 2 + pb;
+                break;
+            default:
+                processInstruction(instr);
         }
+        pb = 0;
+        PC &= 0xffff;
+    }
 
+    // less frequent instructions broken out to improve inlining
+    private void processInstruction(final int instr) {
         switch (instr) {
             // ADC
             case 0x69:
@@ -180,7 +213,7 @@ public final class CPU {
                 adc(indY(dummy.ONCARRY));
                 cycles += 5 + pb;
                 break;
-            // AHX (unofficial)
+                // AHX (unofficial)
             case 0x93:
                 ahx(indY(dummy.ALWAYS));
                 cycles += 6;
@@ -189,12 +222,12 @@ public final class CPU {
                 ahx(abs(Y, dummy.ALWAYS));
                 cycles += 5;
                 break;
-            // ALR (unofficial)
+                // ALR (unofficial)
             case 0x4b:
                 alr(imm());
                 cycles += 2;
                 break;
-            // ANC (unofficial)
+                // ANC (unofficial)
             case 0x0b:
                 anc(imm());
                 cycles += 2;
@@ -203,7 +236,7 @@ public final class CPU {
                 anc(imm());
                 cycles += 2;
                 break;
-            // AND
+                // AND
             case 0x29:
                 and(imm());
                 cycles += 2;
@@ -236,12 +269,12 @@ public final class CPU {
                 and(indY(dummy.ONCARRY));
                 cycles += 5 + pb;
                 break;
-            // ARR (unofficial)
+                // ARR (unofficial)
             case 0x6b:
                 arr(imm());
                 cycles += 2;
                 break;
-            // ASL
+                // ASL
             case 0x0A:
                 aslA();
                 cycles += 2;
@@ -262,12 +295,12 @@ public final class CPU {
                 asl(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // AXS (unofficial)
+                // AXS (unofficial)
             case 0xcb:
                 axs(imm());
                 cycles += 2;
                 break;
-            // BIT
+                // BIT
             case 0x24:
                 bit(zpg());
                 cycles += 3;
@@ -276,11 +309,7 @@ public final class CPU {
                 bit(abs());
                 cycles += 4;
                 break;
-            // Branches: every branch uses rel. addressing
-            case 0x10:
-                branch(!negativeFlag);
-                cycles += 2 + pb;
-                break;
+                // Branches: every branch uses rel. addressing
             case 0x30:
                 branch(negativeFlag);
                 cycles += 2 + pb;
@@ -301,21 +330,17 @@ public final class CPU {
                 branch(carryFlag);
                 cycles += 2 + pb;
                 break;
-            case 0xD0:
-                branch(!zeroFlag);
-                cycles += 2 + pb;
-                break;
             case 0xF0:
                 branch(zeroFlag);
                 cycles += 2 + pb;
                 break;
-            // BRK
+                // BRK
             case 0x00:
                 //System.err.println("Hey! A break!");
                 breakinterrupt();
                 cycles += 7;
                 break;
-            // CMP
+                // CMP
             case 0xc9:
                 cmp(A, imm());
                 cycles += 2;
@@ -348,7 +373,7 @@ public final class CPU {
                 cmp(A, indY(dummy.ONCARRY));
                 cycles += 5 + pb;
                 break;
-            // CPX
+                // CPX
             case 0xe0:
                 cmp(X, imm());
                 cycles += 2;
@@ -361,7 +386,7 @@ public final class CPU {
                 cmp(X, abs());
                 cycles += 4;
                 break;
-            // CPY
+                // CPY
             case 0xc0:
                 cmp(Y, imm());
                 cycles += 2;
@@ -374,7 +399,7 @@ public final class CPU {
                 cmp(Y, abs());
                 cycles += 4;
                 break;
-            // DEC
+                // DEC
             case 0xc6:
                 dec(zpg());
                 cycles += 5;
@@ -391,7 +416,7 @@ public final class CPU {
                 dec(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // DCP (unofficial)
+                // DCP (unofficial)
             case 0xc3:
                 dcp(A, indX());
                 cycles += 8;
@@ -420,7 +445,7 @@ public final class CPU {
                 dcp(A, abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // EOR
+                // EOR
             case 0x49:
                 eor(imm());
                 cycles += 2;
@@ -453,7 +478,7 @@ public final class CPU {
                 eor(indY(dummy.ONCARRY));
                 cycles += 5 + pb;
                 break;
-            // Flag set/clear
+                // Flag set/clear
             case 0x18:
                 carryFlag = false;
                 cycles += 2;
@@ -487,7 +512,7 @@ public final class CPU {
                 decimalModeFlag = true;
                 cycles += 2;
                 break;// do anything on NES
-            // INC
+                // INC
             case 0xe6:
                 inc(zpg());
                 cycles += 5;
@@ -504,7 +529,7 @@ public final class CPU {
                 inc(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // ISC (unofficial)
+                // ISC (unofficial)
             case 0xe3:
                 isc(indX());
                 cycles += 8;
@@ -533,21 +558,16 @@ public final class CPU {
                 isc(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // JMP
-            case 0x4c:
-                PC = abs();
-                cycles += 3;
-                break;
             case 0x6c:
                 PC = ind();
                 cycles += 5;
                 break;
-            // JSR
+                // JSR
             case 0x20:
                 jsr(abs());
                 cycles += 6;
                 break;
-            // KIL (unofficial)
+                // KIL (unofficial)
             case 0x02:
             case 0x12:
             case 0x22:
@@ -563,12 +583,12 @@ public final class CPU {
                 System.err.println("KIL - CPU locked");
                 ram.apu.nes.runEmulation = false;
                 break;
-            // LAS (unofficial)
+                // LAS (unofficial)
             case 0xbb:
                 las(abs(Y, dummy.ONCARRY));
                 cycles += 4 + pb;
                 break;
-            // LAX (unofficial)
+                // LAX (unofficial)
             case 0xa3:
                 lax(indX());
                 cycles += 6;
@@ -597,14 +617,10 @@ public final class CPU {
                 lax(abs(Y, dummy.ONCARRY));
                 cycles += 4 + pb;
                 break;
-            // LDA
+                // LDA
             case 0xa9:
                 lda(imm());
                 cycles += 2;
-                break;
-            case 0xa5:
-                lda(zpg());
-                cycles += 3;
                 break;
             case 0xb5:
                 lda(zpg(X));
@@ -630,7 +646,7 @@ public final class CPU {
                 lda(indY(dummy.ONCARRY));
                 cycles += 5 + pb;
                 break;
-            // LDX
+                // LDX
             case 0xa2:
                 ldx(imm());
                 cycles += 2;
@@ -651,7 +667,7 @@ public final class CPU {
                 ldx(abs(Y, dummy.ONCARRY));
                 cycles += 4 + pb;
                 break;
-            // LDY
+                // LDY
             case 0xa0:
                 ldy(imm());
                 cycles += 2;
@@ -672,7 +688,7 @@ public final class CPU {
                 ldy(abs(X, dummy.ONCARRY));
                 cycles += 4 + pb;
                 break;
-            // LSR
+                // LSR
             case 0x4a:
                 lsrA();
                 cycles += 2;
@@ -693,7 +709,7 @@ public final class CPU {
                 lsr(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // NOP
+                // NOP
             case 0x1a:
             case 0x3a:
             case 0x5a:
@@ -739,7 +755,7 @@ public final class CPU {
                 abs(X, dummy.ONCARRY);
                 cycles += 4 + pb;
                 break;
-            // ORA
+                // ORA
             case 0x09:
                 ora(imm());
                 cycles += 2;
@@ -772,7 +788,7 @@ public final class CPU {
                 ora(indY(dummy.ONCARRY));
                 cycles += 5 + pb;
                 break;
-            // Register instrs.
+                // Register instrs.
             case 0xAA:
                 X = A;
                 cycles += 2;
@@ -785,12 +801,6 @@ public final class CPU {
                 break;
             case 0xca:
                 X--;
-                X &= 0xFF;
-                setflags(X);
-                cycles += 2;
-                break;
-            case 0xe8:
-                X++;
                 X &= 0xFF;
                 setflags(X);
                 cycles += 2;
@@ -817,7 +827,7 @@ public final class CPU {
                 setflags(Y);
                 cycles += 2;
                 break;
-            // RLA (unofficial)
+                // RLA (unofficial)
             case 0x23:
                 rla(indX());
                 cycles += 8;
@@ -846,7 +856,7 @@ public final class CPU {
                 rla(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // ROL
+                // ROL
             case 0x2a:
                 rolA();
                 cycles += 2;
@@ -867,7 +877,7 @@ public final class CPU {
                 rol(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // ROR
+                // ROR
             case 0x6a:
                 rorA();
                 cycles += 2;
@@ -888,7 +898,7 @@ public final class CPU {
                 ror(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // RRA (unofficial)
+                // RRA (unofficial)
             case 0x63:
                 rra(indX());
                 cycles += 8;
@@ -917,17 +927,17 @@ public final class CPU {
                 rra(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // RTI
+                // RTI
             case 0x40:
                 rti();
                 cycles += 6;
                 break;
-            // RTS
+                // RTS
             case 0x60:
                 rts();
                 cycles += 6;
                 break;
-            // SAX (unofficial)
+                // SAX (unofficial)
             case 0x83:
                 sax(indX());
                 cycles += 6;
@@ -944,7 +954,7 @@ public final class CPU {
                 sax(abs());
                 cycles += 4;
                 break;
-            // SBC
+                // SBC
             case 0xE1:
                 sbc(indX());
                 cycles += 6;
@@ -981,17 +991,17 @@ public final class CPU {
                 sbc(abs(X, dummy.ONCARRY));
                 cycles += 4 + pb;
                 break;
-            // SHX (unofficial)
+                // SHX (unofficial)
             case 0x9e:
                 shx(abs(Y, dummy.ALWAYS));
                 cycles += 5;
                 break;
-            // SHY (unofficial)
+                // SHY (unofficial)
             case 0x9c:
                 shy(abs(X, dummy.ALWAYS));
                 cycles += 5;
                 break;
-            // SLO (unofficial)
+                // SLO (unofficial)
             case 0x03:
                 slo(indX());
                 cycles += 8;
@@ -1020,7 +1030,7 @@ public final class CPU {
                 slo(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // SRE (unofficial)
+                // SRE (unofficial)
             case 0x43:
                 sre(indX());
                 cycles += 8;
@@ -1049,7 +1059,7 @@ public final class CPU {
                 sre(abs(X, dummy.ALWAYS));
                 cycles += 7;
                 break;
-            // STA
+                // STA
             case 0x85:
                 sta(zpg());
                 cycles += 3;
@@ -1078,7 +1088,7 @@ public final class CPU {
                 sta(indY(dummy.ALWAYS));
                 cycles += 6;
                 break;
-            // Stack instructions
+                // Stack instructions
             case 0x9A:
                 S = X;
                 cycles += 2;
@@ -1111,7 +1121,7 @@ public final class CPU {
                 bytetoflags(pop());
                 cycles += 4;
                 break;
-            // STX
+                // STX
             case 0x86:
                 stx(zpg());
                 cycles += 3;
@@ -1124,7 +1134,7 @@ public final class CPU {
                 stx(abs());
                 cycles += 4;
                 break;
-            // STY
+                // STY
             case 0x84:
                 sty(zpg());
                 cycles += 3;
@@ -1137,12 +1147,12 @@ public final class CPU {
                 sty(abs());
                 cycles += 4;
                 break;
-            // TAS (unofficial)
+                // TAS (unofficial)
             case 0x9b:
                 tas(abs(Y, dummy.ALWAYS));
                 cycles += 5;
                 break;
-            // XAA (unofficial)
+                // XAA (unofficial)
             case 0x8b:
                 xaa(imm());
                 cycles += 2;
@@ -1153,8 +1163,6 @@ public final class CPU {
                         + utils.hex(PC - 1));
                 break;
         }
-        pb = 0;
-        PC &= 0xffff;
     }
 
     private void delayInterrupt() {
@@ -1166,7 +1174,7 @@ public final class CPU {
         int data = (ram.read(addr));
         ram.write(addr, data);  //dummy write
         data = (data << 1) | (carryFlag ? 1 : 0);
-        carryFlag = utils.getbit(data, 8);
+        carryFlag = (data & utils.BIT8) != 0;
         data &= 0xFF;
         setflags(data);
         ram.write(addr, data);
@@ -1174,7 +1182,7 @@ public final class CPU {
 
     private void rolA() {
         A = A << 1 | (carryFlag ? 1 : 0);
-        carryFlag = utils.getbit(A, 8);
+        carryFlag = (A & utils.BIT8) != 0;
         A &= 0xFF;
         setflags(A);
     }
@@ -1183,7 +1191,7 @@ public final class CPU {
         int data = ram.read(addr);
         ram.write(addr, data);  //dummy write
         final boolean tmp = carryFlag;
-        carryFlag = utils.getbit(data, 0);
+        carryFlag = (data & utils.BIT0) != 0;
         data >>= 1;
         data &= 0x7F;
         data |= (tmp ? 0x80 : 0);
@@ -1193,7 +1201,7 @@ public final class CPU {
 
     private void rorA() {
         final boolean tmp = carryFlag;
-        carryFlag = utils.getbit(A, 0);
+        carryFlag = (A & utils.BIT0) != 0;
         A >>= 1;
         A &= 0x7F;
         A |= (tmp ? 128 : 0);
@@ -1261,7 +1269,7 @@ public final class CPU {
     private void lsr(final int addr) {
         int data = ram.read(addr);
         ram.write(addr, data);  //dummy write
-        carryFlag = utils.getbit(data, 0);
+        carryFlag = (data & utils.BIT0) != 0;
         data >>= 1;
         data &= 0x7F;
         ram.write(addr, data);
@@ -1269,7 +1277,7 @@ public final class CPU {
     }
 
     private void lsrA() {
-        carryFlag = utils.getbit(A, 0);
+        carryFlag = (A & utils.BIT0) != 0;
         A >>= 1;
         A &= 0x7F;
         setflags(A);
@@ -1291,8 +1299,8 @@ public final class CPU {
     private void bit(final int addr) {
         final int data = ram.read(addr);
         zeroFlag = ((data & A) == 0);
-        negativeFlag = utils.getbit(data, 7);
-        overflowFlag = utils.getbit(data, 6);
+        negativeFlag = (data & utils.BIT7) != 0;
+        overflowFlag = (data & utils.BIT6) != 0;
     }
 
     private void jsr(final int addr) {
@@ -1422,7 +1430,7 @@ public final class CPU {
     private void asl(final int addr) {
         int data = ram.read(addr);
         ram.write(addr, data);  //dummy write
-        carryFlag = utils.getbit(data, 7);
+        carryFlag = (data & utils.BIT7) != 0;
         data = data << 1;
         data &= 0xff;
         setflags(data);
@@ -1430,7 +1438,7 @@ public final class CPU {
     }
 
     private void aslA() {
-        carryFlag = utils.getbit(A, 7);
+        carryFlag = (A & utils.BIT7) != 0;
         A <<= 1;
         A &= 0xff;
         setflags(A);
@@ -1440,7 +1448,7 @@ public final class CPU {
     private void cmp(final int regval, final int addr) {
         final int result = regval - ram.read(addr);
         if (result < 0) {
-            negativeFlag = utils.getbit(result, 7);
+            negativeFlag = (result & utils.BIT7) != 0;
             carryFlag = false;
             zeroFlag = false;
         } else if (result == 0) {
@@ -1448,7 +1456,7 @@ public final class CPU {
             carryFlag = true;
             zeroFlag = true;
         } else {
-            negativeFlag = utils.getbit(result, 7);
+            negativeFlag = (result & utils.BIT7) != 0;
             carryFlag = true;
             zeroFlag = false;
         }
@@ -1471,7 +1479,7 @@ public final class CPU {
 
     private void setflags(final int result) {
         zeroFlag = (result == 0);
-        negativeFlag = utils.getbit(result, 7);
+        negativeFlag = (result & utils.BIT7) != 0;
     }
 
     private void sta(final int addr) {
@@ -1511,8 +1519,8 @@ public final class CPU {
         A = (((ram.read(addr) & A) >> 1) | (carryFlag ? 0x80 : 0x00));
         setflags(A);
 
-        carryFlag = utils.getbit(A, 6);
-        overflowFlag = carryFlag ^ utils.getbit(A, 5);
+        carryFlag = (A & utils.BIT6) != 0;
+        overflowFlag = carryFlag ^ (A & utils.BIT5) != 0;
     }
 
     private void axs(final int addr) {
@@ -1604,32 +1612,32 @@ public final class CPU {
 
     // Functions for memory address types; each returns the _memory_address_ for
     // the next fn
-    protected final int imm() {
+    private final int imm() {
         return PC++;
     }
 
-    protected final int zpg() {
+    private final int zpg() {
         // zero page mode
         return ram.read(PC++);
     }
 
-    protected final int zpg(final int reg) {
+    private final int zpg(final int reg) {
         // zero page added to register (modulus page boundary)
         return (ram.read(PC++) + reg) & 0xff;
     }
 
-    protected final int rel() {
+    private final int rel() {
         // returns actual value of PC, not memory location to look at
         // because only branches use this
         return ((byte) ram.read(PC++)) + PC;
     }
 
-    protected final int abs() {
+    private final int abs() {
         // absolute mode
         return ram.read(PC++) + (ram.read(PC++) << 8);
     }
 
-    protected final int abs(final int reg, final dummy dummy) {
+    private final int abs(final int reg, final dummy dummy) {
         // absolute plus value from reg
         final int addr = (ram.read(PC++) | (ram.read(PC++) << 8));
 
@@ -1649,7 +1657,7 @@ public final class CPU {
         return (addr + reg) & 0xffff;
     }
 
-    protected final int ind() {
+    private final int ind() {
         // weird mode. only used by jmp
         final int readloc = abs();
         return ram.read(readloc)
@@ -1659,7 +1667,7 @@ public final class CPU {
         //is taken from first byte on the page, not first byte on NEXT page.
     }
 
-    protected final int indX() {
+    private final int indX() {
         // indirect mode
         final int arg = ram.read(PC++);
         return ram.read((arg + X) & 0xff)
@@ -1667,7 +1675,7 @@ public final class CPU {
         // doesn't suffer from the same bug as jump indirect
     }
 
-    protected final int indY(final dummy dummy) {
+    private final int indY(final dummy dummy) {
         final int arg = ram.read(PC++);
         final int addr = (ram.read((arg) & 0xff) | (ram.read((arg + 1) & 0xff) << 8));
 

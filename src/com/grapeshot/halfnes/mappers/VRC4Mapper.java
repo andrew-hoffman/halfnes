@@ -81,7 +81,7 @@ public class VRC4Mapper extends Mapper {
                             break;
                     }
                 } else {
-                    prgmode = utils.getbit(data, 1);
+                    prgmode = (data & utils.BIT1) != 0;
                 }
                 break;
             case 0xa:
@@ -117,9 +117,9 @@ public class VRC4Mapper extends Mapper {
                     // System.err.println("reload set to " + irqreload);
                 } else {
                     if (!bit0) {
-                        irqack = utils.getbit(data, 0);
-                        irqenable = utils.getbit(data, 1);
-                        irqmode = utils.getbit(data, 2);
+                        irqack = (data & utils.BIT0) != 0;
+                        irqenable = (data & utils.BIT1) != 0;
+                        irqmode = (data & utils.BIT2) != 0;
                         if (irqenable) {
                             irqcounter = irqreload;
                         }

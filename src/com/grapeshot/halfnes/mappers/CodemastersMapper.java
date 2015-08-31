@@ -41,7 +41,7 @@ public class CodemastersMapper extends Mapper {
             if (crc == 0x1BC686A8) {
                 //fire hawk is only game with mapper controlled mirroring
                 //micro machines glitches hard if this is on              
-                setmirroring((utils.getbit(data, 4) ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0));
+                setmirroring(((data & utils.BIT4) != 0 ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0));
             }
         } else {
             bank = data & 0xf;

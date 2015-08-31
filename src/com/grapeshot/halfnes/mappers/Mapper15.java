@@ -25,7 +25,7 @@ public class Mapper15 extends Mapper {
 
         int prgbank = (data << 1) & 0xFE;
         int prgflip = data >> 7;
-        setmirroring(utils.getbit(data, 6) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+        setmirroring((data & utils.BIT6) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
 
 
         switch (addr & 0xFFF) {

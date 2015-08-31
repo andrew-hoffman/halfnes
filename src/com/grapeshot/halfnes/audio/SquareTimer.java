@@ -18,22 +18,28 @@ public class SquareTimer extends Timer {
         if (period + periodadd <= 0) {
             return;
         }
-        --divider;
-        while (divider <= 0) {
-            divider += period + periodadd;
-            position = ++position % values.length;
+        ++divider;
+        // note: stay away from negative division to avoid rounding problems
+        int periods = (divider + period + periodadd) / (period + periodadd);
+        if (periods < 0) {
+            periods = 0; // can happen if period or periodadd were made smaller
         }
+        position = (position + periods) % values.length;
+        divider -= (period + periodadd) * periods;
     }
 
     public final void clock(final int cycles) {
         if (period < 8) {
             return;
         }
-        divider -= cycles;
-        while (divider <= 0) {
-            divider += period + periodadd;
-            position = ++position % values.length;
+        divider += cycles;
+        // note: stay away from negative division to avoid rounding problems
+        int periods = (divider + period + periodadd) / (period + periodadd);
+        if (periods < 0) {
+            periods = 0; // can happen if period or periodadd were made smaller
         }
+        position = (position + periods) % values.length;
+        divider -= (period + periodadd) * periods;
     }
 
     public SquareTimer(final int ctrlen, final int periodadd) {

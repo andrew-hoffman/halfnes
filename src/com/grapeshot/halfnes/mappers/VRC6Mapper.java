@@ -113,9 +113,9 @@ public class VRC6Mapper extends Mapper {
                     if (!bit0) {
                         irqreload = data;
                     } else {
-                        irqack = utils.getbit(data, 0);
-                        irqenable = utils.getbit(data, 1);
-                        irqmode = utils.getbit(data, 2);
+                        irqack = (data & utils.BIT0) != 0;
+                        irqenable = (data & utils.BIT1) != 0;
+                        irqmode = (data & utils.BIT2) != 0;
                         if (irqenable) {
                             irqcounter = irqreload;
                         }

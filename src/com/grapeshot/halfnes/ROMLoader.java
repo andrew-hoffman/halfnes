@@ -49,12 +49,12 @@ public class ROMLoader {
                 //basically multicarts over 2mb won't ever work without a DB
             }
             chrsize = 8192 * header[5];
-            scrolltype = utils.getbit(header[6], 3)
+            scrolltype = (header[6] & utils.BIT3) != 0
                     ? Mapper.MirrorType.FOUR_SCREEN_MIRROR
-                    : utils.getbit(header[6], 0)
+                    : (header[6] & utils.BIT0) != 0
                     ? Mapper.MirrorType.V_MIRROR
                     : Mapper.MirrorType.H_MIRROR;
-            savesram = utils.getbit(header[6], 1);
+            savesram = (header[6] & utils.BIT1) != 0;
             mappertype = (header[6] >> 4);
             if (header[11] + header[12] + header[13] + header[14]
                     + header[15] == 0) {// fix for DiskDude

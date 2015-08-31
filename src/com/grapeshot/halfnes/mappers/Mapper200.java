@@ -36,7 +36,7 @@ public class Mapper200 extends Mapper {
 
         int reg = addr & 7;
 
-        setmirroring(utils.getbit(data, 3) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+        setmirroring((data & utils.BIT3) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
 
         //remap CHR bank
         for (int i = 0; i < 8; ++i) {

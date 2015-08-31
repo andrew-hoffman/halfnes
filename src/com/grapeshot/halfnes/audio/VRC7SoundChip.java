@@ -186,14 +186,14 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 int m = register - 0x20;
                 octave[m] = (data >> 1) & 7;
                 freq[m] = (freq[m] & 0xff) | ((data & 1) << 8);
-                if (getbit(data, 4) && !key[m]) {
+                if ((data & BIT4) != 0 && !key[m]) {
                     //when note is keyed on
                     carenv_state[m] = adsr.CUTOFF;
                     modenv_state[m] = adsr.CUTOFF;
                     // printarray(key);
                 }
-                key[m] = getbit(data, 4);
-                sust[m] = getbit(data, 5);
+                key[m] = (data & BIT4) != 0;
+                sust[m] = (data & BIT5) != 0;
                 break;
             case 0x30:
             case 0x31:
@@ -256,7 +256,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         //invaluable info: http://gendev.spritesmind.net/forum/viewtopic.php?t=386
         //http://www.smspower.org/maxim/Documents/YM2413ApplicationManual
         //http://forums.nesdev.com/viewtopic.php?f=3&t=9102
-        final double modVibrato = getbit(inst[0], 6) ? vib[fmctr] * (1 << octave[ch]) : 0;
+        final double modVibrato = (inst[0] & BIT6) != 0 ? vib[fmctr] * (1 << octave[ch]) : 0;
         final double modFreqMultiplier = multbl[inst[0] & 0xf];
         final int modFeedback = (fb == 7) ? 0 : (mod[ch] + oldmodout[ch]) >> (2 + fb);
         //no i don't know why it adds the last 2 old outputs but MAME
@@ -265,20 +265,20 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         //each of these values is an attenuation value
         final int modVol = (inst[2] & 0x3f) * 32;//modulator vol
         final int modEnvelope = ((int) modenv_vol[ch]) << 2;
-        final int modAM = getbit(inst[0], 7) ? am[amctr] : 0;
-        final boolean modRectify = getbit(inst[3], 3);
+        final int modAM = (inst[0] & BIT7) != 0 ? am[amctr] : 0;
+        final boolean modRectify = (inst[3] & BIT3) != 0;
         //calculate modulator operator value
         mod[ch] = operator(mod_f, (int) (modVol + modEnvelope + modks + modAM), modRectify) << 2;
         oldmodout[ch] = mod[ch];
         //now repeat most of that for the carrier
-        final double carVibrato = getbit(inst[1], 6) ? vib[fmctr] * (freq[ch] << octave[ch]) / 512. : 0;
+        final double carVibrato = (inst[1] & BIT6) != 0 ? vib[fmctr] * (freq[ch] << octave[ch]) / 512. : 0;
         final double carFreqMultiplier = multbl[inst[1] & 0xf];
         final int carFeedback = (mod[ch] + oldmodout[ch]) >> 1; //inaccurately named
         final int car_f = carFeedback + (int) (carVibrato + carFreqMultiplier * phase[ch]);
         final int carVol = vol[ch] * 128; //4 bits for carrier vol not 6
         final int carEnvelope = ((int) carenv_vol[ch]) << 2;
-        final int carAM = getbit(inst[1], 7) ? am[amctr] : 0;
-        final boolean carRectify = getbit(inst[3], 4);
+        final int carAM = (inst[1] & BIT7) != 0 ? am[amctr] : 0;
+        final boolean carRectify = (inst[3] & BIT4) != 0;
         out[ch] = operator(car_f, (int) (carVol + carEnvelope + carks + carAM), carRectify) << 3;
         outputSample();
     }
@@ -343,7 +343,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     final private static int MAXVOL = 0;
 
     private void setenvelope(final int[] instrument, final adsr[] state, final double[] vol, final int ch, final boolean isCarrier) {
-        final boolean keyscaleRate = getbit(instrument[(isCarrier ? 1 : 0)], 4);
+        final boolean keyscaleRate = (instrument[(isCarrier ? 1 : 0)] & BIT4) != 0;
         final int ksrShift = keyscaleRate ? octave[ch] << 1 : octave[ch] >> 1;
         //^ the key scaling bit (java should really have unions, this is such a mess)
         /*TODO: fix all of this. Most of these constants were calculated from a 
@@ -412,7 +412,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                         vol[ch] += .005;
                     }
                 } else if (vol[ch] < ZEROVOL) {
-                    if (getbit(instrument[isCarrier ? 1 : 0], 5)) {
+                    if ((instrument[isCarrier ? 1 : 0] & BIT5) != 0) {
                         //sustain on, don't decay until keyed
                         if (!key[ch]) {
                             state[ch] = adsr.SUSTRELEASE;

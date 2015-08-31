@@ -38,7 +38,7 @@ public class VRC1Mapper extends Mapper {
                 setbanks();
                 break;
             case 0x9:
-                setmirroring(utils.getbit(data, 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+                setmirroring((data & utils.BIT0) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
                 chrbank[0] = (chrbank[0] & 0xf) | ((data << 3) & 0x10);
                 chrbank[1] = (chrbank[1] & 0xf) | ((data << 2) & 0x10);
                 setbanks();

@@ -37,6 +37,6 @@ public class Mapper229 extends Mapper {
             prg_map[i + 16] = (1024 * (i + 16 * bank)) & (prgsize - 1);
         }
 
-        setmirroring(utils.getbit(addr, 5) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+        setmirroring((addr & utils.BIT5) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
     }
 }

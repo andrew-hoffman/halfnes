@@ -1,6 +1,7 @@
 package com.grapeshot.halfnes;
 
 //HalfNES, Copyright Andrew Hoffman, October 2010
+import com.grapeshot.halfnes.ui.GUIImpl;
 import java.io.*;
 import javax.swing.*;
 
@@ -11,14 +12,14 @@ public class halfNES {
     public static void main(String[] args) throws IOException {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            System.err.println("Could not set system look and feel. Meh.");
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+            System.err.println("Could not set system look and feel. Meh: " + e);
         }
-        com.grapeshot.halfnes.NES thing = new com.grapeshot.halfnes.NES();
+        NES nes = new NES(new GUIImpl());
         if (args == null || args.length < 1 || args[0] == null) {
-            thing.run();
+            nes.run();
         } else {
-            thing.run(args[0]);
+            nes.run(args[0]);
         }
 
     }

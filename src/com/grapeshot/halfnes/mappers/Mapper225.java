@@ -23,7 +23,7 @@ public class Mapper225 extends Mapper {
             return;
         }
 
-        setmirroring(utils.getbit(addr, 0xD) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+        setmirroring((addr & utils.BIT13) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
 
         int bank = addr >> 7 & 0x1F;
 

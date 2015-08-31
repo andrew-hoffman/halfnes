@@ -56,7 +56,7 @@ public class Sunsoft03Mapper extends Mapper {
                 --cpu.interrupt;
                 interrupted = false;
             }
-            irqenable = utils.getbit(data, 4);
+            irqenable = (data & utils.BIT4) != 0;
             irqtoggle = false;
         } else if (addr >= 0xE800 && addr <= 0xEFFF) {
             switch (data & 3) {

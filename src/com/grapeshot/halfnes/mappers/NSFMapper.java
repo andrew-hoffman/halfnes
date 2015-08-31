@@ -159,7 +159,7 @@ public class NSFMapper extends Mapper {
     @Override
     public void cartWrite(final int addr, final int data) {
         if (n163 && addr == 0xF800) {
-            n163autoincrement = utils.getbit(data, 7);
+            n163autoincrement = (data & utils.BIT7) != 0;
             n163soundAddr = data & 0x7f;
         } else if (n163 && addr == 0x4800) {
             n163Audio.write(n163soundAddr, data);
@@ -371,7 +371,7 @@ public class NSFMapper extends Mapper {
     }
 
     private void setSoundChip() {
-        if (utils.getbit(sndchip, 0)) {
+        if ((sndchip & utils.BIT0) != 0) {
             //VRC6 audio
             vrc6 = true;
             vrc6Audio = new VRC6SoundChip();
@@ -379,7 +379,7 @@ public class NSFMapper extends Mapper {
                 cpuram.apu.addExpnSound(vrc6Audio);
             }
         }
-        if (utils.getbit(sndchip, 1)) {
+        if ((sndchip & utils.BIT1) != 0) {
             //VRC7 audio
             vrc7 = true;
             vrc7Audio = new VRC7SoundChip();
@@ -387,10 +387,10 @@ public class NSFMapper extends Mapper {
                 cpuram.apu.addExpnSound(vrc7Audio);
             }
         }
-        if (utils.getbit(sndchip, 2)) {
+        if ((sndchip & utils.BIT2) != 0) {
             //FDS audio, not yet implemented
         }
-        if (utils.getbit(sndchip, 3)) {
+        if ((sndchip & utils.BIT3) != 0) {
             //MMC5 audio
             mmc5 = true;
             mmc5Audio = new MMC5SoundChip();
@@ -398,7 +398,7 @@ public class NSFMapper extends Mapper {
                 cpuram.apu.addExpnSound(mmc5Audio);
             }
         }
-        if (utils.getbit(sndchip, 4)) {
+        if ((sndchip & utils.BIT4) != 0) {
             //Namco 163 audio
             n163 = true;
             n163Audio = new Namco163SoundChip();
@@ -406,7 +406,7 @@ public class NSFMapper extends Mapper {
                 cpuram.apu.addExpnSound(n163Audio);
             }
         }
-        if (utils.getbit(sndchip, 5)) {
+        if ((sndchip & utils.BIT5) != 0) {
             //Sunsoft 5B audio
             s5b = true;
             s5bAudio = new Sunsoft5BSoundChip();

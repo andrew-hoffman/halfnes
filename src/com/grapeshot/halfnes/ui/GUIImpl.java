@@ -20,9 +20,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -32,7 +35,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
 
     private Canvas canvas;
     private BufferStrategy buffer;
-    private final NES nes;
+    private NES nes;
     private static final long serialVersionUID = 6411494245530679723L;
     private final AL listener = new AL();
     private int screenScaleFactor;
@@ -44,14 +47,17 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private Renderer renderer;
     private final ControllerImpl padController1, padController2;
 
-    public GUIImpl(NES nes) {
-        this.nes = nes;
+    public GUIImpl() {
         screenScaleFactor = PrefsSingleton.get().getInt("screenScaling", 2);
         padController1 = new ControllerImpl(this, 0);
         padController2 = new ControllerImpl(this, 1);
-        nes.setControllers(padController1, padController2);
         padController1.startEventQueue();
         padController2.startEventQueue();
+    }
+    
+    public void setNES(NES nes) {
+        this.nes = nes;
+        nes.setControllers(padController1, padController2);
     }
 
     public synchronized void setRenderOptions() {
@@ -80,6 +86,10 @@ public class GUIImpl extends JFrame implements GUIInterface {
 
     @Override
     public synchronized void run() {
+        SwingUtilities.invokeLater(this::runOnEventThread);
+    }
+    
+    public synchronized void runOnEventThread() {
         //construct window
         this.setTitle("HalfNES " + NES.VERSION);
         this.setResizable(false);
@@ -95,7 +105,10 @@ public class GUIImpl extends JFrame implements GUIInterface {
                 PrefsSingleton.get().getInt("windowY", 0));
         this.addWindowListener(listener);
         this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-
+        
+        // todo: create options for these
+        hideCursor();
+        toggleFullScreen();
 
         this.setVisible(true);
         // Create BackBuffer
@@ -131,6 +144,16 @@ public class GUIImpl extends JFrame implements GUIInterface {
         };
         this.setTransferHandler(handler);
     }
+
+  private void hideCursor() throws IndexOutOfBoundsException, HeadlessException {
+    // Transparent 16 x 16 pixel cursor image.
+    BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+    // Create a new blank cursor.
+    Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+        cursorImg, new Point(0, 0), "blank cursor");
+    // Set the blank cursor to the JFrame.
+    getContentPane().setCursor(blankCursor);
+  }
 
     public void buildMenus() {
         JMenuBar menus = new JMenuBar();
@@ -247,7 +270,8 @@ public class GUIImpl extends JFrame implements GUIInterface {
         }
     }
 
-    private void loadROM(String path) {
+    @Override
+    public void loadROM(String path) {
         if (path.endsWith(".zip") || path.endsWith(".ZIP")) {
             try {
                 loadRomFromZip(path);
@@ -319,9 +343,11 @@ public class GUIImpl extends JFrame implements GUIInterface {
                 + File.separator + FileUtils.stripExtension(new File(zipName).getName())
                 + " - " + romName);
         if (outputFile.exists()) {
-            this.messageBox("Cannot extract file. File " + outputFile.getCanonicalPath() + " already exists.");
-            zipStream.close();
-            return null;
+            if (!outputFile.delete()) {
+              this.messageBox("Cannot extract file. File " + outputFile.getCanonicalPath() + " already exists.");
+              zipStream.close();
+              return null;
+            }
         }
         final byte[] buf = new byte[4096];
         final FileOutputStream fos = new FileOutputStream(outputFile);
@@ -368,7 +394,6 @@ public class GUIImpl extends JFrame implements GUIInterface {
     int bgcolor;
     BufferedImage frame;
     double fps;
-    int frameskip = 0;
 
     @Override
     public final synchronized void setFrame(final int[] nextframe, final int[] bgcolors, boolean dotcrawl) {
@@ -388,16 +413,14 @@ public class GUIImpl extends JFrame implements GUIInterface {
             }
             averageframes /= frametimes.length;
             fps = 1E9 / averageframes;
-            this.setTitle(String.format("HalfNES %s - %s, %2.2f fps"
-                    + ((frameskip > 0) ? " frameskip " + frameskip : ""),
+            this.setTitle(String.format("HalfNES %s - %s, %2.2f fps",
+//                    + ((nes.frameskip > 0) ? " frameskip " + nes.frameskip : ""),
                     NES.VERSION,
                     nes.getCurrentRomName(),
                     fps));
         }
-        if (nes.framecount % (frameskip + 1) == 0) {
-            frame = renderer.render(nextframe, bgcolors, dotcrawl);
-            render();
-        }
+        frame = renderer.render(nextframe, bgcolors, dotcrawl);
+        render();
     }
 
     @Override

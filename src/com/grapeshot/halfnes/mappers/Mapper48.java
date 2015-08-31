@@ -101,7 +101,7 @@ public class Mapper48 extends Mapper {
         } else if (addr <= 0xFFFF) {
             switch (addr & 3) {
                 case 0:
-                    setmirroring(utils.getbit(data, 6) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+                    setmirroring((data & utils.BIT6) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
                     break;
             }
         }

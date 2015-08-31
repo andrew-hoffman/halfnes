@@ -39,6 +39,6 @@ public class Mapper212 extends Mapper {
         for (int i = 0; i < 8; ++i) {
             chr_map[i] = (1024 * (i + 8 * addr)) & (chrsize - 1);
         }
-        setmirroring(utils.getbit(addr, 4) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+        setmirroring((addr & utils.BIT4) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
     }
 }

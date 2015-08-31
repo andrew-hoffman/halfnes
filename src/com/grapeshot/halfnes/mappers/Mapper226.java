@@ -29,7 +29,7 @@ public class Mapper226 extends Mapper {
 
         int bank = ((reg[0] >> 1 & 0x0F) | (reg[0] >> 3 & 0x10) | (reg[1] << 5 & 0x20));
 
-        setmirroring(utils.getbit(reg[0], 6) ? MirrorType.V_MIRROR : MirrorType.H_MIRROR);
+        setmirroring((reg[0] & utils.BIT6) != 0 ? MirrorType.V_MIRROR : MirrorType.H_MIRROR);
 
         if ((reg[0] & 0x20) != 0) {
             bank = (bank << 1) | (reg[0] & 1);

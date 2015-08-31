@@ -2,10 +2,38 @@ package com.grapeshot.halfnes.mappers;
 //HalfNES, Copyright Andrew Hoffman, October 2010
 
 import com.grapeshot.halfnes.*;
+import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.zip.CRC32;
+import sun.misc.Unsafe;
 
 public abstract class Mapper {
+
+    static final Unsafe unsafe;
+    static final int INTEGER_ARRAY_BASE_OFFSET;
+
+    static {
+        unsafe = (Unsafe) AccessController.doPrivileged(
+            new PrivilegedAction<Object>() {
+              @Override
+              public Object run() {
+                try {
+                  Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                  f.setAccessible(true);
+                  return f.get(null);
+                } catch (Exception e) {
+                  throw new Error();
+                }
+              }
+            });
+
+        INTEGER_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(int[].class);
+        if (unsafe.arrayIndexScale(int[].class) != 4) {
+          throw new AssertionError();
+        }
+    }
 
     protected ROMLoader loader;
     protected int mappertype = 0, prgsize = 0, prgoff = 0, chroff = 0, chrsize = 0;
@@ -58,8 +86,8 @@ public abstract class Mapper {
         chrsize = loader.chrsize;
         scrolltype = loader.scrolltype;
         savesram = loader.savesram;
-        prg = loader.load(prgsize, prgoff);
-        crc = crc32(prg);
+        int[] unshiftedprg = loader.load(prgsize, prgoff);
+        crc = crc32(unshiftedprg);
         //System.err.println(utils.hex(crc));
         //crc "database" for certain impossible-to-recognize games
         if ((crc == 0x41243492) //low g man (u)
@@ -67,6 +95,8 @@ public abstract class Mapper {
                 ) {
             hasprgram = false;
         }
+        prg = new int[unshiftedprg.length + 0x8000];
+        System.arraycopy(unshiftedprg, 0, prg, 0x8000, unshiftedprg.length);
         chr = loader.load(chrsize, chroff);
 
         if (chrsize == 0) {//chr ram
@@ -109,16 +139,18 @@ public abstract class Mapper {
         // by default has wram at 0x6000 and cartridge at 0x8000-0xfff
         // but some mappers have different so override for those
         if (addr >= 0x8000) {
-            return prg[prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023)];
+            return prg[addr];
+//            return unsafe.getInt(prg, INTEGER_ARRAY_BASE_OFFSET + (addr - 0x8000) * 4);
         } else if (addr >= 0x6000 && hasprgram) {
             return prgram[addr & 0x1fff];
+//            return unsafe.getInt(prgram, INTEGER_ARRAY_BASE_OFFSET + (addr & 0x1fff) * 4);
         }
         return addr >> 8; //open bus
     }
 
     public int ppuRead(int addr) {
         if (addr < 0x2000) {
-            return chr[chr_map[addr >> 10] + (addr & 1023)];
+            return chr[addr];
         } else {
             switch (addr & 0xc00) {
                 case 0:

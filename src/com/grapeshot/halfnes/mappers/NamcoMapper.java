@@ -87,7 +87,7 @@ public class NamcoMapper extends Mapper {
             //irq counter high 7 bits           
             irqcounter &= 0xff;
             irqcounter |= ((data & 0x7f) << 8);
-            irqenable = utils.getbit(data, 7);
+            irqenable = (data & utils.BIT7) != 0;
             irqack();
             //and bit 7 is irq enable
         } else if (addr <= 0xbfff) {
@@ -104,28 +104,28 @@ public class NamcoMapper extends Mapper {
                 //i hope it doesnt try to write while it's chr rom
                 nt0 = Arrays.copyOfRange(chr, (data * 1024), (data + 1) * 1024);
             } else {
-                nt0 = (utils.getbit(data, 0) ? pput1 : pput0);
+                nt0 = ((data & utils.BIT0) != 0 ? pput1 : pput0);
             }
         } else if (addr <= 0xc8ff) {
             //nametable select 2
             if (data < 0xe0) {
                 nt1 = Arrays.copyOfRange(chr, (data * 1024), (data + 1) * 1024);
             } else {
-                nt1 = (utils.getbit(data, 0) ? pput1 : pput0);
+                nt1 = ((data & utils.BIT0) != 0 ? pput1 : pput0);
             }
         } else if (addr <= 0xd7ff) {
             //nametable select 3
             if (data < 0xe0) {
                 nt2 = Arrays.copyOfRange(chr, (data * 1024), (data + 1) * 1024);
             } else {
-                nt2 = (utils.getbit(data, 0) ? pput1 : pput0);
+                nt2 = ((data & utils.BIT0) != 0 ? pput1 : pput0);
             }
         } else if (addr <= 0xdfff) {
             //nametable select 4
             if (data < 0xe0) {
                 nt3 = Arrays.copyOfRange(chr, (data * 1024), (data + 1) * 1024);
             } else {
-                nt3 = (utils.getbit(data, 0) ? pput1 : pput0);
+                nt3 = ((data & utils.BIT0) != 0 ? pput1 : pput0);
             }
         } else if (addr <= 0xe7ff) {
             //prg select 1 (1st 6 bits) and mirroring
@@ -137,8 +137,8 @@ public class NamcoMapper extends Mapper {
             for (int i = 0; i < 8; ++i) {
                 prg_map[i + 8] = (1024 * (i + 8 * (data & 63))) % prgsize;
             }
-            chrramenable0 = !utils.getbit(data, 6);
-            chrramenable1 = !utils.getbit(data, 7);
+            chrramenable0 = (data & utils.BIT6) == 0;
+            chrramenable1 = (data & utils.BIT7) == 0;
         } else if (addr <= 0xf7ff) {
             for (int i = 0; i < 8; ++i) {
                 prg_map[i + 16] = (1024 * (i + 8 * (data & 63))) % prgsize;
@@ -147,7 +147,7 @@ public class NamcoMapper extends Mapper {
         } else if (addr <= 0xffff) {
             //write protect for prg ram on namco 163
             //also sound address port (7 bits)
-            autoincrement = utils.getbit(data, 7);
+            autoincrement = (data & utils.BIT7) != 0;
             soundAddr = data & 0x7f;
         }
     }

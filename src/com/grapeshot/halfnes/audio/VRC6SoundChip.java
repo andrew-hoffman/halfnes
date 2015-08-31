@@ -29,25 +29,25 @@ public class VRC6SoundChip implements ExpansionSoundChip {
             case 0x9000:
                 volume[0] = data & 0xf;
                 //duty cycle is between 12.5% and 50% unless last bit set and then it's forced to 100%
-                timers[0].setduty(utils.getbit(data, 7) ? 16 : (((data >> 4) & 7) + 1));
+                timers[0].setduty((data & utils.BIT7) != 0 ? 16 : (((data >> 4) & 7) + 1));
                 break;
             case 0x9001:
                 timers[0].setperiod((timers[0].getperiod() & 0xf00) + data);
                 break;
             case 0x9002:
                 timers[0].setperiod((timers[0].getperiod() & 0xff) + ((data & 0xf) << 8));
-                enable[0] = utils.getbit(data, 7);
+                enable[0] = (data & utils.BIT7) != 0;
                 break;
             case 0xa000:
                 volume[1] = data & 0xf;
-                timers[1].setduty(utils.getbit(data, 7) ? 16 : (((data >> 4) & 7) + 1));
+                timers[1].setduty((data & utils.BIT7) != 0 ? 16 : (((data >> 4) & 7) + 1));
                 break;
             case 0xa001:
                 timers[1].setperiod((timers[1].getperiod() & 0xf00) + data);
                 break;
             case 0xa002:
                 timers[1].setperiod((timers[1].getperiod() & 0xff) + ((data & 0xf) << 8));
-                enable[1] = utils.getbit(data, 7);
+                enable[1] = (data & utils.BIT7) != 0;
                 break;
             case 0xb000:
                 //saw accumulator
@@ -60,7 +60,7 @@ public class VRC6SoundChip implements ExpansionSoundChip {
             case 0xb002:
                 sawdivider &= 0xff;
                 sawdivider += ((data & 0xf) << 8);
-                enable[2] = utils.getbit(data, 7);
+                enable[2] = (data & utils.BIT7) != 0;
                 break;
         }
     }

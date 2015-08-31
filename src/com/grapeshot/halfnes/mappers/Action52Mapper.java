@@ -30,10 +30,10 @@ public class Action52Mapper extends Mapper {
             ram[addr & 3] = data & 0xf;
         } else if (addr >= 0x8000) {
             chrpage = ((addr & 0xf) << 2) + (data & 3);
-            prgmode = utils.getbit(addr, 5);
+            prgmode = (addr & utils.BIT5) != 0;
             prgpage = (addr >> 6) & 0x1f;
             prgchip = (addr >> 11) & 3;
-            setmirroring((utils.getbit(addr, 13)) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+            setmirroring((addr & utils.BIT13) != 0 ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
             for (int i = 0; i < 8; ++i) {
                 chr_map[i] = (1024 * (chrpage * 8 + i)) % chrsize;
             }
