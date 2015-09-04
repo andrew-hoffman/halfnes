@@ -1,7 +1,8 @@
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
+ */
 package com.grapeshot.halfnes.mappers;
-//HalfNES, Copyright Andrew Hoffman, October 2010
-
-import com.grapeshot.halfnes.*;
 
 public class UnromMapper extends Mapper {
 

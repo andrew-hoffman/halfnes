@@ -1,11 +1,9 @@
-package com.grapeshot.halfnes.mappers;
-//HalfNES, Copyright Andrew Hoffman, October 2010
-import com.grapeshot.halfnes.*;
-
-/**
- *
- * @author Andrew
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
  */
+package com.grapeshot.halfnes.mappers;
+
 public class BnromMapper extends Mapper {
 
     @Override

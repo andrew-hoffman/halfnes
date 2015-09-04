@@ -1,5 +1,8 @@
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
+ */
 package com.grapeshot.halfnes.ui;
-//HalfNES, Copyright Andrew Hoffman, October 2010
 
 import com.grapeshot.halfnes.FileUtils;
 import com.grapeshot.halfnes.NES;

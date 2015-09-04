@@ -1,3 +1,7 @@
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
+ */
 package com.grapeshot.halfnes.mappers;
 
 import com.grapeshot.halfnes.*;

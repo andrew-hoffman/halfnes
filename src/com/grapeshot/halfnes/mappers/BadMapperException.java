@@ -1,14 +1,9 @@
-package com.grapeshot.halfnes.mappers;
-//HalfNES, Copyright Andrew Hoffman, October 2010
-
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
  */
-/**
- *
- * @author Andrew
- */
+package com.grapeshot.halfnes.mappers;
+
 public class BadMapperException extends Exception {
 
     public String e;

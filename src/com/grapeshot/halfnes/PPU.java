@@ -1,5 +1,8 @@
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
+ */
 package com.grapeshot.halfnes;
-//HalfNES by Andrew Hoffman
 
 import static com.grapeshot.halfnes.PrefsSingleton.get;
 import com.grapeshot.halfnes.mappers.Mapper;
@@ -385,7 +388,7 @@ public class PPU {
                 fetchNTByte();
                 fetchNTByte();
             }
-            if(cycles == 65 && renderingOn()){
+            if (cycles == 65 && renderingOn()) {
                 oamstart = oamaddr;
             }
             if (cycles == 260 && renderingOn()) {

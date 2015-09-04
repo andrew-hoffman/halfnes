@@ -1,13 +1,15 @@
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
+ */
 package com.grapeshot.halfnes.mappers;
-//HalfNES, Copyright Andrew Hoffman, October 2010
-
-import com.grapeshot.halfnes.*;
 
 public class Sunsoft01Mapper extends Mapper {
 
     private int lowBank = 0;
     private int highBank = 0;
 
+    @Override
     public void loadrom() throws BadMapperException {
         //needs to be in every mapper. Fill with initial cfg
         super.loadrom();

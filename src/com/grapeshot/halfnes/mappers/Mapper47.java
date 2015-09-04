@@ -1,6 +1,6 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
  */
 package com.grapeshot.halfnes.mappers;
 
@@ -28,7 +28,6 @@ public class Mapper47 extends MMC3Mapper {
             chr_map[i] = 0;
         }
         setbank6();
-        cpuram.setPrgRAMEnable(false);
     }
 
     @Override

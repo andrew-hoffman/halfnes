@@ -1,3 +1,7 @@
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
+ */
 package com.grapeshot.halfnes;
 
 import com.grapeshot.halfnes.ui.Oscilloscope;
@@ -5,7 +9,6 @@ import com.grapeshot.halfnes.audio.*;
 import com.grapeshot.halfnes.mappers.Mapper;
 import java.util.ArrayList;
 
-//HalfNES, Copyright Andrew Hoffman, October 2010
 public class APU {
 
     public int samplerate = 1;

@@ -1,5 +1,8 @@
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
+ */
 package com.grapeshot.halfnes.mappers;
-//HalfNES, Copyright Andrew Hoffman, October 2010
 
 import com.grapeshot.halfnes.*;
 import com.grapeshot.halfnes.audio.*;
@@ -55,7 +58,7 @@ public class VRC7Mapper extends Mapper {
                 } else if (bit0 && bit1) {
                     //$9030: data write to sndchip
                     if (!hasInitSound) {
-            //tiny hack, because the APU is not initialized until AFTER this happens
+                        //tiny hack, because the APU is not initialized until AFTER this happens
                         //TODO: this really should not need to be here.
                         cpuram.apu.addExpnSound(sndchip);
                         hasInitSound = true;

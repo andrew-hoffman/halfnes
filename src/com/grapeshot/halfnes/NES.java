@@ -1,3 +1,7 @@
+/**
+ *
+ * @author Andrew Hoffman
+ */
 package com.grapeshot.halfnes;
 
 import com.grapeshot.halfnes.ui.*;
@@ -7,10 +11,6 @@ import com.grapeshot.halfnes.mappers.Mapper;
 
 import java.util.prefs.Preferences;
 
-/**
- *
- * @author Andrew Hoffman
- */
 public class NES {
 
     private Mapper mapper;
@@ -94,7 +94,6 @@ public class NES {
 //            cpu.startLog();
 //            System.err.println("log on");
 //        }
-
         //run cpu, ppu for active drawing time
         //render the frame
         ppu.renderFrame(gui);

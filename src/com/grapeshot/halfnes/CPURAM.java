@@ -1,6 +1,6 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
  */
 package com.grapeshot.halfnes;
 
@@ -17,7 +17,6 @@ import java.util.HashMap;
  */
 public class CPURAM {
 
-    private boolean hasprgram = true;
     private final int[] wram = new int[2048];
     Mapper mapper;
     public APU apu;
@@ -74,10 +73,6 @@ public class CPURAM {
         } else if (0x4000 <= addr && addr <= 0x4018) {
             apu.write(addr - 0x4000, data);
         }
-    }
-
-    public void setPrgRAMEnable(boolean b) {
-        hasprgram = b;
     }
 
     public void setAPU(APU apu) {

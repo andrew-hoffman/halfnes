@@ -1,5 +1,8 @@
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
+ */
 package com.grapeshot.halfnes.mappers;
-//HalfNES, Copyright Andrew Hoffman, October 2010
 
 import com.grapeshot.halfnes.*;
 import com.grapeshot.halfnes.audio.*;
@@ -160,7 +163,7 @@ public class VRC6Mapper extends Mapper {
         }
 //        utils.printarray(chr_map);
     }
-    
+
     int prescaler = 341;
 
     @Override

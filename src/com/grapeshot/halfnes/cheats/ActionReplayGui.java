@@ -1,3 +1,7 @@
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
+ */
 package com.grapeshot.halfnes.cheats;
 
 import java.util.ArrayList;
@@ -140,8 +144,8 @@ public class ActionReplayGui extends javax.swing.JDialog {
             long c = GGtoHex(code);
             if (((c & (1 << 23)) != 0)) { //check bit 15 is true
                 //now descramble this value into address and data
-                final int address =
-                        0x8000
+                final int address
+                        = 0x8000
                         | ((int) ((c >> 18) & 1) << 14)
                         | ((int) ((c >> 17) & 1) << 13)
                         | ((int) ((c >> 16) & 1) << 12)
@@ -157,8 +161,8 @@ public class ActionReplayGui extends javax.swing.JDialog {
                         | ((int) ((c >> 14) & 1) << 2)
                         | ((int) ((c >> 13) & 1) << 1)
                         | ((int) ((c >> 12) & 1));
-                final int data =
-                        ((int) ((c >> 31) & 1) << 7)
+                final int data
+                        = ((int) ((c >> 31) & 1) << 7)
                         | ((int) ((c >> 26) & 1) << 6)
                         | ((int) ((c >> 25) & 1) << 5)
                         | ((int) ((c >> 24) & 1) << 4)
@@ -167,8 +171,8 @@ public class ActionReplayGui extends javax.swing.JDialog {
                         | ((int) ((c >> 29) & 1) << 1)
                         | ((int) ((c >> 28) & 1));
 
-                final int check =
-                        //8 char game genie codes use a check byte so val is only
+                final int check
+                        = //8 char game genie codes use a check byte so val is only
                         //patched when rom value matches this.
                         ((int) ((c >> 7) & 1) << 7)
                         | ((int) ((c >> 2) & 1) << 6)

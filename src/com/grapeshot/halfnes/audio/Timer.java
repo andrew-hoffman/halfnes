@@ -1,10 +1,9 @@
-package com.grapeshot.halfnes.audio;
-//HalfNES, Copyright Andrew Hoffman, October 2010
-
-/**
- *
- * @author Andrew
+/*
+ * HalfNES by Andrew Hoffman
+ * Licensed under the GNU GPL Version 3. See LICENSE file
  */
+package com.grapeshot.halfnes.audio;
+
 public abstract class Timer {
 
     protected int period;
