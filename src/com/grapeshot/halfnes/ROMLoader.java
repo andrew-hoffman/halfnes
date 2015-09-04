@@ -43,12 +43,12 @@ public class ROMLoader {
                 && header[2] == 'S' && header[3] == 0x1A) {
             //a valid iNES file, proceed
 
-            scrolltype = utils.getbit(header[6], 3)
+            scrolltype = ((header[6] & (utils.BIT3)) != 0)
                     ? Mapper.MirrorType.FOUR_SCREEN_MIRROR
-                    : utils.getbit(header[6], 0)
+                    : ((header[6] & (utils.BIT0)) != 0)
                             ? Mapper.MirrorType.V_MIRROR
                             : Mapper.MirrorType.H_MIRROR;
-            savesram = utils.getbit(header[6], 1);
+            savesram = ((header[6] & (utils.BIT1)) != 0);
             mappertype = (header[6] >> 4);
             //detect NES 2.0 format for the rest of the header
             if (((header[7] >> 2) & 3) == 2) {
@@ -97,7 +97,7 @@ public class ROMLoader {
                         + header[15] == 0) {
                     //only consider upper bytes of mapper # if the end bytes are zero
                     mappertype += ((header[7] >> 4) << 4);
-                    if (utils.getbit(header[9], 0)) {
+                    if (((header[9] & (utils.BIT0)) != 0)) {
                         //detect tv type though it's not really used
                         tvtype = Mapper.TVType.PAL;
                         System.err.println("pal header type 1");

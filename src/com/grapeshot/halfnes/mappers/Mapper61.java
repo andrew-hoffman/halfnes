@@ -46,6 +46,6 @@ public class Mapper61 extends Mapper {
                 }
         }
 
-        setmirroring(utils.getbit(addr, 7) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+        setmirroring(((addr & (utils.BIT7)) != 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
     }
 }

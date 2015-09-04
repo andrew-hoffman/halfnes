@@ -104,32 +104,32 @@ public class ActionReplayGui extends javax.swing.JDialog {
         } else if ((code.length() == 6) && code.matches("[AEGIKLNOPSTUVXYZaegiklnopstuvxyz]*")) {
             //game genie type 1 code
             long c = GGtoHex(code);
-            if (!getbit(c, 15)) { //check bit 15 is false
+            if (!((c & (BIT15)) != 0)) { //check bit 15 is false
                 //now descramble this value into address and data
                 final int address = 0x8000
-                        | (getbitI(c, 10) << 14)
-                        | (getbitI(c, 9) << 13)
-                        | (getbitI(c, 8) << 12)
-                        | (getbitI(c, 7) << 11)
-                        | (getbitI(c, 2) << 10)
-                        | (getbitI(c, 1) << 9)
-                        | (getbitI(c, 0) << 8)
-                        | (getbitI(c, 19) << 7)
-                        | (getbitI(c, 14) << 6)
-                        | (getbitI(c, 13) << 5)
-                        | (getbitI(c, 12) << 4)
-                        | (getbitI(c, 11) << 3)
-                        | (getbitI(c, 6) << 2)
-                        | (getbitI(c, 5) << 1)
-                        | (getbitI(c, 4));
-                final int data = (getbitI(c, 23) << 7)
-                        | (getbitI(c, 18) << 6)
-                        | (getbitI(c, 17) << 5)
-                        | (getbitI(c, 16) << 4)
-                        | (getbitI(c, 3) << 3)
-                        | (getbitI(c, 22) << 2)
-                        | (getbitI(c, 21) << 1)
-                        | getbitI(c, 20);
+                        | ((int) ((c >> 10) & 1) << 14)
+                        | ((int) ((c >> 9) & 1) << 13)
+                        | ((int) ((c >> 8) & 1) << 12)
+                        | ((int) ((c >> 7) & 1) << 11)
+                        | ((int) ((c >> 2) & 1) << 10)
+                        | ((int) ((c >> 1) & 1) << 9)
+                        | ((int) ((c >> 0) & 1) << 8)
+                        | ((int) ((c >> 19) & 1) << 7)
+                        | ((int) ((c >> 14) & 1) << 6)
+                        | ((int) ((c >> 13) & 1) << 5)
+                        | ((int) ((c >> 12) & 1) << 4)
+                        | ((int) ((c >> 11) & 1) << 3)
+                        | ((int) ((c >> 6) & 1) << 2)
+                        | ((int) ((c >> 5) & 1) << 1)
+                        | ((int) ((c >> 4) & 1));
+                final int data = ((int) ((c >> 23) & 1) << 7)
+                        | ((int) ((c >> 18) & 1) << 6)
+                        | ((int) ((c >> 17) & 1) << 5)
+                        | ((int) ((c >> 16) & 1) << 4)
+                        | ((int) ((c >> 3) & 1) << 3)
+                        | ((int) ((c >> 22) & 1) << 2)
+                        | ((int) ((c >> 21) & 1) << 1)
+                        | (int) ((c >> 20) & 1);
                 btnApply.setEnabled(true);
                 patch = new Patch(address, data);
                 return true;
@@ -138,46 +138,46 @@ public class ActionReplayGui extends javax.swing.JDialog {
         } else if ((code.length() == 8) && code.matches("[AEGIKLNOPSTUVXYZaegiklnopstuvxyz]*")) {
             //game genie type 2 code
             long c = GGtoHex(code);
-            if (getbit(c, 23)) { //check bit 15 is true
+            if (((c & (1 << 23)) != 0)) { //check bit 15 is true
                 //now descramble this value into address and data
                 final int address =
                         0x8000
-                        | (getbitI(c, 18) << 14)
-                        | (getbitI(c, 17) << 13)
-                        | (getbitI(c, 16) << 12)
-                        | (getbitI(c, 15) << 11)
-                        | (getbitI(c, 10) << 10)
-                        | (getbitI(c, 9) << 9)
-                        | (getbitI(c, 8) << 8)
-                        | (getbitI(c, 27) << 7)
-                        | (getbitI(c, 22) << 6)
-                        | (getbitI(c, 21) << 5)
-                        | (getbitI(c, 20) << 4)
-                        | (getbitI(c, 19) << 3)
-                        | (getbitI(c, 14) << 2)
-                        | (getbitI(c, 13) << 1)
-                        | (getbitI(c, 12));
+                        | ((int) ((c >> 18) & 1) << 14)
+                        | ((int) ((c >> 17) & 1) << 13)
+                        | ((int) ((c >> 16) & 1) << 12)
+                        | ((int) ((c >> 15) & 1) << 11)
+                        | ((int) ((c >> 10) & 1) << 10)
+                        | ((int) ((c >> 9) & 1) << 9)
+                        | ((int) ((c >> 8) & 1) << 8)
+                        | ((int) ((c >> 27) & 1) << 7)
+                        | ((int) ((c >> 22) & 1) << 6)
+                        | ((int) ((c >> 21) & 1) << 5)
+                        | ((int) ((c >> 20) & 1) << 4)
+                        | ((int) ((c >> 19) & 1) << 3)
+                        | ((int) ((c >> 14) & 1) << 2)
+                        | ((int) ((c >> 13) & 1) << 1)
+                        | ((int) ((c >> 12) & 1));
                 final int data =
-                        (getbitI(c, 31) << 7)
-                        | (getbitI(c, 26) << 6)
-                        | (getbitI(c, 25) << 5)
-                        | (getbitI(c, 24) << 4)
-                        | (getbitI(c, 3) << 3)
-                        | (getbitI(c, 30) << 2)
-                        | (getbitI(c, 29) << 1)
-                        | (getbitI(c, 28));
+                        ((int) ((c >> 31) & 1) << 7)
+                        | ((int) ((c >> 26) & 1) << 6)
+                        | ((int) ((c >> 25) & 1) << 5)
+                        | ((int) ((c >> 24) & 1) << 4)
+                        | ((int) ((c >> 3) & 1) << 3)
+                        | ((int) ((c >> 30) & 1) << 2)
+                        | ((int) ((c >> 29) & 1) << 1)
+                        | ((int) ((c >> 28) & 1));
 
                 final int check =
                         //8 char game genie codes use a check byte so val is only
                         //patched when rom value matches this.
-                        (getbitI(c, 7) << 7)
-                        | (getbitI(c, 2) << 6)
-                        | (getbitI(c, 1) << 5)
-                        | (getbitI(c, 0) << 4)
-                        | (getbitI(c, 11) << 3)
-                        | (getbitI(c, 6) << 2)
-                        | (getbitI(c, 5) << 1)
-                        | (getbitI(c, 4));
+                        ((int) ((c >> 7) & 1) << 7)
+                        | ((int) ((c >> 2) & 1) << 6)
+                        | ((int) ((c >> 1) & 1) << 5)
+                        | ((int) ((c >> 0) & 1) << 4)
+                        | ((int) ((c >> 11) & 1) << 3)
+                        | ((int) ((c >> 6) & 1) << 2)
+                        | ((int) ((c >> 5) & 1) << 1)
+                        | ((int) ((c >> 4) & 1));
                 btnApply.setEnabled(true);
                 patch = new Patch(address, data, check);
                 return true;

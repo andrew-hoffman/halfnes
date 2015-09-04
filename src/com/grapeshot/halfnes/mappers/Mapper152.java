@@ -39,6 +39,6 @@ public class Mapper152 extends Mapper {
             prg_map[i] = (1024 * (i + 16 * prgselect)) & (prgsize - 1);
         }
 
-        setmirroring(utils.getbit(data, 7) ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
+        setmirroring(((data & (utils.BIT7)) != 0) ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
     }
 }

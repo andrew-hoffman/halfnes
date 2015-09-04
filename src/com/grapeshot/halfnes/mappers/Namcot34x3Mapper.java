@@ -58,7 +58,7 @@ public class Namcot34x3Mapper extends Mapper {
         }
 
         if (mirroring) {
-            setmirroring(utils.getbit(data, 6) ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
+            setmirroring(((data & (utils.BIT6)) != 0) ? MirrorType.SS_MIRROR1 : MirrorType.SS_MIRROR0);
         }
     }
 

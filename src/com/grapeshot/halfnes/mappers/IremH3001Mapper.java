@@ -32,9 +32,9 @@ public class IremH3001Mapper extends Mapper {
                 prg_map[i] = (1024 * (i + (data * 8))) & (prgsize - 1);
             }
         } else if (addr == 0x9001) {    //Mirroring
-            setmirroring(utils.getbit(data, 7) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+            setmirroring(((data & (utils.BIT7)) != 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
         } else if (addr == 0x9003) {    //IRQ Enable
-            irqenable = utils.getbit(data, 7);
+            irqenable = ((data & (utils.BIT7)) != 0);
             if (interrupted) {
                 --cpu.interrupt;
                 interrupted = false;

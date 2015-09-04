@@ -113,19 +113,19 @@ public class MMC5Mapper extends Mapper {
                 case 0x5114:
                     //prg reg 1
                     prgregs[0] = data & 0x7f;
-                    romHere[0] = utils.getbit(data, 7);
+                    romHere[0] = ((data & (utils.BIT7)) != 0);
                     setupPRG();
                     break;
                 case 0x5115:
                     //prg reg 2
                     prgregs[1] = data & 0x7f;
-                    romHere[1] = utils.getbit(data, 7);
+                    romHere[1] = ((data & (utils.BIT7)) != 0);
                     setupPRG();
                     break;
                 case 0x5116:
                     //prg reg 3
                     prgregs[2] = data & 0x7f;
-                    romHere[2] = utils.getbit(data, 7);
+                    romHere[2] = ((data & (utils.BIT7)) != 0);
                     setupPRG();
                     break;
                 case 0x5117:
@@ -190,7 +190,7 @@ public class MMC5Mapper extends Mapper {
                     break;
                 case 0x5200:
                     //splitscreen control
-                    if (utils.getbit(data, 7)) {
+                    if (((data & (utils.BIT7)) != 0)) {
                         System.err.println("Split screen mode not supported yet");
                     }
                     break;
@@ -206,7 +206,7 @@ public class MMC5Mapper extends Mapper {
                     break;
                 case 0x5204:
                     //irq control
-                    scanctrEnable = utils.getbit(data, 7);
+                    scanctrEnable = ((data & (utils.BIT7)) != 0);
                     break;
                 case 0x5205:
                     multiplier1 = data;

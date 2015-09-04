@@ -215,7 +215,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
     public void write(int register, int data) {
         if (register == 0x4023) {
             //enable register, must be 1 for anything else to work
-            regEnable = utils.getbit(data, 0);
+            regEnable = ((data & (utils.BIT0)) != 0);
         }
         if (regEnable) {
             if (register >= 0x4040 && register <= 0x407f) {
@@ -225,8 +225,8 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 }
             } else if (register == 0x4080) {
                 //volume envelope enable and speed
-                volEnvDisable = utils.getbit(data, 7); //ON when it's FALSE
-                volEnvDirection = utils.getbit(data, 6);
+                volEnvDisable = ((data & (utils.BIT7)) != 0); //ON when it's FALSE
+                volEnvDirection = ((data & (utils.BIT6)) != 0);
                 if (volEnvDisable) {
                     volGain = (data & 63);
                 }
@@ -240,18 +240,18 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 //frequency high, wave reset and phase
                 pitch &= 0xff;
                 pitch |= (data & 0xf) << 8;
-                haltWaveAndReset = utils.getbit(data, 7);
+                haltWaveAndReset = ((data & (utils.BIT7)) != 0);
                 if (haltWaveAndReset) {
                     waveAccum = 0;
                     waveAddr = 0;
                 }
                 //uh is it write 1 to enable or DISable here??
                 //todo: do something with envelope enables bit 6
-                BothEnvDisable = utils.getbit(data, 6);
+                BothEnvDisable = ((data & (utils.BIT6)) != 0);
             } else if (register == 0x4084) {
                 //modulator envelope enable and speed
-                modEnvDisable = utils.getbit(data, 7);
-                modEnvDirection = utils.getbit(data, 6);
+                modEnvDisable = ((data & (utils.BIT7)) != 0);
+                modEnvDirection = ((data & (utils.BIT6)) != 0);
                 if (modEnvDisable) {
                     modGain = data & 0x3f;
                 }
@@ -274,7 +274,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 modFreq |= (data & 0xf) << 8;
                 //setting frequency to 0 disables modulation too
                 //i think this is 1 to disable.
-                modDisable = utils.getbit(data, 7);
+                modDisable = ((data & (utils.BIT7)) != 0);
             } else if (register == 0x4088) {
                 //write data to 2 consecutive entries of modulator table
                 if (modDisable) {
@@ -287,7 +287,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
             } else if (register == 0x4089) {
                 //wave write protect and master vol
                 masterVol = data & 3;
-                waveWriteEnable = utils.getbit(data, 7);
+                waveWriteEnable = ((data & (utils.BIT7)) != 0);
             } else if (register == 0x408A) {
                 //sets speed of volume and sweep envelopes
                 //(or 0 to disable them)

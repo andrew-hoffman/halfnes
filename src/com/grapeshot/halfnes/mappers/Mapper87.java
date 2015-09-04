@@ -28,8 +28,8 @@ public class Mapper87 extends Mapper {
     public final void cartWrite(final int addr, final int data) {
         if (addr >= 0x6000 && addr < 0x8000) {
             //remap CHR bank
-            int bit0 = utils.getbitI(data, 1);
-            int bit1 = utils.getbitI(data, 0);
+            int bit0 = (data >> 1) & 1;
+            int bit1 = data & 1;
             for (int i = 0; i < 8; ++i) {
                 chr_map[i] = (1024 * (i + 8 * ((bit1 << 1) + bit0))) & (chrsize - 1);
             }

@@ -60,12 +60,12 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
         //enable the corresponding bit to the key
         controllerbyte |= m.get(kepressed);
         //special case: if up and down are pressed at once, use whichever was pressed previously
-        if (getbit(controllerbyte, 4) && getbit(controllerbyte, 5)) {
+        if (((controllerbyte & (BIT4)) != 0) && ((controllerbyte & (BIT5)) != 0)) {
             controllerbyte &= ~(BIT4 | BIT5);
             controllerbyte |= (prevbyte & ~(BIT4 | BIT5));
         }
         //same for left and right
-        if (getbit(controllerbyte, 6) && getbit(controllerbyte, 7)) {
+        if (((controllerbyte & (BIT6)) != 0) && ((controllerbyte & (BIT7)) != 0)) {
             controllerbyte &= ~(BIT6 | BIT7);
             controllerbyte |= (prevbyte & ~(BIT6 | BIT7));
         }
@@ -171,7 +171,6 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
                                 }
                             }
                         }
-
 
                         try {
                             Thread.sleep(5);
@@ -296,7 +295,7 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
             System.err.println(controllernum + 1 + ". " + gameController.getName());
             this.buttons = getButtons(controllers[controllernum]);
         } else {
-            PrefsSingleton.get().put("controller" + controllernum,"");
+            PrefsSingleton.get().put("controller" + controllernum, "");
             this.gameController = null;
             this.buttons = null;
         }

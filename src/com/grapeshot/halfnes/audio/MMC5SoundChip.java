@@ -36,11 +36,11 @@ public class MMC5SoundChip implements ExpansionSoundChip {
         switch (register) {
             case 0x0:
                 //length counter 1 halt
-                lenctrHalt[0] = utils.getbit(data, 5);
+                lenctrHalt[0] = ((data & (utils.BIT5)) != 0);
                 // pulse 1 duty cycle
                 timers[0].setduty(dutylookup[data >> 6]);
                 // and envelope
-                envConstVolume[0] = utils.getbit(data, 4);
+                envConstVolume[0] = ((data & (utils.BIT4)) != 0);
                 envelopeValue[0] = data & 15;
                 //setvolumes();
                 break;
@@ -65,11 +65,11 @@ public class MMC5SoundChip implements ExpansionSoundChip {
                 break;
             case 0x4:
                 //length counter 2 halt
-                lenctrHalt[1] = utils.getbit(data, 5);
+                lenctrHalt[1] = ((data & (utils.BIT5)) != 0);
                 // pulse 2 duty cycle
                 timers[1].setduty(dutylookup[data >> 6]);
                 // and envelope
-                envConstVolume[1] = utils.getbit(data, 4);
+                envConstVolume[1] = ((data & (utils.BIT4)) != 0);
                 envelopeValue[1] = data & 15;
                 //setvolumes();
                 break;
@@ -91,12 +91,12 @@ public class MMC5SoundChip implements ExpansionSoundChip {
                 envelopeStartFlag[1] = true;
                 break;
             case 0x10:
-                pcmMode = utils.getbit(data, 0);
+                pcmMode = ((data & (utils.BIT0)) != 0);
                 //true = read mode, false = write mode
                 //read mode watches ALL reads in first 8k of PRG ROM
                 //and writes to dpcm reg
                 //(no way to implement w/o refactors)
-                pcmIRQen = utils.getbit(data, 7);
+                pcmIRQen = ((data & (utils.BIT7)) != 0);
                 if (pcmIRQen || pcmMode) {
                     System.err.println("Implement the MMC5 PCM IRQ, something's using it!");
                 }

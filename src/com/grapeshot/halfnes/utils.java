@@ -1,7 +1,6 @@
 package com.grapeshot.halfnes;
 
 //HalfNES, Copyright Andrew Hoffman, October 2010
-
 import java.util.Locale;
 
 public class utils {
@@ -13,30 +12,6 @@ public class utils {
 
     public static int setbit(final int num, final int bitnum, final boolean state) {
         return (state) ? (num | (1 << bitnum)) : (num & ~(1 << bitnum));
-    }
-
-    public static boolean getbit(final int num, final int bitnum) {
-        //returns the nth bit of the int provided
-        //bit numbers are zero indexed
-        return ((num & (1 << bitnum)) != 0);
-    }
-
-    public static int getbitI(final int num, final int bitnum) {
-        //returns the nth bit of the int provided
-        //as an int, instead. Speeds up things when what you want is an int not a boolean to switch off.
-        return (num >> bitnum) & 1;
-    }
-
-    public static int getbitI(final long num, final int bitnum) {
-        //returns the nth bit of the long provided
-        //as an int, instead. Speeds up things when what you want is an int not a boolean to switch off.
-        return (int) ((num >> bitnum) & 1);
-    }
-
-    public static boolean getbit(final long num, final int bitnum) {
-        //returns the nth bit of the long provided
-        //bit numbers are zero indexed
-        return ((num & (1 << bitnum)) != 0);
     }
 
     public static String hex(final int num) {

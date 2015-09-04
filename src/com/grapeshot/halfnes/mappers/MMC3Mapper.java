@@ -47,7 +47,7 @@ public class MMC3Mapper extends Mapper {
         //bankswitches here
         //different register for even/odd writes
         //System.err.println("mmc3 write " + utils.hex(addr) + " " + utils.hex(data));
-        if (utils.getbit(addr, 0)) {
+        if (((addr & (utils.BIT0)) != 0)) {
             //odd registers
             if ((addr >= 0x8000) && (addr <= 0x9fff)) {
                 //bank change
@@ -79,10 +79,10 @@ public class MMC3Mapper extends Mapper {
             if ((addr >= 0x8000) && (addr <= 0x9fff)) {
                 //bank select
                 whichbank = data & 7;
-                prgconfig = utils.getbit(data, 6);
+                prgconfig = ((data & (utils.BIT6)) != 0);
                 //if bit is false, 8000-9fff swappable and c000-dfff fixed to 2nd to last bank
                 //if bit is true, c000-dfff swappable and 8000-9fff fixed to 2nd to last bank
-                chrconfig = utils.getbit(data, 7);
+                chrconfig = ((data & (utils.BIT7)) != 0);
                 //if false: 2 2k banks @ 0000-0fff, 4 1k banks in 1000-1fff
                 //if true: 4 1k banks @ 0000-0fff, 2 2k banks @ 1000-1fff
                 setupchr();
@@ -90,7 +90,7 @@ public class MMC3Mapper extends Mapper {
             } else if ((addr >= 0xA000) && (addr <= 0xbfff)) {
                 //mirroring setup
                 if (scrolltype != MirrorType.FOUR_SCREEN_MIRROR) {
-                    setmirroring(utils.getbit(data, 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+                    setmirroring(((data & (utils.BIT0)) != 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
                 }
             } else if ((addr >= 0xc000) && (addr <= 0xdfff)) {
                 //value written here used to reload irq counter _@ end of scanline_
@@ -172,7 +172,7 @@ public class MMC3Mapper extends Mapper {
         //clocks scanline counter every time A12 line goes from low to high
         //on PPU address bus, _except_ when it has been less than 8 PPU cycles 
         //since the line last went low.
-        boolean a12 = utils.getbit(addr, 12);
+        boolean a12 = ((addr & (utils.BIT12)) != 0);
         if (a12 && (!lastA12)) {
             //rising edge
             if ((a12timer <= 0)) {

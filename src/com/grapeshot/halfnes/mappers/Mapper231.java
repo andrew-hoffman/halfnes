@@ -23,7 +23,7 @@ public class Mapper231 extends Mapper {
             return;
         }
 
-        setmirroring(utils.getbit(addr, 7) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+        setmirroring(((addr & (utils.BIT7)) != 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
 
         int prg = addr & 0x1E;
 

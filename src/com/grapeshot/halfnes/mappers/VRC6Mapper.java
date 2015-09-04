@@ -52,8 +52,8 @@ public class VRC6Mapper extends Mapper {
             return;
         }
 
-        final boolean bit0 = utils.getbit(addr, registers[0]);
-        final boolean bit1 = utils.getbit(addr, registers[1]);
+        final boolean bit0 = ((addr & (1 << registers[0])) != 0);
+        final boolean bit1 = ((addr & (1 << registers[1])) != 0);
         switch (addr >> 12) {
             case 0x8:
                 //8000-8003: prg bank 0 select
@@ -107,9 +107,9 @@ public class VRC6Mapper extends Mapper {
                     if (!bit0) {
                         irqreload = data;
                     } else {
-                        irqack = utils.getbit(data, 0);
-                        irqenable = utils.getbit(data, 1);
-                        irqmode = utils.getbit(data, 2);
+                        irqack = ((data & (utils.BIT0)) != 0);
+                        irqenable = ((data & (utils.BIT1)) != 0);
+                        irqmode = ((data & (utils.BIT2)) != 0);
                         if (irqenable) {
                             irqcounter = irqreload;
                             prescaler = 341;

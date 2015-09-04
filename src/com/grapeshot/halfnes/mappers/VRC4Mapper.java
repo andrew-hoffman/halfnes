@@ -53,8 +53,8 @@ public class VRC4Mapper extends Mapper {
             return;
         }
 
-        boolean bit0 = utils.getbit(addr, registers[0][0]) || utils.getbit(addr, registers[1][0]);
-        boolean bit1 = utils.getbit(addr, registers[0][1]) || utils.getbit(addr, registers[1][1]);
+        boolean bit0 = ((addr & (1 << registers[0][0])) != 0) || ((addr & (1 << registers[1][0])) != 0);
+        boolean bit1 = ((addr & (1 << registers[0][1])) != 0) || ((addr & (1 << registers[1][1])) != 0);
         switch (addr >> 12) {
             case 0x8:
                 prgbank0 = data & 0x1f;
@@ -76,7 +76,7 @@ public class VRC4Mapper extends Mapper {
                             break;
                     }
                 } else {
-                    prgmode = utils.getbit(data, 1);
+                    prgmode = ((data & (utils.BIT1)) != 0);
                 }
                 break;
             case 0xa:
@@ -112,9 +112,9 @@ public class VRC4Mapper extends Mapper {
                     // System.err.println("reload set to " + irqreload);
                 } else {
                     if (!bit0) {
-                        irqack = utils.getbit(data, 0);
-                        irqenable = utils.getbit(data, 1);
-                        irqmode = utils.getbit(data, 2);
+                        irqack = ((data & (utils.BIT0)) != 0);
+                        irqenable = ((data & (utils.BIT1)) != 0);
+                        irqmode = ((data & (utils.BIT2)) != 0);
                         if (irqenable) {
                             irqcounter = irqreload;
                             prescaler = 341;

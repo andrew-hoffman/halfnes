@@ -48,7 +48,7 @@ public class Mapper112 extends Mapper {
             //bank select
             whichbank = data & 7;
         } else if (addr == 0xE000) {
-            setmirroring(utils.getbit(data, 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+            setmirroring(((data & (utils.BIT0)) != 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
         }
     }
 

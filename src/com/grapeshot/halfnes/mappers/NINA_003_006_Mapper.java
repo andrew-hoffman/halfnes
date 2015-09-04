@@ -46,7 +46,7 @@ public class NINA_003_006_Mapper extends Mapper {
         }
 
         if (m113) {
-            setmirroring(utils.getbit(data, 7) ? MirrorType.V_MIRROR : MirrorType.H_MIRROR);
+            setmirroring(((data & (utils.BIT7)) != 0) ? MirrorType.V_MIRROR : MirrorType.H_MIRROR);
 
             //remap CHR bank
             for (int i = 0; i < 8; ++i) {

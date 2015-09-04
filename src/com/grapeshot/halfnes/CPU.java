@@ -1245,7 +1245,7 @@ public final class CPU {
         int data = (ram.read(addr));
         ram.write(addr, data);  //dummy write
         data = (data << 1) | (carryFlag ? 1 : 0);
-        carryFlag = utils.getbit(data, 8);
+        carryFlag = ((data & (utils.BIT8)) != 0);
         data &= 0xFF;
         setflags(data);
         ram.write(addr, data);
@@ -1253,7 +1253,7 @@ public final class CPU {
 
     private void rolA() {
         A = A << 1 | (carryFlag ? 1 : 0);
-        carryFlag = utils.getbit(A, 8);
+        carryFlag = ((A & (utils.BIT8)) != 0);
         A &= 0xFF;
         setflags(A);
     }
@@ -1262,7 +1262,7 @@ public final class CPU {
         int data = ram.read(addr);
         ram.write(addr, data);  //dummy write
         final boolean tmp = carryFlag;
-        carryFlag = utils.getbit(data, 0);
+        carryFlag = ((data & (utils.BIT0)) != 0);
         data >>= 1;
         data &= 0x7F;
         data |= (tmp ? 0x80 : 0);
@@ -1272,7 +1272,7 @@ public final class CPU {
 
     private void rorA() {
         final boolean tmp = carryFlag;
-        carryFlag = utils.getbit(A, 0);
+        carryFlag = ((A & (utils.BIT0)) != 0);
         A >>= 1;
         A &= 0x7F;
         A |= (tmp ? 128 : 0);
@@ -1321,7 +1321,7 @@ public final class CPU {
     private void lsr(final int addr) {
         int data = ram.read(addr);
         ram.write(addr, data);  //dummy write
-        carryFlag = utils.getbit(data, 0);
+        carryFlag = ((data & (utils.BIT0)) != 0);
         data >>= 1;
         data &= 0x7F;
         ram.write(addr, data);
@@ -1329,7 +1329,7 @@ public final class CPU {
     }
 
     private void lsrA() {
-        carryFlag = utils.getbit(A, 0);
+        carryFlag = ((A & (utils.BIT0)) != 0);
         A >>= 1;
         A &= 0x7F;
         setflags(A);
@@ -1351,8 +1351,8 @@ public final class CPU {
     private void bit(final int addr) {
         final int data = ram.read(addr);
         zeroFlag = ((data & A) == 0);
-        negativeFlag = utils.getbit(data, 7);
-        overflowFlag = utils.getbit(data, 6);
+        negativeFlag = ((data & (utils.BIT7)) != 0);
+        overflowFlag = ((data & (utils.BIT6)) != 0);
     }
 
     private void jsr(final int addr) {
@@ -1486,7 +1486,7 @@ public final class CPU {
     private void asl(final int addr) {
         int data = ram.read(addr);
         ram.write(addr, data);  //dummy write
-        carryFlag = utils.getbit(data, 7);
+        carryFlag = ((data & (utils.BIT7)) != 0);
         data = data << 1;
         data &= 0xff;
         setflags(data);
@@ -1494,7 +1494,7 @@ public final class CPU {
     }
 
     private void aslA() {
-        carryFlag = utils.getbit(A, 7);
+        carryFlag = ((A & (utils.BIT7)) != 0);
         A <<= 1;
         A &= 0xff;
         setflags(A);
@@ -1504,7 +1504,7 @@ public final class CPU {
     private void cmp(final int regval, final int addr) {
         final int result = regval - ram.read(addr);
         if (result < 0) {
-            negativeFlag = utils.getbit(result, 7);
+            negativeFlag = ((result & (utils.BIT7)) != 0);
             carryFlag = false;
             zeroFlag = false;
         } else if (result == 0) {
@@ -1512,7 +1512,7 @@ public final class CPU {
             carryFlag = true;
             zeroFlag = true;
         } else {
-            negativeFlag = utils.getbit(result, 7);
+            negativeFlag = ((result & (utils.BIT7)) != 0);
             carryFlag = true;
             zeroFlag = false;
         }
@@ -1535,7 +1535,7 @@ public final class CPU {
 
     private void setflags(final int result) {
         zeroFlag = (result == 0);
-        negativeFlag = utils.getbit(result, 7);
+        negativeFlag = ((result & (utils.BIT7)) != 0);
     }
 
     private void sta(final int addr) {
@@ -1593,8 +1593,8 @@ public final class CPU {
         A = (((ram.read(addr) & A) >> 1) | (carryFlag ? 0x80 : 0x00));
         setflags(A);
 
-        carryFlag = utils.getbit(A, 6);
-        overflowFlag = carryFlag ^ utils.getbit(A, 5);
+        carryFlag = ((A & (utils.BIT6)) != 0);
+        overflowFlag = carryFlag ^ ((A & (utils.BIT5)) != 0);
     }
 
     private void axs(final int addr) {

@@ -93,8 +93,8 @@ public class FME7Mapper extends Mapper {
                     setbanks();
                     break;
                 case 8:
-                    ramEnable = utils.getbit(data, 7);
-                    ramSelect = utils.getbit(data, 6);
+                    ramEnable = ((data & (utils.BIT7)) != 0);
+                    ramSelect = ((data & (utils.BIT6)) != 0);
                     prgbanks[0] = data & 0x3f;
                     setbanks();
                     break;
@@ -123,11 +123,11 @@ public class FME7Mapper extends Mapper {
                     }
                 case 0xd:
                     //irq - let's put this in and hope it works
-                    irqclock = utils.getbit(data, 7);
+                    irqclock = ((data & (utils.BIT7)) != 0);
                     //2015-05: test by Teppples says that any value written here
                     //will acknowledge a pending interrupt
 
-                    irqenabled = utils.getbit(data, 0);
+                    irqenabled = ((data & (utils.BIT0)) != 0);
 
                     if (interrupted && cpu.interrupt > 0) {
                         --cpu.interrupt;

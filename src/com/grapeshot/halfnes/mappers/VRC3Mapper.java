@@ -46,10 +46,10 @@ public class VRC3Mapper extends Mapper {
                 irqreload = (irqreload & 0x0FFF) | (data & 0xF) << 12;
                 break;
             case 0xC:   //IRQ Control
-                irqmode = utils.getbit(data, 2);
-                irqackenable = utils.getbit(data, 0);
+                irqmode = ((data & (utils.BIT2)) != 0);
+                irqackenable = ((data & (utils.BIT0)) != 0);
 
-                irqenable = utils.getbit(data, 1);
+                irqenable = ((data & (utils.BIT1)) != 0);
                 if (irqenable) {
                     if (irqmode) {
                         irqctr &= 0xFF00;

@@ -134,12 +134,12 @@ public class APU {
                 //for future ref: NEED to put those ternary operators in parentheses!
                 //otherwise order of operations does the wrong thing.
                 final int returnval = ((lengthctr[0] > 0) ? 1 : 0)
-                        + ((lengthctr[1] > 0) ? 2 : 0)
-                        + ((lengthctr[2] > 0) ? 4 : 0)
-                        + ((lengthctr[3] > 0) ? 8 : 0)
-                        + ((dmcsamplesleft > 0) ? 16 : 0)
-                        + (statusframeint ? 64 : 0)
-                        + (statusdmcint ? 128 : 0);
+                        | ((lengthctr[1] > 0) ? 2 : 0)
+                        | ((lengthctr[2] > 0) ? 4 : 0)
+                        | ((lengthctr[3] > 0) ? 8 : 0)
+                        | ((dmcsamplesleft > 0) ? 16 : 0)
+                        | (statusframeint ? 64 : 0)
+                        | (statusdmcint ? 128 : 0);
                 if (statusframeint) {
                     //System.err.println("Frame interrupt ack at " + cpu.cycles);
                     --cpu.interrupt;
@@ -190,22 +190,22 @@ public class APU {
         switch (reg) {
             case 0x0:
                 //length counter 1 halt
-                lenctrHalt[0] = utils.getbit(data, 5);
+                lenctrHalt[0] = ((data & (utils.BIT5)) != 0);
                 // pulse 1 duty cycle
                 timers[0].setduty(dutylookup[data >> 6]);
                 // and envelope
-                envConstVolume[0] = utils.getbit(data, 4);
+                envConstVolume[0] = ((data & (utils.BIT4)) != 0);
                 envelopeValue[0] = data & 15;
                 //setvolumes();
                 break;
             case 0x1:
                 //pulse 1 sweep setup
                 //sweep enabled
-                sweepenable[0] = utils.getbit(data, 7);
+                sweepenable[0] = ((data & (utils.BIT7)) != 0);
                 //sweep divider period
                 sweepperiod[0] = (data >> 4) & 7;
                 //sweep negate flag
-                sweepnegate[0] = utils.getbit(data, 3);
+                sweepnegate[0] = ((data & (utils.BIT3)) != 0);
                 //sweep shift count
                 sweepshift[0] = (data & 7);
                 sweepreload[0] = true;
@@ -227,22 +227,22 @@ public class APU {
                 break;
             case 0x4:
                 //length counter 2 halt
-                lenctrHalt[1] = utils.getbit(data, 5);
+                lenctrHalt[1] = ((data & (utils.BIT5)) != 0);
                 // pulse 2 duty cycle
                 timers[1].setduty(dutylookup[data >> 6]);
                 // and envelope
-                envConstVolume[1] = utils.getbit(data, 4);
+                envConstVolume[1] = ((data & (utils.BIT4)) != 0);
                 envelopeValue[1] = data & 15;
                 //setvolumes();
                 break;
             case 0x5:
                 //pulse 2 sweep setup
                 //sweep enabled
-                sweepenable[1] = utils.getbit(data, 7);
+                sweepenable[1] = ((data & (utils.BIT7)) != 0);
                 //sweep divider period
                 sweepperiod[1] = (data >> 4) & 7;
                 //sweep negate flag
-                sweepnegate[1] = utils.getbit(data, 3);
+                sweepnegate[1] = ((data & (utils.BIT3)) != 0);
                 //sweep shift count
                 sweepshift[1] = (data & 7);
                 sweepreload[1] = true;
@@ -265,7 +265,7 @@ public class APU {
                 //triangle linear counter load
                 linctrreload = data & 0x7f;
                 //and length counter halt
-                lenctrHalt[2] = utils.getbit(data, 7);
+                lenctrHalt[2] = ((data & (utils.BIT7)) != 0);
                 break;
             case 0x9:
                 break;
@@ -284,15 +284,15 @@ public class APU {
                 break;
             case 0xC:
                 //noise halt and envelope
-                lenctrHalt[3] = utils.getbit(data, 5);
-                envConstVolume[3] = utils.getbit(data, 4);
+                lenctrHalt[3] = ((data & (utils.BIT5)) != 0);
+                envConstVolume[3] = ((data & (utils.BIT4)) != 0);
                 envelopeValue[3] = data & 0xf;
                 //setvolumes();
                 break;
             case 0xD:
                 break;
             case 0xE:
-                timers[3].setduty(utils.getbit(data, 7) ? 6 : 1);
+                timers[3].setduty(((data & (utils.BIT7)) != 0) ? 6 : 1);
                 timers[3].setperiod(noiseperiod[data & 15]);
                 break;
             case 0xF:
@@ -303,8 +303,8 @@ public class APU {
                 envelopeStartFlag[3] = true;
                 break;
             case 0x10:
-                dmcirq = utils.getbit(data, 7);
-                dmcloop = utils.getbit(data, 6);
+                dmcirq = ((data & (utils.BIT7)) != 0);
+                dmcloop = ((data & (utils.BIT6)) != 0);
                 dmcrate = dmcperiods[data & 0xf];
                 if (!dmcirq && statusdmcint) {
                     --cpu.interrupt;
@@ -333,7 +333,7 @@ public class APU {
                 //status register
                 // counter enable(silence channel when bit is off)
                 for (int i = 0; i < 4; ++i) {
-                    lenCtrEnable[i] = utils.getbit(data, i);
+                    lenCtrEnable[i] = ((data & (1 << i)) != 0);
                     //THIS was the channels not cutting off bug! If you toggle a channel's
                     //status on and off very quickly then the length counter should
                     //IMMEDIATELY be forced to zero.
@@ -341,7 +341,7 @@ public class APU {
                         lengthctr[i] = 0;
                     }
                 }
-                if (utils.getbit(data, 4)) {
+                if (((data & (utils.BIT4)) != 0)) {
                     if (dmcsamplesleft == 0) {
                         restartdmc();
                     }
@@ -356,13 +356,13 @@ public class APU {
                 break;
             case 0x16:
                 // latch controller 1 + 2
-                nes.getcontroller1().output(utils.getbit(data, 0));
-                nes.getcontroller2().output(utils.getbit(data, 0));
+                nes.getcontroller1().output(((data & (utils.BIT0)) != 0));
+                nes.getcontroller2().output(((data & (utils.BIT0)) != 0));
                 break;
             case 0x17:
-                ctrmode = utils.getbit(data, 7) ? 5 : 4;
+                ctrmode = ((data & (utils.BIT7)) != 0) ? 5 : 4;
                 //System.err.println("reset " + ctrmode + ' ' + cpu.cycles);
-                apuintflag = utils.getbit(data, 6);
+                apuintflag = ((data & (utils.BIT6)) != 0);
                 //set is no interrupt, clear is an interrupt
                 framectr = 0;
                 framectrdiv = framectrreload + 8; //Why +8?
@@ -541,7 +541,7 @@ public class APU {
                 }
             }
             if (!dmcsilence) {
-                dmcvalue += (utils.getbit(dmcshiftregister, 0) ? 2 : -2);
+                dmcvalue += (((dmcshiftregister & (utils.BIT0)) != 0) ? 2 : -2);
                 //DMC output register doesn't wrap around
                 if (dmcvalue > 0x7f) {
                     dmcvalue = 0x7f;

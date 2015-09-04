@@ -67,8 +67,8 @@ public class NoiseTimer extends Timer {
         int[] tehsuck = new int[(whichbit == 1) ? 32767 : 93];
         for (int i = 0; i < tehsuck.length; ++i) {
             seed = (seed >> 1)
-                    | ((utils.getbit(seed, whichbit)
-                    ^ utils.getbit(seed, 0))
+                    | ((((seed & (1 << whichbit)) != 0)
+                    ^ ((seed & (utils.BIT0)) != 0))
                     ? 16384 : 0);
             tehsuck[i] = seed;
         }

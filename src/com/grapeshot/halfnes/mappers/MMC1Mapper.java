@@ -43,7 +43,7 @@ public class MMC1Mapper extends Mapper {
         //and this is extremely ugly/likely to break
         //but is needed to prevent the Bill+Ted fix from breaking Dr Mario intro.
         cpucycleprev = cpu.clocks;
-        if (utils.getbit(data, 7)) {
+        if (((data & (utils.BIT7)) != 0)) {
             // reset shift register
             mmc1shift = 0;
             mmc1latch = 0;
@@ -85,7 +85,7 @@ public class MMC1Mapper extends Mapper {
                     //SOROM boards use the high bit of CHR to switch between 1st and last
                     //256k of the PRG ROM
                     mmc1chr0 &= 0xf;
-                    soromlatch = utils.getbit(mmc1shift, 4);
+                    soromlatch = ((mmc1shift & (utils.BIT4)) != 0);
                 }
             } else if (addr >= 0xc000 && addr <= 0xdfff) {
                 // mmc1chr1
@@ -107,7 +107,7 @@ public class MMC1Mapper extends Mapper {
 
     private void setbanks() {
         // chr bank 0
-        if (utils.getbit(mmc1ctrl, 4)) {
+        if (((mmc1ctrl & (utils.BIT4)) != 0)) {
             // 4k bank mode
             for (int i = 0; i < 4; ++i) {
                 chr_map[i] = (1024 * (i + 4 * mmc1chr0)) % chrsize;
@@ -123,14 +123,14 @@ public class MMC1Mapper extends Mapper {
         }
 
         // prg bank
-        if (!utils.getbit(mmc1ctrl, 3)) {
+        if (!((mmc1ctrl & (utils.BIT3)) != 0)) {
             // 32k switch
             // ignore low bank bit
             for (int i = 0; i < 32; ++i) {
                 prg_map[i] = (1024 * i + 32768 * (mmc1prg >> 1)) % prgsize;
             }
 
-        } else if (!utils.getbit(mmc1ctrl, 2)) {
+        } else if (!((mmc1ctrl & (utils.BIT2)) != 0)) {
             // fix 1st bank, 16k switch 2nd bank
             for (int i = 0; i < 16; ++i) {
                 prg_map[i] = (1024 * i);

@@ -5,10 +5,7 @@ import static com.grapeshot.halfnes.PrefsSingleton.get;
 import com.grapeshot.halfnes.mappers.Mapper;
 import com.grapeshot.halfnes.ui.DebugUI;
 import com.grapeshot.halfnes.ui.GUIInterface;
-import static com.grapeshot.halfnes.utils.getbit;
-import static com.grapeshot.halfnes.utils.getbitI;
 import static com.grapeshot.halfnes.utils.reverseByte;
-import static com.grapeshot.halfnes.utils.setbit;
 import java.awt.image.BufferedImage;
 import static java.awt.image.BufferedImage.TYPE_INT_BGR;
 import java.util.Arrays;
@@ -203,32 +200,32 @@ public class PPU {
                  This only happens on one CPU/PPU alignment of real hardware 
                  though so it only shows up ~33% of the time.
                  */
-                vraminc = (getbit(data, 2) ? 32 : 1);
-                sprpattern = getbit(data, 3);
-                bgpattern = getbit(data, 4);
-                spritesize = getbit(data, 5);
+                vraminc = (((data & (utils.BIT2)) != 0) ? 32 : 1);
+                sprpattern = ((data & (utils.BIT3)) != 0);
+                bgpattern = ((data & (utils.BIT4)) != 0);
+                spritesize = ((data & (utils.BIT5)) != 0);
                 /*bit 6 is kind of a halt and catch fire situation since it outputs
                  ppu color data on the EXT pins that are tied to ground if set
                  and that'll make the PPU get very hot from sourcing the current. 
                  Only really useful for the NESRGB interposer board, kind of
                  useless for emulators. I will ignore it.
                  */
-                nmicontrol = getbit(data, 7);
+                nmicontrol = ((data & (utils.BIT7)) != 0);
 
                 break;
             case 1: //PPUMASK (2001)
-                grayscale = getbit(data, 0);
-                bgClip = !getbit(data, 1); //clip left 8 pixels when its on
-                spriteClip = !getbit(data, 2);
-                bgOn = getbit(data, 3);
-                spritesOn = getbit(data, 4);
+                grayscale = ((data & (utils.BIT0)) != 0);
+                bgClip = !((data & (utils.BIT1)) != 0); //clip left 8 pixels when its on
+                spriteClip = !((data & (utils.BIT2)) != 0);
+                bgOn = ((data & (utils.BIT3)) != 0);
+                spritesOn = ((data & (utils.BIT4)) != 0);
                 emph = (data & 0xe0) << 1;
                 if (numscanlines == 312) {
                     //if PAL switch position of red and green emphasis bits (6 and 5)
                     //red is bit 6 -> bit 7
                     //green is bit 7 -> bit 6
-                    int red = getbitI(emph, 6);
-                    int green = getbitI(emph, 7);
+                    int red = (emph >> 6) & 1;
+                    int green = (emph >> 7) & 1;
                     emph &= 0xf3f;
                     emph |= (red << 7) | (green << 6);
                 }
@@ -342,7 +339,7 @@ public class PPU {
         int skip = (numscanlines == 262
                 && scanline == 0
                 && renderingOn()
-                && !getbit(framecount, 1)) ? 1 : 0;
+                && !((framecount & (utils.BIT1)) != 0)) ? 1 : 0;
         for (cycles = skip; cycles < 341; ++cycles) {
             clock();
         }
@@ -568,10 +565,10 @@ public class PPU {
             bitmap[bufferoffset] = pal[0];
             isBG = true;
         } else {
-            final int bgPix = (getbitI(bgShiftRegH, -loopyX + 16) << 1)
-                    + getbitI(bgShiftRegL, -loopyX + 16);
-            final int bgPal = (getbitI(bgAttrShiftRegH, -loopyX + 8) << 1)
-                    + getbitI(bgAttrShiftRegL, -loopyX + 8);
+            final int bgPix = (((bgShiftRegH >> -loopyX + 16) & 1) << 1)
+                    + ((bgShiftRegL >> -loopyX + 16) & 1);
+            final int bgPal = (((bgAttrShiftRegH >> -loopyX + 8) & 1) << 1)
+                    + ((bgAttrShiftRegL >> -loopyX + 8) & 1);
             isBG = (bgPix == 0);
             bitmap[bufferoffset] = isBG ? pal[0] : pal[(bgPal << 2) + bgPix];
         }
@@ -629,11 +626,11 @@ public class PPU {
                 final int oamextra = OAM[spritestart + 2];
 
                 //bg flag
-                spritebgflags[found] = getbit(oamextra, 5);
+                spritebgflags[found] = ((oamextra & (utils.BIT5)) != 0);
                 //x value
                 spriteXlatch[found] = OAM[spritestart + 3];
                 spritepals[found] = ((oamextra & 3) + 4) * 4;
-                if (getbit(oamextra, 7)) {
+                if (((oamextra & (utils.BIT7)) != 0)) {
                     //if sprite is flipped vertically, reverse the offset
                     offset = (spritesize ? 15 : 7) - offset;
                 }
@@ -668,7 +665,7 @@ public class PPU {
         }
         tilefetched += offset;
         //now load up the shift registers for said sprite
-        final boolean hflip = getbit(oamextra, 6);
+        final boolean hflip = ((oamextra & (utils.BIT6)) != 0);
         if (!hflip) {
             spriteshiftregL[found] = reverseByte(mapper.ppuRead(tilefetched));
             spriteshiftregH[found] = reverseByte(mapper.ppuRead(tilefetched + 8));
@@ -725,14 +722,14 @@ public class PPU {
      */
     private int getAttribute(final int ntstart, final int tileX, final int tileY) {
         final int base = mapper.ppuRead(ntstart + (tileX >> 2) + 8 * (tileY >> 2));
-        if (getbit(tileY, 1)) {
-            if (getbit(tileX, 1)) {
+        if (((tileY & (utils.BIT1)) != 0)) {
+            if (((tileX & (utils.BIT1)) != 0)) {
                 return (base >> 6) & 3;
             } else {
                 return (base >> 4) & 3;
             }
         } else {
-            if (getbit(tileX, 1)) {
+            if (((tileX & (utils.BIT1)) != 0)) {
                 return (base >> 2) & 3;
             } else {
                 return base & 3;
@@ -809,9 +806,9 @@ public class PPU {
             for (int j = 0; j < 8; ++j) {
                 //per pixel(1 bit)
                 dat[8 * i + j]
-                        = ((getbit(mapper.ppuRead(i + offset), 7 - j))
+                        = ((((mapper.ppuRead(i + offset) & (utils.BIT7 - j)) != 0))
                                 ? 0x555555 : 0)
-                        + ((getbit(mapper.ppuRead(i + offset + 8), 7 - j))
+                        + ((((mapper.ppuRead(i + offset + 8) & (utils.BIT7 - j)) != 0))
                                 ? 0xaaaaaa : 0);
             }
         }

@@ -53,8 +53,8 @@ public class AfterburnerMapper extends Mapper {
         } else if (addr <= 0xdfff) {
             romnt2 = data | 0x80;
         } else if (addr <= 0xefff) {
-            useromnt = utils.getbit(data, 4);
-            setmirroring(utils.getbit(data, 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
+            useromnt = ((data & (utils.BIT4)) != 0);
+            setmirroring(((data & (utils.BIT0)) != 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
         } else if (addr <= 0xffff) {
             bank = data & 0xf;
             //remap PRG bank (1st bank switchable, 2nd bank mapped to LAST bank)
