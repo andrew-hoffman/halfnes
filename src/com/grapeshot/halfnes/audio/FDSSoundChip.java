@@ -57,7 +57,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
             if ((waveAccum & 0xffff) != waveAccum) {
                 //increment wave position on overflow
                 waveAccum &= 0xffff;
-                waveAddr = ++waveAddr & 63;
+                waveAddr = (waveAddr + 1) & 63;
             }
         }
 

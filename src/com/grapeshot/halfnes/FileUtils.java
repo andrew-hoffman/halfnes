@@ -21,7 +21,7 @@ public class FileUtils {
         if (s == null || s.equals("")) {
             return "";
         }
-        int split = s.lastIndexOf(".");
+        int split = s.lastIndexOf('.');
         if (split < 0) {
             return "";
         }
@@ -34,7 +34,7 @@ public class FileUtils {
         if (s == null || s.equals("")) {
             return "";
         }
-        int split = s.lastIndexOf(".");
+        int split = s.lastIndexOf('.');
         if (split < 0) {
             return "";
         }
@@ -45,7 +45,7 @@ public class FileUtils {
         if (s == null || s.equals("")) {
             return "";
         }
-        int split = s.lastIndexOf(".");
+        int split = s.lastIndexOf('.');
         if (split < 0) {
             return "";
         }
@@ -87,6 +87,7 @@ public class FileUtils {
                     }
                     b.write(buf);
                     b.flush();
+                    b.close();
                 } catch (IOException e) {
                     System.err.print("Could not save. ");
                     System.err.println(e);
@@ -105,13 +106,12 @@ public class FileUtils {
         FileInputStream fis;
         try {
             fis = new FileInputStream(f);
-            fis.read(bytes);
-            fis.close();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            System.err.println("Failed to load file");
+                fis.read(bytes);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                System.err.println("Failed to load file");
             e.printStackTrace();
-        }
+            }
         int[] ints = new int[bytes.length];
 
         for (int i = 0;

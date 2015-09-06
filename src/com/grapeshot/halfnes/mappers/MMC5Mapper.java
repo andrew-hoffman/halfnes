@@ -15,7 +15,7 @@ import java.util.Arrays;
 public class MMC5Mapper extends Mapper {
 
     //the infamous kitchen sink mapper
-    private final int[] exram = new int[1024];
+    final int[] exram = new int[1024];
     private int exramMode, chrMode, prgMode;
     private int wramWrite1, wramWrite2, multiplier1, multiplier2;
     private int prgpage, chrOr, wrambank;
@@ -278,7 +278,10 @@ public class MMC5Mapper extends Mapper {
             switch (addr) {
                 case 0x5015:
                     //sound status
-                    return soundchip.status();
+                    if (soundchip != null) {
+                        return soundchip.status();
+                    }
+                    return addr >> 8;
                 case 0x5204:
                     //irq status
                     int stat = (irqPend ? 0x80 : 0) + (inFrame ? 0x40 : 0);
@@ -476,6 +479,7 @@ public class MMC5Mapper extends Mapper {
         //hook for the MMC5
         switch (ntsetup & 3) {
             case 0:
+            default:
                 nt0 = pput0;
                 break;
             case 1:
@@ -490,6 +494,7 @@ public class MMC5Mapper extends Mapper {
         ntsetup >>= 2;
         switch (ntsetup & 3) {
             case 0:
+            default:
                 nt1 = pput0;
                 break;
             case 1:
@@ -505,6 +510,7 @@ public class MMC5Mapper extends Mapper {
         ntsetup >>= 2;
         switch (ntsetup & 3) {
             case 0:
+            default:
                 nt2 = pput0;
                 break;
             case 1:
@@ -520,6 +526,7 @@ public class MMC5Mapper extends Mapper {
         ntsetup >>= 2;
         switch (ntsetup & 3) {
             case 0:
+            default:
                 nt3 = pput0;
                 break;
             case 1:

@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public final class CPU {
 
-    private final CPURAM ram;
+    private CPURAM ram;
     private int cycles; //increment to steal cycles from cpu
     public int clocks; //use for synchronizing with cpu
     private int A, X, Y, S; // registers
@@ -22,17 +22,17 @@ public final class CPU {
     private int pb = 0;// set to 1 if access crosses page boundary
     public int interrupt = 0;
     public boolean nmiNext = false, idle = false;
-    private final boolean decimalModeEnable = false,
+    private static boolean decimalModeEnable = false,
             idleLoopSkip = false;
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;
-    private final static String[] opcodes = opcodes();
+    private static String[] opcodes = opcodes();
 
     //Battletoads Hack until I get around to making a truly cycle accurate CPU core.
     //Delays the write of a STA, STX, or STY until the first cycle of the NEXT instruction
     //which is enough to move it a few PPU clocks after the scroll is changed
     //making sure that Battletoads gets its sprite 0 hit. 
-    final private boolean battletoadsHackOn = true;
+    final private static boolean battletoadsHackOn = true;
     private boolean dirtyBattletoadsHack = false;
     private int hackAddr = 0;
     private int hackData = 0;
@@ -54,7 +54,7 @@ public final class CPU {
     public void startLog() {
         logging = true;
         try {
-            w = new FileWriter(new File("nesdebug2.txt"));
+            w = new FileWriter(new File("nesdebug.txt"));
         } catch (IOException e) {
             System.err.println("Cannot create debug log" + e.getLocalizedMessage());
         }
@@ -1689,32 +1689,32 @@ public final class CPU {
 
     // Functions for memory address types; each returns the _memory_address_ for
     // the next fn
-    protected final int imm() {
+    private int imm() {
         return PC++;
     }
 
-    protected final int zpg() {
+    private int zpg() {
         // zero page mode
         return ram.read(PC++);
     }
 
-    protected final int zpg(final int reg) {
+    private int zpg(final int reg) {
         // zero page added to register (modulus page boundary)
         return (ram.read(PC++) + reg) & 0xff;
     }
 
-    protected final int rel() {
+    private int rel() {
         // returns actual value of PC, not memory location to look at
         // because only branches use this
         return ((byte) ram.read(PC++)) + PC;
     }
 
-    protected final int abs() {
+    private int abs() {
         // absolute mode
         return ram.read(PC++) + (ram.read(PC++) << 8);
     }
 
-    protected final int abs(final int reg, final dummy dummy) {
+    private int abs(final int reg, final dummy dummy) {
         // absolute plus value from reg
         final int addr = (ram.read(PC++) | (ram.read(PC++) << 8));
 
@@ -1734,7 +1734,7 @@ public final class CPU {
         return (addr + reg) & 0xffff;
     }
 
-    protected final int ind() {
+    private int ind() {
         // weird mode. only used by jmp
         final int readloc = abs();
         return ram.read(readloc)
@@ -1744,7 +1744,7 @@ public final class CPU {
         //is taken from first byte on the page, not first byte on NEXT page.
     }
 
-    protected final int indX() {
+    private int indX() {
         // indirect mode
         final int arg = ram.read(PC++);
         return ram.read((arg + X) & 0xff)
@@ -1752,7 +1752,7 @@ public final class CPU {
         // doesn't suffer from the same bug as jump indirect
     }
 
-    protected final int indY(final dummy dummy) {
+    private int indY(final dummy dummy) {
         final int arg = ram.read(PC++);
         final int addr = (ram.read((arg) & 0xff) | (ram.read((arg + 1) & 0xff) << 8));
 
@@ -1782,7 +1782,7 @@ public final class CPU {
                 | (carryFlag ? utils.BIT0 : 0));
     }
 
-    protected final void bytetoflags(final int statusbyte) {
+    private void bytetoflags(final int statusbyte) {
 
         negativeFlag = ((statusbyte & utils.BIT7) != 0);
         overflowFlag = ((statusbyte & utils.BIT6) != 0);

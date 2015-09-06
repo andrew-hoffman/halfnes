@@ -110,6 +110,8 @@ public class MMC5SoundChip implements ExpansionSoundChip {
                     }
                 }
                 break;
+            default:
+                break;
         }
     }
 
