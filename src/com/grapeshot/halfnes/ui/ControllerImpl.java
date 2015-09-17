@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.prefs.Preferences;
+import javafx.scene.Scene;
 
 import net.java.games.input.Component;
 import net.java.games.input.Controller;
@@ -28,7 +29,7 @@ import net.java.games.input.EventQueue;
  */
 public class ControllerImpl implements ControllerInterface, KeyListener {
 
-    private final java.awt.Component parent;
+    private java.awt.Component parent;
     private Controller gameController;
     private Component[] buttons;
     private final ScheduledExecutorService thread = Executors.newSingleThreadScheduledExecutor();
@@ -38,27 +39,42 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
     private GpioControllerImpl gpioController;
 
     public ControllerImpl(final java.awt.Component parent, final int controllernum) {
+        this(controllernum);
+        this.parent = parent;
+        parent.addKeyListener(this);
+    }
+
+    public ControllerImpl(final Scene scene, final int controllernum) {
+        this(controllernum);
+        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+            pressKey(e.getCode().impl_getCode());
+        });
+        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_RELEASED, e -> {
+            releaseKey(e.getCode().impl_getCode());
+        });
+    }
+    
+    public ControllerImpl(final int controllernum) {
         if ((controllernum != 0) && (controllernum != 1)) {
             throw new IllegalArgumentException("controllerNum must be 0 or 1");
         }
         this.controllernum = controllernum;
         setButtons();
-        this.parent = parent;
-        if (parent != null) {
-          parent.addKeyListener(this);
-        }
     }
 
     @Override
-    public void keyPressed(final KeyEvent arg0) {
+    public void keyPressed(final KeyEvent keyEvent) {
+        pressKey(keyEvent.getKeyCode());
+    }
+    
+    private void pressKey(int keyCode) {
         //enable the byte of whatever is found
         prevbyte = controllerbyte;
-        final int kepressed = arg0.getKeyCode();
-        if (!m.containsKey(kepressed)) {
+        if (!m.containsKey(keyCode)) {
             return;
         }
         //enable the corresponding bit to the key
-        controllerbyte |= m.get(kepressed);
+        controllerbyte |= m.get(keyCode);
         //special case: if up and down are pressed at once, use whichever was pressed previously
         if ((controllerbyte & (BIT4 | BIT5)) == (BIT4 | BIT5)) {
             controllerbyte &= ~(BIT4 | BIT5);
@@ -69,17 +85,19 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
             controllerbyte &= ~(BIT6 | BIT7);
             controllerbyte |= (prevbyte & ~(BIT6 | BIT7));
         }
-
     }
 
     @Override
-    public void keyReleased(final KeyEvent arg0) {
+    public void keyReleased(final KeyEvent keyEvent) {
+        releaseKey(keyEvent.getKeyCode());
+    }
+    
+    private void releaseKey(int keyCode) {
         prevbyte = controllerbyte;
-        final int kepressed = arg0.getKeyCode();
-        if (!m.containsKey(kepressed)) {
+        if (!m.containsKey(keyCode)) {
             return;
         }
-        controllerbyte &= ~m.get(kepressed);
+        controllerbyte &= ~m.get(keyCode);
     }
 
     public int getbyte() {
@@ -91,17 +109,28 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
         // TODO Auto-generated method stub
     }
 
+    @Override
     public void strobe() {
         //shifts a byte out
         outbyte = latchbyte & 1;
         latchbyte = ((latchbyte >> 1) | 0x100);
     }
 
+    @Override
     public void output(final boolean state) {
       if (gpioController == null) {
         latchbyte = gamepadbyte | controllerbyte;
       } else {
         latchbyte = gamepadbyte | controllerbyte | gpioController.getByte();
+      }
+    }
+    
+    @Override
+    public int peekOutput() {
+      if (gpioController == null) {
+        return gamepadbyte | controllerbyte;
+      } else {
+        return gamepadbyte | controllerbyte | gpioController.getByte();
       }
     }
 

@@ -15,4 +15,6 @@ public interface ControllerInterface {
     public void output(final boolean state);
 
     public int getbyte();
+    
+    public int peekOutput();
 }

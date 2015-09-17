@@ -20,12 +20,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -54,7 +51,13 @@ public class GUIImpl extends JFrame implements GUIInterface {
         padController1.startEventQueue();
         padController2.startEventQueue();
     }
+
+    @Override
+    public NES getNes() {
+        return nes;
+    }
     
+    @Override
     public void setNES(NES nes) {
         this.nes = nes;
         nes.setControllers(padController1, padController2);
@@ -133,7 +136,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
                 try {
                     //holy typecasting batman (this interface predates generics)
                     File toload = (File) ((java.util.List) t.getTransferData(DataFlavor.javaFileListFlavor)).get(0);
-                    loadROM(toload.getCanonicalPath());
+                    loadROMs(toload.getCanonicalPath());
                 } catch (UnsupportedFlavorException e) {
                     return false;
                 } catch (IOException e) {
@@ -263,7 +266,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
         fileDialog.setVisible(true);
         if (fileDialog.getFile() != null) {
             PrefsSingleton.get().put("filePath", fileDialog.getDirectory());
-            loadROM(fileDialog.getDirectory() + fileDialog.getFile());
+            loadROMs(fileDialog.getDirectory() + fileDialog.getFile());
         }
         if (wasInFullScreen) {
             toggleFullScreen();
@@ -271,11 +274,12 @@ public class GUIImpl extends JFrame implements GUIInterface {
     }
 
     @Override
-    public void loadROM(String path) {
+    public void loadROMs(String path) {
         if (path.endsWith(".zip") || path.endsWith(".ZIP")) {
             try {
                 loadRomFromZip(path);
             } catch (IOException ex) {
+              ex.printStackTrace();
                 this.messageBox("Could not load file:\nFile does not exist or is not a valid NES game.\n" + ex.getMessage());
             }
         } else {
@@ -339,7 +343,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
 
         //note: here's the bug, when it saves the temp file if it's in a folder 
         //in the zip it's trying to put it in the same folder outside the zip
-        final File outputFile = new File(new File(zipName).getParent()
+        final File outputFile = new File(new File(zipName).getCanonicalFile().getParent()
                 + File.separator + FileUtils.stripExtension(new File(zipName).getName())
                 + " - " + romName);
         if (outputFile.exists()) {

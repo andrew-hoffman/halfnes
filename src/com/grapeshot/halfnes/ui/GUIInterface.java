@@ -12,6 +12,8 @@ import com.grapeshot.halfnes.NES;
  */
 public interface GUIInterface extends Runnable {
 
+    public NES getNes();
+
     public void setNES(NES nes);
 
     public void setFrame(int[] frame, int[] bgcolor, boolean dotcrawl);
@@ -25,5 +27,5 @@ public interface GUIInterface extends Runnable {
 
     public void render();
     
-    public void loadROM(String path);
+    public void loadROMs(String path);
 }

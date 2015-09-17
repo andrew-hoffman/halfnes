@@ -29,7 +29,7 @@ public final class PPU {
             {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D, 0x08, 0x10, 0x08, 0x24, 0x00, 0x00, //palette *might* be different on every NES
                 0x04, 0x2C, 0x09, 0x01, 0x34, 0x03, 0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, //but some emulators (nesemu1, BizHawk, RockNES, MyNes)
                 0x00, 0x20, 0x2C, 0x08};    //use it anyway
-    public final int[] packedpal = new int[8];
+    public final int[][] packedpal = new int[8][4];
     private DebugUI debuggui;
     private int vraminc = 1;
     private final static boolean PPUDEBUG = PrefsSingleton.get().getBoolean("ntView", false);
@@ -655,17 +655,17 @@ public final class PPU {
      * @return int array with 8 NES color numbers
      */
     private int[] getTile(final int tileptr, final int palettenum, final int off) {
-        final int tilepal = packedpal[palettenum];
+        final int[] tilepal = packedpal[palettenum];
         final int linelowbits = mapper.ppuRead(off + tileptr);
         final int linehighbits = mapper.ppuRead(off + tileptr + 8) << 1;
-        tiledata[7] = tilepal >>> ((linehighbits & 0x2 | linelowbits & 0x1) << 3) & 0xFF;
-        tiledata[6] = tilepal >>> ((linehighbits & 0x4 | linelowbits & 0x2) << 2) & 0xFF;
-        tiledata[5] = tilepal >>> ((linehighbits & 0x8 | linelowbits & 0x4) << 1) & 0xFF;
-        tiledata[4] = tilepal >>> ((linehighbits & 0x10 | linelowbits & 0x8)) & 0xFF;
-        tiledata[3] = tilepal >>> ((linehighbits & 0x20 | linelowbits & 0x10) >> 1) & 0xFF;
-        tiledata[2] = tilepal >>> ((linehighbits & 0x40 | linelowbits & 0x20) >> 2) & 0xFF;
-        tiledata[1] = tilepal >>> ((linehighbits & 0x80 | linelowbits & 0x40) >> 3) & 0xFF;
-        tiledata[0] = tilepal >>> ((linehighbits & 0x100 | linelowbits & 0x80) >> 4) & 0xFF;
+        tiledata[7] = tilepal[((linehighbits & 0x2 | linelowbits & 0x1)) & 0xFF];
+        tiledata[6] = tilepal[((linehighbits & 0x4 | linelowbits & 0x2) >> 1) & 0xFF];
+        tiledata[5] = tilepal[((linehighbits & 0x8 | linelowbits & 0x4) >> 2) & 0xFF];
+        tiledata[4] = tilepal[((linehighbits & 0x10 | linelowbits & 0x8) >> 3) & 0xFF];
+        tiledata[3] = tilepal[((linehighbits & 0x20 | linelowbits & 0x10) >> 4) & 0xFF];
+        tiledata[2] = tilepal[((linehighbits & 0x40 | linelowbits & 0x20) >> 5) & 0xFF];
+        tiledata[1] = tilepal[((linehighbits & 0x80 | linelowbits & 0x40) >> 6) & 0xFF];
+        tiledata[0] = tilepal[((linehighbits & 0x100 | linelowbits & 0x80) >> 7) & 0xFF];
         return tiledata;
     }
 
@@ -693,10 +693,10 @@ public final class PPU {
 
     private void computePackedpal() {
         for (int i=0; i<8; i++) {
-            packedpal[i] = pal[0]
-                | pal[i*4 + 1] << 8
-                | pal[i*4 + 2] << 16
-                | pal[i*4 + 3] << 24;
+            packedpal[i][0] = bgcolor;
+            packedpal[i][1] = pal[i*4 + 1];
+            packedpal[i][2] = pal[i*4 + 2];
+            packedpal[i][3] = pal[i*4 + 3];
         }
     }
 }

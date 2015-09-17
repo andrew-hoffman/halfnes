@@ -86,8 +86,8 @@ public abstract class Mapper {
         chrsize = loader.chrsize;
         scrolltype = loader.scrolltype;
         savesram = loader.savesram;
-        int[] unshiftedprg = loader.load(prgsize, prgoff);
-        crc = crc32(unshiftedprg);
+        prg = loader.load(prgsize, prgoff);
+        crc = crc32(prg);
         //System.err.println(utils.hex(crc));
         //crc "database" for certain impossible-to-recognize games
         if ((crc == 0x41243492) //low g man (u)
@@ -95,8 +95,6 @@ public abstract class Mapper {
                 ) {
             hasprgram = false;
         }
-        prg = new int[unshiftedprg.length + 0x8000];
-        System.arraycopy(unshiftedprg, 0, prg, 0x8000, unshiftedprg.length);
         chr = loader.load(chrsize, chroff);
 
         if (chrsize == 0) {//chr ram
@@ -139,7 +137,7 @@ public abstract class Mapper {
         // by default has wram at 0x6000 and cartridge at 0x8000-0xfff
         // but some mappers have different so override for those
         if (addr >= 0x8000) {
-            return prg[addr];
+            return prg[prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023)];
 //            return unsafe.getInt(prg, INTEGER_ARRAY_BASE_OFFSET + (addr - 0x8000) * 4);
         } else if (addr >= 0x6000 && hasprgram) {
             return prgram[addr & 0x1fff];
@@ -150,7 +148,7 @@ public abstract class Mapper {
 
     public int ppuRead(int addr) {
         if (addr < 0x2000) {
-            return chr[addr];
+            return chr[chr_map[addr >> 10] + (addr & 1023)];
         } else {
             switch (addr & 0xc00) {
                 case 0:

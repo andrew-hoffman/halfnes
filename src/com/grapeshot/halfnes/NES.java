@@ -41,7 +41,7 @@ public class NES {
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
         //set thread priority higher than the interface thread
         curRomPath = romtoload;
-        gui.loadROM(romtoload);
+        gui.loadROMs(romtoload);
         run();
     }
 
