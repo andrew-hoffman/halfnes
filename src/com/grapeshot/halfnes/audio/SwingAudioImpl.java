@@ -43,13 +43,14 @@ public class SwingAudioImpl implements AudioOutInterface {
                 AudioFormat af = new AudioFormat(
                         samplerate,
                         16,//bit
-                        1,//channel
+                        2,//channel
                         true,//signed
                         false //little endian
                 //(works everywhere, afaict, but macs need 44100 sample rate)
                 );
                 sdl = AudioSystem.getSourceDataLine(af);
-                sdl.open(af, samplesperframe * 8); //create 4 frame audio buffer
+                sdl.open(af, samplesperframe * 4 * 2 /*ch*/ * 2 /*bytes/sample*/); 
+                //create 4 frame audio buffer
                 sdl.start();
             } catch (LineUnavailableException a) {
                 System.err.println(a);
@@ -99,9 +100,15 @@ public class SwingAudioImpl implements AudioOutInterface {
                 sample = 32767;
                 //System.err.println("clop");
             }
-            audiobuf[bufptr] = (byte) (sample & 0xff);
-            audiobuf[bufptr + 1] = (byte) ((sample >> 8) & 0xff);
-            bufptr += 2;
+            //left ch
+            int lch = sample;
+            audiobuf[bufptr] = (byte) (lch & 0xff);
+            audiobuf[bufptr + 1] = (byte) ((lch >> 8) & 0xff);
+            //right ch
+            int rch = sample;
+            audiobuf[bufptr + 2] = (byte) (rch & 0xff);
+            audiobuf[bufptr + 3] = (byte) ((rch >> 8) & 0xff);
+            bufptr += 4;
         }
     }
 
