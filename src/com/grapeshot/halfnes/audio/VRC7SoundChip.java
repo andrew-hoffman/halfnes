@@ -6,6 +6,7 @@ package com.grapeshot.halfnes.audio;
 
 //import com.grapeshot.halfnes.ui.DebugUI;
 import static com.grapeshot.halfnes.utils.*;
+import com.grapeshot.halfnes.Twiddler;
 //import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
@@ -62,6 +63,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     };
 
     public VRC7SoundChip() {
+//        t.setVisible(true);
 ////        some debug code to make a scope view:
 //        DebugUI d = new DebugUI(512,480);
 //        BufferedImage b = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
@@ -288,7 +290,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         final int carAM = ((inst[1] & (BIT7)) != 0) ? am[amctr] : 0;
         final boolean carRectify = ((inst[3] & (BIT4)) != 0);
         out[ch] = operator(car_f, (int) (carVol + carEnvelope + carks + carAM), carRectify) << 2;
-        outputSample();
+        outputSample(ch);
     }
 
     private int operator(final int phase, final int gain, final boolean rectify) {
@@ -336,19 +338,26 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         }
     }
     int lpaccum = 0;
+    int lpaccum2 = 0;
 
-    private void outputSample() {
-        int sample = (out[0] + out[1] + out[2] + out[3] + out[4] + out[5]) * 3;
+    private void outputSample(int ch) {
+        int sample = out[ch] * 24;
+        //two stage low pass filter (looked @ schematic of hybrid on PCB)
         sample += lpaccum;
-        lpaccum -= sample >> 2;
+        lpaccum -= sample >> 3;
+        int j = lpaccum;
+        j += lpaccum2;
+        lpaccum2 -= j >> 2;
     }
 
     @Override
     public final int getval() {
-        return lpaccum;
+        return lpaccum2;
     }
     final private static int ZEROVOL = 511;
     final private static int MAXVOL = 0;
+    
+//    Twiddler t = new Twiddler(0.4);
 
     private void setenvelope(final int[] instrument, final EnvState[] state, final double[] vol, final int ch, final boolean isCarrier) {
         final boolean keyscaleRate = ((instrument[(isCarrier ? 1 : 0)] & (BIT4)) != 0);
@@ -368,19 +377,24 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         //and counts down to zero (no attenuation)
         //on real HW the envelope out is probably the upper 9 bits of a 23 bit
         //attenuation register (this would add 1 LSB per clock at slowest rate)
-        
         switch (state[ch]) {
             default:
             case CUTOFF:
                 if (vol[ch] < ZEROVOL) {
-                    vol[ch] += 2;
+                    vol[ch] += 0.4;
+                    /*
+                     programmer's manual seems to say it takes a few ms to decay
+                     before the new note starts its attack run.
+                     need to listen really hard to the HW recordings and tune
+                     this by ear
+                     */
                 } else {
                     vol[ch] = ZEROVOL;
                     if (key[ch]) {
                         /*the programmer's manual suggests that sound has to
                          decay back to zero volume when keyed on before the attack
                          happens, but other references don't say this
-                        */
+                         */
                         state[ch] = EnvState.ATTACK;
                         phase[ch] = 0;
                         //reset phase to avoid popping? can't tell if the chip does this.
@@ -425,7 +439,6 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 //in its respective register (ugh)
                 //for consistency with it though let's call the channel sustain SUS
                 //and the patch register D5
-                
                 boolean d5 = ((instrument[isCarrier ? 1 : 0] & (BIT5)) != 0);
                 boolean SUS = chSust[ch];
                 if (key[ch]) {
