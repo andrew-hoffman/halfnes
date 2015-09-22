@@ -7,7 +7,7 @@ del HalfNES.app
 java -jar .\proguard4.7\lib\proguard.jar @halfnes_autojar.pro
 
 rem Reminder that the version of jarsplice used here is patched to take the right file extension for an OSX library (original programmer didn't look it up apparently)
-java -jar jarsplice-0.40-CLI-CUSTPATCH.jar -fat HalfNES.jar -app HalfNES.app HalfNES -win HalfNES.exe -jars halfnes-temp.jar;.\lib\jinput.jar;.\lib\org.happy.library-1.3.jar;.\lib\libs\concurrent.jar;  -nats .\lib\libjinput-linux64.so;.\lib\libjinput-linux.so;.\lib\libjinput-osx.jnilib;.\lib\jinput-wintab.dll;.\lib\jinput-raw_64.dll;.\lib\jinput-raw.dll;.\lib\jinput-dx8_64.dll;.\lib\jinput-dx8.dll; -main com.grapeshot.halfnes.halfNES
+java -jar jarsplice-0.40-CLI-CUSTPATCH.jar -fat HalfNES.jar -win HalfNES.exe -jars halfnes-temp.jar;.\lib\jinput.jar;.\lib\org.happy.library-1.3.jar;.\lib\libs\concurrent.jar;  -nats .\lib\libjinput-linux64.so;.\lib\libjinput-linux.so;.\lib\libjinput-osx.jnilib;.\lib\jinput-wintab.dll;.\lib\jinput-raw_64.dll;.\lib\jinput-raw.dll;.\lib\jinput-dx8_64.dll;.\lib\jinput-dx8.dll; -main com.grapeshot.halfnes.halfNES
 
 echo Next time you make a release this should create the archive too.
 pause

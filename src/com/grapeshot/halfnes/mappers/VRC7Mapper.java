@@ -17,7 +17,7 @@ public class VRC7Mapper extends Mapper {
     int regaddr = 0;
     ExpansionSoundChip sndchip = new VRC7SoundChip();
     boolean hasInitSound = false;
-
+    
     @Override
     public void loadrom() throws BadMapperException {
         super.loadrom();
