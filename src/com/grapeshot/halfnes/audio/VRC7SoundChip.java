@@ -30,8 +30,8 @@ public class VRC7SoundChip implements ExpansionSoundChip {
             oldmodout = new int[6], out = new int[6];
     private final boolean[] key = new boolean[6], chSust = new boolean[6];
     private int fmctr = 0, amctr = 0; //free running counter for indices
-    private final double[] phase = new double[6], modenv_vol = new double[6], carenv_vol = new double[6];
-    private final int[] usertone = new int[8];
+    private final double[] phase = new double[6];
+    private final int[] usertone = new int[8], modenv_vol = new int[6], carenv_vol = new int[6];
     private final int[][] instdata = { //instrument parameters
         usertone, //user tone register
         //i'm surprised no one's bothered to decap it and take a look
@@ -248,10 +248,8 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         //envelopes
         //TODO: rewrite the whole envelope code
         //to match rate chip is actually running envelope updates at
-        for (int fi = 0; fi < 6; ++fi) {
-            setenvelope(inst, modenv_state, modenv_vol, ch, false);
-            setenvelope(inst, carenv_state, carenv_vol, ch, true);
-        }
+        setenvelope(inst, modenv_state, modenv_vol, ch, false);
+        setenvelope(inst, carenv_state, carenv_vol, ch, true);
         //key scaling
         int keyscale = keyscaletbl[freq[ch] >> 5] - 512 * (7 - octave[ch]);
         if (keyscale < 0) {
@@ -274,7 +272,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         final int mod_f = modFeedback + (int) (modVibrato + modFreqMultiplier * phase[ch]);
         //each of these values is an attenuation value
         final int modVol = (inst[2] & 0x3f) * 32;//modulator vol
-        final int modEnvelope = ((int) modenv_vol[ch]) << 2;
+        final int modEnvelope = (modenv_vol[ch] >> 14) << 2;
         final int modAM = ((inst[0] & (BIT7)) != 0) ? am[amctr] : 0;
         final boolean modRectify = ((inst[3] & (BIT3)) != 0);
         //calculate modulator operator value
@@ -286,7 +284,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         final int carFeedback = (mod[ch] + oldmodout[ch]) >> 1; //inaccurately named
         final int car_f = carFeedback + (int) (carVibrato + carFreqMultiplier * phase[ch]);
         final int carVol = vol[ch] * 128; //4 bits for carrier vol not 6
-        final int carEnvelope = ((int) carenv_vol[ch]) << 2;
+        final int carEnvelope = (carenv_vol[ch] >> 14) << 2;
         final int carAM = ((inst[1] & (BIT7)) != 0) ? am[amctr] : 0;
         final boolean carRectify = ((inst[3] & (BIT4)) != 0);
         out[ch] = operator(car_f, (int) (carVol + carEnvelope + carks + carAM), carRectify) << 2;
@@ -344,7 +342,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         int sample = out[ch] * 24;
         //two stage low pass filter (looked @ schematic of hybrid on PCB)
         sample += lpaccum;
-        lpaccum -= sample >> 3;
+        lpaccum -= sample >> 2;
         int j = lpaccum;
         j += lpaccum2;
         lpaccum2 -= j >> 2;
@@ -354,34 +352,35 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     public final int getval() {
         return lpaccum2;
     }
-    final private static int ZEROVOL = 511;
+    final private static int ZEROVOL = 8388608; //2^23
     final private static int MAXVOL = 0;
-    
-//    Twiddler t = new Twiddler(0.4);
 
-    private void setenvelope(final int[] instrument, final EnvState[] state, final double[] vol, final int ch, final boolean isCarrier) {
+//    Twiddler t = new Twiddler(0.4);
+    private void setenvelope(final int[] instrument, final EnvState[] state,
+            final int[] vol, final int ch, final boolean isCarrier) {
         final boolean keyscaleRate = ((instrument[(isCarrier ? 1 : 0)] & (BIT4)) != 0);
         final int ksrShift = keyscaleRate ? octave[ch] << 1 : octave[ch] >> 1;
         //^ the key scaling bit (java should really have unions, this is such a mess)
         /*
-         TODO: fix all of this. Most of these constants were computed backwards from a
+         Most of these constants were computed backwards from a
          table in a badly translated YM2413 technical manual 
          (that was given in ms to decay 40db) and are thus only approximate.       
          The key scaling stuff is similarly just a best guess.       
          Of course the real hardware isn't using floating point here either.
-         I suspect it's a 23 bit int value so that each envelope update changes
-         at least 1 LSB though.
+         I suspect it's a 23 bit int value and each envelope update changes
+         at least 1 LSB
          */
 
         //from docs on the OPL3: envelope starts at 511 (max attenuation)
         //and counts down to zero (no attenuation)
         //on real HW the envelope out is probably the upper 9 bits of a 23 bit
         //attenuation register (this would add 1 LSB per clock at slowest rate)
+        //System.err.println(state[ch]);
         switch (state[ch]) {
             default:
             case CUTOFF:
                 if (vol[ch] < ZEROVOL) {
-                    vol[ch] += 0.4;
+                    vol[ch] += 16384; //decay to off in 10ms
                     /*
                      programmer's manual seems to say it takes a few ms to decay
                      before the new note starts its attack run.
@@ -402,11 +401,15 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 }
                 break;
             case ATTACK:
-                if (vol[ch] > MAXVOL + 0.01) {
+                if (vol[ch] > MAXVOL + 8) {
+                    //attack should be exponential not just linear
+                    //how best to do that naow?
                     //((vol[ch] + 17) / 272)
                     //or
-                    // (1 + (((int)vol[ch]) >> 4) )
-                    vol[ch] -= ((vol[ch] + 17) / 272) * attack_tbl[(instrument[(isCarrier ? 5 : 4)] >> 4) * 4
+                    // (1 + (vol[ch] >> 4))
+                    // ((vol[ch]) / (ZEROVOL / 2)) * ?
+                    vol[ch]
+                            -= attack_tbl[(instrument[(isCarrier ? 5 : 4)] >> 4) * 4
                             + ksrShift];
                 } else {
                     state[ch] = EnvState.DECAY;
@@ -416,7 +419,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 }
                 break;
             case DECAY:
-                if (vol[ch] < ((instrument[(isCarrier ? 7 : 6)] >> 4)) * 32) {
+                if (vol[ch] < ((instrument[(isCarrier ? 7 : 6)] >> 4)) * 524288) {
                     //the higher the sustain value is, the lower the volume when
                     //it switches to sustain.
                     vol[ch] += decay_tbl[(instrument[(isCarrier ? 5 : 4)] & 0xf) * 4
@@ -458,7 +461,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                         //sustained tone
                         if (SUS) {
                             //decay at rate of 1.2 seconds to cut off
-                            vol[ch] += 0.001;
+                            vol[ch] += 14;
                         } else {
                             //decay at release rate
                             vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
@@ -469,14 +472,17 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                         //percussive tone
                         if (SUS) {
                             //decay at rate of 1.2 seconds to cut off
-                            vol[ch] += 0.001;
+                            vol[ch] += 14;
                         } else {
                             //decay at release rate prime, 310ms to cutoff
-                            vol[ch] += .005;
+                            vol[ch] += 56;
                         }
                     }
                 }
                 break;
+                //there was also something about one of the decay values not working
+                //if a modulator or something
+                //on the famitracker forums or somewhere
         }
         if (vol[ch] < MAXVOL) {
             vol[ch] = MAXVOL;
@@ -485,49 +491,49 @@ public class VRC7SoundChip implements ExpansionSoundChip {
             vol[ch] = ZEROVOL;
         }
     }
-    private final static double[] attack_tbl = {0, 0, 0, 0,
-        0.00147964, 0.001827788, 0.002219467, 0.002589363,
-        0.00295653, 0.003280789, 0.004438896, 0.005178727,
-        0.005918528, 0.007147843, 0.009131117, 0.010357663,
-        0.011837056, 0.014622722, 0.017718715, 0.020728745,
-        0.023675206, 0.029243774, 0.035121416, 0.041430652,
-        0.046655732, 0.058487549, 0.071032186, 0.082847896,
-        0.094709582, 0.121904762, 0.142064373, 0.165695793,
-        0.189349112, 0.234003656, 0.284128746, 0.331606218,
-        0.378698225, 0.468007313, 0.567627494, 0.663212435,
-        0.775757576, 0.934306569, 1.137777778, 1.32642487,
-        1.514792899, 1.868613139, 2.265486726, 2.639175258,
-        3.047619048, 3.657142857, 4.266666667, 4.740740741,
-        5.12, 6.095238095, 7.529411765, 8.533333333,
-        9.142857143, 11.63636364, 14.22222222, 18.28571429,
-        511, 511, 511, 511,
-        511, 511, 511, 511,
-        511, 511, 511, 511,
-        511, 511, 511, 511,
-        511, 511, 511, 511,
-        511, 511, 511, 511,};
-    private final static double[] decay_tbl = {0, 0, 0, 0,
-        0.000122332, 0.000152316, 0.000175261, 0.000211944,
-        0.000244665, 0.000304632, 0.000365559, 0.000425651,
-        0.00048933, 0.000609264, 0.000731117, 0.000851302,
-        0.000978661, 0.001173833, 0.00146223, 0.001702603,
-        0.001957321, 0.002437051, 0.002924478, 0.003405206,
-        0.003914672, 0.004874148, 0.005848888, 0.006808873,
-        0.007829225, 0.009748296, 0.011698044, 0.013620644,
-        0.01565845, 0.01949585, 0.023396088, 0.027242737,
-        0.031318816, 0.038994669, 0.046792177, 0.054479677,
-        0.063888196, 0.07992507, 0.093567251, 0.108982546,
-        0.125244618, 0.156002438, 0.188235294, 0.21787234,
-        0.250489237, 0.31181486, 0.374269006, 0.436115843,
-        0.500978474, 0.624390244, 0.748538012, 0.870748299,
-        1.003921569, 1.248780488, 1.497076023, 1.741496599,
-        2.015748031, 2.015748031, 2.015748031, 2.015748031,
-        2.015748031, 2.015748031, 2.015748031, 2.015748031,
-        //last lines duplicated to account for key scaling
-        2.015748031, 2.015748031, 2.015748031, 2.015748031,
-        2.015748031, 2.015748031, 2.015748031, 2.015748031,
-        2.015748031, 2.015748031, 2.015748031, 2.015748031,
-        2.015748031, 2.015748031, 2.015748031, 2.015748031};
+
+    private final static int[] attack_tbl = {0, 0, 0, 0,
+        98, 120, 146, 171,
+        195, 216, 293, 341,
+        390, 471, 602, 683,
+        780, 964, 1168, 1366,
+        1560, 1927, 2315, 2731,
+        3075, 3855, 4682, 5461,
+        6242, 8035, 9364, 10921,
+        12480, 15423, 18727, 21856,
+        24960, 30847, 37413, 43713,
+        51130, 61580, 74991, 87425,
+        99841, 123161, 149319, 173949,
+        200870, 241044, 281218, 312464,
+        337461, 401739, 496266, 562435,
+        602609, 766957, 937392, 1205218,
+        8388607, 8388607, 8388607, 8388607,
+        8388607, 8388607, 8388607, 8388607,
+        8388607, 8388607, 8388607, 8388607,
+        8388607, 8388607, 8388607, 8388607};
+    private final static int[] decay_tbl = {0, 0, 0, 0,
+        8, 10, 12, 14, //+2
+        16, 20, 24, 28, //+4
+        32, 40, 48, 56, //+8
+        65, 77, 96, 112, //+16
+        129, 161, 193, 224, //+32
+        258, 321, 386, 449, //+64
+        516, 643, 771, 898, //+128
+        1032, 1285, 1542, 1796, //+256
+        2064, 2570, 3084, 3591, //+512
+        4211, 5268, 6167, 7183, //+1024
+        8255, 10282, 12407, 14360, //+2048
+        16510, 20552, 24668, 28745, //+4096
+        33020, 41154, 49336, 57391, //+8192
+        66169, 82308, 98673, 114783, //+16384
+        132859, 132859, 132859, 132859,
+        132859, 132859, 132859, 132859,
+        132859, 132859, 132859, 132859,
+        132859, 132859, 132859, 132859,};
 }
 //these 2 tables calculated from excel based on the envelope table
 //in the programming guide.
+
+//decay table is SO CLOSE to neat powers of 2
+//and it really has to be anyway since there isn't any table
+//of envelope values on the real chip.
