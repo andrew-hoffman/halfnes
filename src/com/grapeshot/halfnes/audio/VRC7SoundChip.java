@@ -248,8 +248,10 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         //envelopes
         //TODO: rewrite the whole envelope code
         //to match rate chip is actually running envelope updates at
-        setenvelope(inst, modenv_state, modenv_vol, ch, false);
-        setenvelope(inst, carenv_state, carenv_vol, ch, true);
+        int modEnvelope = setenvelope(inst, modenv_state, modenv_vol, ch, false)
+                << 2;
+        int carEnvelope = setenvelope(inst, carenv_state, carenv_vol, ch, true)
+                << 2;
         //key scaling
         int keyscale = keyscaletbl[freq[ch] >> 5] - 512 * (7 - octave[ch]);
         if (keyscale < 0) {
@@ -272,7 +274,6 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         final int mod_f = modFeedback + (int) (modVibrato + modFreqMultiplier * phase[ch]);
         //each of these values is an attenuation value
         final int modVol = (inst[2] & 0x3f) * 32;//modulator vol
-        final int modEnvelope = (modenv_vol[ch] >> 14) << 2;
         final int modAM = ((inst[0] & (BIT7)) != 0) ? am[amctr] : 0;
         final boolean modRectify = ((inst[3] & (BIT3)) != 0);
         //calculate modulator operator value
@@ -284,7 +285,6 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         final int carFeedback = (mod[ch] + oldmodout[ch]) >> 1; //inaccurately named
         final int car_f = carFeedback + (int) (carVibrato + carFreqMultiplier * phase[ch]);
         final int carVol = vol[ch] * 128; //4 bits for carrier vol not 6
-        final int carEnvelope = (carenv_vol[ch] >> 14) << 2;
         final int carAM = ((inst[1] & (BIT7)) != 0) ? am[amctr] : 0;
         final boolean carRectify = ((inst[3] & (BIT4)) != 0);
         out[ch] = operator(car_f, (int) (carVol + carEnvelope + carks + carAM), carRectify) << 2;
@@ -356,10 +356,12 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     final private static int MAXVOL = 0;
 
 //    Twiddler t = new Twiddler(0.4);
-    private void setenvelope(final int[] instrument, final EnvState[] state,
+    private int setenvelope(final int[] instrument, final EnvState[] state,
             final int[] vol, final int ch, final boolean isCarrier) {
         final boolean keyscaleRate = ((instrument[(isCarrier ? 1 : 0)] & (BIT4)) != 0);
-        final int ksrShift = keyscaleRate ? octave[ch] << 1 : octave[ch] >> 1;
+        final int ksrShift = keyscaleRate ?
+                (octave[ch] << 1) + (freq[ch] >> 8)
+                : octave[ch] >> 1;
         //^ the key scaling bit (java should really have unions, this is such a mess)
         /*
          Most of these constants were computed backwards from a
@@ -402,15 +404,10 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 break;
             case ATTACK:
                 if (vol[ch] > MAXVOL + 8) {
-                    //attack should be exponential not just linear
-                    //how best to do that naow?
-                    //((vol[ch] + 17) / 272)
-                    //or
-                    // (1 + (vol[ch] >> 4))
-                    // ((vol[ch]) / (ZEROVOL / 2)) * ?
-                    vol[ch]
-                            -= attack_tbl[(instrument[(isCarrier ? 5 : 4)] >> 4) * 4
-                            + ksrShift];
+                    vol[ch]-= attack_tbl[
+                            (instrument[(isCarrier ? 5 : 4)] >> 4) * 4
+                            + ksrShift
+                            ];
                 } else {
                     state[ch] = EnvState.DECAY;
                 }
@@ -419,7 +416,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                 }
                 break;
             case DECAY:
-                if (vol[ch] < ((instrument[(isCarrier ? 7 : 6)] >> 4)) * 524288) {
+                if (vol[ch] < ((instrument[(isCarrier ? 7 : 6)] >> 4)) * 524288) { // <-- check this 524288
                     //the higher the sustain value is, the lower the volume when
                     //it switches to sustain.
                     vol[ch] += decay_tbl[(instrument[(isCarrier ? 5 : 4)] & 0xf) * 4
@@ -461,7 +458,8 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                         //sustained tone
                         if (SUS) {
                             //decay at rate of 1.2 seconds to cut off
-                            vol[ch] += 14;
+                            vol[ch] += decay_tbl[5 * 4
+                                    + ksrShift];
                         } else {
                             //decay at release rate
                             vol[ch] += decay_tbl[(instrument[(isCarrier ? 7 : 6)] & 0xf) * 4
@@ -472,10 +470,16 @@ public class VRC7SoundChip implements ExpansionSoundChip {
                         //percussive tone
                         if (SUS) {
                             //decay at rate of 1.2 seconds to cut off
-                            vol[ch] += 14;
+                            vol[ch] += decay_tbl[5 * 4
+                                    + ksrShift];
                         } else {
                             //decay at release rate prime, 310ms to cutoff
-                            vol[ch] += 56;
+                            //according to the docs,
+                            //or a rate of 7 according
+                            //to tests on nesdev forums.
+                            vol[ch] += decay_tbl[7 * 4
+                                    + ksrShift];
+                            //maybe we do apply key scaling to these still
                         }
                     }
                 }
@@ -490,6 +494,16 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         if (vol[ch] > ZEROVOL) {
             vol[ch] = ZEROVOL;
         }
+        if(state[ch] == EnvState.ATTACK){
+            //logarithmic envelope attack
+            //48 dB - (48 dB * ln(EGC) / ln(1<<23)) from Disch's doc
+            //also accounting for env ctr is running down not up
+            //this is slow and probably wrong vs real chip
+            //but stays for now bc it works and sounds ok
+            int out = 8388608 - (int)(8388608 * Math.log(8388608 - vol[ch]) / Math.log(8388608));
+            return out >> 14;
+        }
+        return vol[ch] >> 14;
     }
 
     private final static int[] attack_tbl = {0, 0, 0, 0,
