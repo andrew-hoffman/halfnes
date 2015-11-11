@@ -38,6 +38,7 @@ public class VRC2Mapper extends Mapper {
                 prgbank0 = data & 0xf;
                 break;
             case 0x9:
+                //mirroring
                 switch (data & 3) {
                     case 0:
                         setmirroring(Mapper.MirrorType.V_MIRROR);
@@ -52,6 +53,10 @@ public class VRC2Mapper extends Mapper {
                         setmirroring(Mapper.MirrorType.SS_MIRROR1);
                         break;
                 }
+                //Seems to be wrong in vertically scrolling stage of Konami
+                //Wai Wai World.
+                //See http://forums.nesdev.com/viewtopic.php?f=3&t=13473
+                //maybe someone's figured it out
                 break;
             case 0xa:
                 prgbank1 = data & 0xf;
