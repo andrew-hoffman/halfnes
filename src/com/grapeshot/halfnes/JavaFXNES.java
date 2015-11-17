@@ -48,7 +48,8 @@ public class JavaFXNES extends Application implements GUIInterface {
     @Override
     public void start(Stage stage) throws Exception {
         this.stage = stage;
-        Rectangle2D bounds = Screen.getPrimary().getBounds();
+        //Rectangle2D bounds = Screen.getPrimary().getBounds();
+        Rectangle2D bounds = new Rectangle2D(0,0,640,480);
         gameCanvas = new Canvas(256, 240);
         stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
             nes.quit();
@@ -60,7 +61,7 @@ public class JavaFXNES extends Application implements GUIInterface {
         Group root = new Group(gameCanvas, menu);
         Scene scene = new Scene(root, bounds.getWidth(), bounds.getHeight(), Color.BLACK);
         stage.setScene(scene);
-        stage.setFullScreen(true);
+        //stage.setFullScreen(true);
         stage.setFullScreenExitKeyCombination(KeyCombination.valueOf("F11"));
         stage.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
             if (e.getCode().equals(KeyCode.ESCAPE)) {
