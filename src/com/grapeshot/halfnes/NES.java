@@ -18,6 +18,7 @@ public class NES {
     private CPU cpu;
     private CPURAM cpuram;
     private PPU ppu;
+    private GUIInterface gui;
     private ControllerInterface controller1, controller2;
     final public static String VERSION = "060";
     public boolean runEmulation = false;
@@ -25,29 +26,22 @@ public class NES {
     public long frameStartTime, framecount, frameDoneTime;
     private boolean frameLimiterOn = true;
     private String curRomPath, curRomName;
-    private final GUIInterface gui = new GUIImpl(this);
     private final FrameLimiterInterface limiter = new FrameLimiterImpl(this, 16639267);
     // Pro Action Replay device
     private ActionReplay actionReplay;
 
-    public NES() {
-        try {
-            java.awt.EventQueue.invokeAndWait(gui);
-        } catch (InterruptedException e) {
-            System.err.println("Could not initialize GUI. Exiting.");
-            System.exit(-1);
-        } catch (java.lang.reflect.InvocationTargetException f) {
-            System.err.println(f.getCause().toString());
-            //not sure how this could happen (thrown if run method causes exception)
-            System.exit(-1);
-        }
+
+    public NES(GUIInterface gui) {
+        this.gui = gui;
+        gui.setNES(this);
+        gui.run();
     }
 
     public void run(final String romtoload) {
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
         //set thread priority higher than the interface thread
         curRomPath = romtoload;
-        loadROM(romtoload);
+        gui.loadROMs(romtoload);
         run();
     }
 
@@ -77,8 +71,6 @@ public class NES {
     };
 
     private synchronized void runframe() {
-        //the main method sequencing everything that has to happen in the nes each frame
-        //loops unrolled a bit to avoid some conditionals every cycle
         ppu.runFrame();
 
         //do end of frame stuff
@@ -198,6 +190,8 @@ public class NES {
             runEmulation = false;
             saveSRAM(false);
         }
+        //there might be some subtle threading bug with saving?
+        //System.Exit is very dirty but werks
         System.exit(0);
     }
 

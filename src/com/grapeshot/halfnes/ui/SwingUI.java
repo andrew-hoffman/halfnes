@@ -31,11 +31,11 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import javax.swing.*;
 
-public class GUIImpl extends JFrame implements GUIInterface {
+public class SwingUI extends JFrame implements GUIInterface {
 
     private Canvas canvas;
     private BufferStrategy buffer;
-    private final NES nes;
+    private NES nes;
     private static final long serialVersionUID = 6411494245530679723L;
     private final AL listener = new AL();
     private int screenScaleFactor;
@@ -47,14 +47,29 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private Renderer renderer;
     private final ControllerImpl padController1, padController2;
 
-    public GUIImpl(NES nes) {
-        this.nes = nes;
+    public SwingUI(String[] args) {
+        nes = new NES(this);
         screenScaleFactor = PrefsSingleton.get().getInt("screenScaling", 2);
         padController1 = new ControllerImpl(this, 0);
         padController2 = new ControllerImpl(this, 1);
         nes.setControllers(padController1, padController2);
         padController1.startEventQueue();
         padController2.startEventQueue();
+        if (args == null || args.length < 1 || args[0] == null) {
+            nes.run();
+        } else {
+            nes.run(args[0]);
+        }
+    }
+
+    @Override
+    public NES getNes() {
+        return nes;
+    }
+
+    @Override
+    public void setNES(NES nes) {
+        this.nes = nes;
     }
 
     public synchronized void setRenderOptions() {
@@ -489,6 +504,11 @@ public class GUIImpl extends JFrame implements GUIInterface {
 
     private double getmaxscale(final int width, final int height) {
         return Math.min(height / (double) NES_HEIGHT, width / (double) NES_WIDTH);
+    }
+
+    @Override
+    public void loadROMs(String path) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     public class AL implements ActionListener, WindowListener {

@@ -4,6 +4,7 @@
  */
 package com.grapeshot.halfnes;
 
+import com.grapeshot.halfnes.ui.SwingUI;
 import java.io.*;
 import javax.swing.*;
 
@@ -17,12 +18,8 @@ public class halfNES {
         } catch (Exception e) {
             System.err.println("Could not set system look and feel. Meh.");
         }
-        com.grapeshot.halfnes.NES thing = new com.grapeshot.halfnes.NES();
-        if (args == null || args.length < 1 || args[0] == null) {
-            thing.run();
-        } else {
-            thing.run(args[0]);
-        }
+        SwingUI thing = new SwingUI(args);
+
 
     }
 }

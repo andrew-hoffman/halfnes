@@ -81,4 +81,9 @@ public class DummyController implements ControllerInterface {
         }
         ++frame;
     }
+
+    @Override
+    public int peekOutput() {
+        return latchbyte;
+    }
 }

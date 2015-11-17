@@ -1,6 +1,6 @@
 /*
- * HalfNES by Andrew Hoffman
- * Licensed under the GNU GPL Version 3. See LICENSE file
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
  */
 package com.grapeshot.halfnes.video;
 
@@ -12,6 +12,7 @@ public class NesColors {
 
     private final static double att = 0.7;
     public final static int[][] col = GetNESColors();
+    public final static byte[][][] colbytes = NESColorsToBytes(col);
 
     private static int[][] GetNESColors() {
         //just or's all the colors with opaque alpha and does the color emphasis calcs
@@ -67,6 +68,21 @@ public class NesColors {
         return colors;
     }
 
+
+    private static byte[][][] NESColorsToBytes(int[][] col) {
+        byte[][][] colbytes = new byte[col.length][][];
+        for (int i=0; i<col.length; i++) {
+            int[] col2 = col[i];
+            byte[][] colbytes2 = colbytes[i] = new byte[col2.length][3];
+            for (int j=0; j<col2.length; j++) {
+                colbytes2[j][0] = (byte) b(col2[j]);
+                colbytes2[j][1] = (byte) g(col2[j]);
+                colbytes2[j][2] = (byte) r(col2[j]);
+            }
+        }
+        return colbytes;
+    }
+    
     private static int r(int col) {
         return (col >> 16) & 0xff;
     }

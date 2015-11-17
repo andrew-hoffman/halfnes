@@ -225,12 +225,10 @@ public class NTSCRenderer extends Renderer {
         //todo: add intelligent code so it's possible to build w/o this!
         Parallel_1x0.For(0,//start 
                 240,//end
-                4,//grain (idk why lower grain works best)
-                new ForTask_1x0() {
-                    public void iteration(int line) {
-                        cacheRender(nespixels, line, bgcolors, dotcrawl);
-                    }
-                });
+                4, //grain (idk why lower grain works best)
+        (int line) -> {
+            cacheRender(nespixels, line, bgcolors, dotcrawl);
+        });
 
         BufferedImage i = getImageFromArray(frame, frame_w * clip, frame_w, 240 - 2 * clip);
         ++frames;
@@ -248,15 +246,15 @@ public class NTSCRenderer extends Renderer {
         offset = (4 * line + offset) % 12; //3 line dot crawl
         final int[] inpixels = new int[256];
         System.arraycopy(nespixels, line << 8, inpixels, 0, 256);
-        final long crc = crc32(inpixels, offset, bgcolors[line]);
-        //you'd think crc32 would have too many collisions but i haven't seen a one
+//        final long crc = crc32(inpixels, offset, bgcolors[line]);
+//        //you'd think crc32 would have too many collisions but i haven't seen a one
         int[] outpixels;
-        outpixels = (int[]) cache.get(crc);
-        if (outpixels == null) { //not in cache
+//        outpixels = (int[]) cache.get(crc);
+        if (true) { //not in cache
             //could do with hints from the PPU here: if the entire screen is
             //scrolling horizontally, the cache will be useless.
             outpixels = ntsc_decode(ntsc_encode(inpixels, offset, line, bgcolors[line]), offset);
-            cache.put(crc, outpixels);
+//            cache.put(crc, outpixels);
         }
 
         System.arraycopy(outpixels, 0, frame, line * frame_w, frame_w);
