@@ -87,7 +87,7 @@
                             <executable>java</executable>
                             <arguments>
                                 <argument>-jar</argument>
-                                <argument>jarsplice-0.40-CLI-CUSTPATCH.jar</argument>
+                                <argument>src/main/build/jarsplice-0.40-CLI-CUSTPATCH.jar</argument>
                                 <argument>-fat</argument>
                                 <argument>target/HalfNES.jar</argument>
                                 <argument>-win</argument>
