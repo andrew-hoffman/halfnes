@@ -5,12 +5,8 @@
 package com.grapeshot.halfnes.video;
 
 import java.awt.image.*;
-import java.util.Collections;
-import org.happy.commons.concurrent.loops.ForTask_1x0;
-import org.happy.commons.concurrent.loops.Parallel_1x0;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
+
 import java.util.zip.CRC32;
 
 /**
@@ -18,6 +14,14 @@ import java.util.zip.CRC32;
  * @author Andrew
  */
 public class NTSCRenderer extends Renderer {
+
+    private final static List<Integer> lines;
+    static {
+        lines = new ArrayList<>();
+        for (int line = 0; line < 240; ++line) {
+            lines.add(line);
+        }
+    }
 
     //hm, if I downsampled these perfectly to 4Fsc i could get rid of matrix decode
     //and the sine tables altogether...
@@ -215,20 +219,8 @@ public class NTSCRenderer extends Renderer {
 
     @Override
     public BufferedImage render(final int[] nespixels, final int[] bgcolors, final boolean dotcrawl) {
-        //old and busted single threaded filter
-
-//        for (int line = 0; line < 240; ++line) {
-//            cacheRender(nespixels, line, bgcolors, dotcrawl);
-//        }
-        //new hotness range for lightweight multithreaded filter (using The Happy Java Library 1.3)
-        //i will pull just the parts I need out of this later maybe. It's got a load of dependencies
-        //todo: add intelligent code so it's possible to build w/o this!
-        Parallel_1x0.For(0,//start 
-                240,//end
-                4, //grain (idk why lower grain works best)
-        (int line) -> {
-            cacheRender(nespixels, line, bgcolors, dotcrawl);
-        });
+        // multithreaded filter
+        lines.parallelStream().forEach(line -> cacheRender(nespixels, line, bgcolors, dotcrawl));
 
         BufferedImage i = getImageFromArray(frame, frame_w * clip, frame_w, 240 - 2 * clip);
         ++frames;
