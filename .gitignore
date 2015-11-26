@@ -33,3 +33,6 @@ proguard4.7
 /*.app
 /battletoads double dragon.txt
 /justbreedbug.txt
+/.idea
+/*.iml
+/target
