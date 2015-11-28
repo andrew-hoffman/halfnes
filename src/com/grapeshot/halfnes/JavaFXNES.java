@@ -49,7 +49,7 @@ public class JavaFXNES extends Application implements GUIInterface {
     public void start(Stage stage) throws Exception {
         this.stage = stage;
         //Rectangle2D bounds = Screen.getPrimary().getBounds();
-        Rectangle2D bounds = new Rectangle2D(0,0,640,480);
+        Rectangle2D bounds = new Rectangle2D(0,0,584,448);
         gameCanvas = new Canvas(256, 240);
         stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
             nes.quit();
