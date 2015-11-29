@@ -220,7 +220,7 @@ public class NTSCRenderer extends Renderer {
     @Override
     public BufferedImage render(final int[] nespixels, final int[] bgcolors, final boolean dotcrawl) {
         // multithreaded filter
-        lines.parallelStream().forEach(line -> cacheRender(nespixels, line, bgcolors, dotcrawl));
+        //lines.parallelStream().forEach(line -> cacheRender(nespixels, line, bgcolors, dotcrawl));
 
         BufferedImage i = getImageFromArray(frame, frame_w * clip, frame_w, 240 - 2 * clip);
         ++frames;

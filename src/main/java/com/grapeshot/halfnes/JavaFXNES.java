@@ -90,6 +90,7 @@ public class JavaFXNES extends Application implements GUIInterface {
     }
 
     public static void main(String[] args) {
+        JInputHelper.setupJInputNatives();
         launch(args);
     }
 
