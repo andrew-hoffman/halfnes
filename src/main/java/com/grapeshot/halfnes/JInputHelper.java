@@ -73,17 +73,19 @@ public enum JInputHelper {
     private static void fixInputPluginForWindows8() {
         AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
             String os = System.getProperty("os.name", "").trim();
-            if (os.startsWith("Windows 8")) {  // 8, 8.1
-                // disable default plugin lookup
-                System.setProperty("jinput.useDefaultPlugin", "false");
-                // set to same as windows 7
-                System.setProperty("net.java.games.input.plugins", "net.java.games.input.DirectAndRawInputEnvironmentPlugin");
-            }
-            if (isWindows10()) {
-                // disable default plugin lookup
-                System.setProperty("jinput.useDefaultPlugin", "false");
-                // set fallback to AWT plugin
-                System.setProperty("net.java.games.input.plugins", "net.java.games.input.AWTEnvironmentPlugin");
+            if (os.startsWith("Windows")) {
+                if (os.startsWith("Windows 8")) {  // 8, 8.1
+                    // disable default plugin lookup
+                    System.setProperty("jinput.useDefaultPlugin", "false");
+                    // set to same as windows 7
+                    System.setProperty("net.java.games.input.plugins", "net.java.games.input.DirectAndRawInputEnvironmentPlugin");
+                }
+                if (isWindows10()) {
+                    // disable default plugin lookup
+                    System.setProperty("jinput.useDefaultPlugin", "false");
+                    // set fallback to AWT plugin
+                    System.setProperty("net.java.games.input.plugins", "net.java.games.input.AWTEnvironmentPlugin");
+                }
             }
             return null;
         });
