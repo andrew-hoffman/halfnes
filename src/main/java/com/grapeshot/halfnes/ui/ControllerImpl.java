@@ -267,9 +267,6 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
 
     /**
      * Return the available buttons on this controller (by priority order).
-     *
-     * @param controller
-     * @return
      */
     private static Component[] getButtons(Controller controller) {
         List<Component> buttons = new ArrayList<Component>();

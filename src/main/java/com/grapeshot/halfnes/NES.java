@@ -289,8 +289,6 @@ public class NES {
 
     /**
      * Access to the Pro Action Replay device.
-     *
-     * @return
      */
     public synchronized ActionReplay getActionReplay() {
         return actionReplay;

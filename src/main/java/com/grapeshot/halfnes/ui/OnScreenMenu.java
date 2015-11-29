@@ -23,7 +23,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 
 /**
- * @author Stephen Chin <steveonjava@gmail.com>
+ * @author Stephen Chin - steveonjava@gmail.com
  */
 public class OnScreenMenu extends StackPane {
 

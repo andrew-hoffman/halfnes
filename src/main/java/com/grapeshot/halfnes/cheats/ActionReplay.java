@@ -32,8 +32,6 @@ public class ActionReplay {
 
     /**
      * Get the list of patches currently applied.
-     *
-     * @return
      */
     public HashMap<Integer, Patch> getPatches() {
         return patches;
@@ -82,8 +80,6 @@ public class ActionReplay {
 
     /**
      * Gets the list memory addresses of the current search.
-     *
-     * @return
      */
     public List<Integer> getFoundAddresses() {
         return foundAddresses;

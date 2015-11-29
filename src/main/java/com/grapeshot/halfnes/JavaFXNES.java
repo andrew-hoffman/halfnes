@@ -23,7 +23,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**
- * @author Stephen Chin <steveonjava@gmail.com>
+ * @author Stephen Chin - steveonjava@gmail.com
  */
 public class JavaFXNES extends Application implements GUIInterface {
 

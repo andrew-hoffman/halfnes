@@ -347,9 +347,6 @@ public class PreferencesDialog extends javax.swing.JDialog {
     private void jRegionBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRegionBoxActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jRegionBoxActionPerformed
-    /**
-     * @param args the command line arguments
-     */
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JButton jButtonCancel;

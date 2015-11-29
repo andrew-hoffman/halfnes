@@ -35,8 +35,6 @@ public class Patch {
 
     /**
      * Returns the address to patch.
-     *
-     * @return
      */
     public int getAddress() {
         return address;
@@ -44,8 +42,6 @@ public class Patch {
 
     /**
      * Returns the value to write in the address.
-     *
-     * @return
      */
     public int getData() {
         return data;
@@ -54,8 +50,6 @@ public class Patch {
     /**
      * Returns true if the check matches the data or it's a code type that
      * doesn't check data bus
-     *
-     * @return
      */
     public boolean matchesData(int data) {
         return (type == 0) || (data == cmpData);

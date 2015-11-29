@@ -7,7 +7,7 @@ package com.grapeshot.halfnes.mappers;
  * Speed optimization for NROM games: copy everything to linear mapping and
  * don't use the bankswitching capability at all
  *
- * thanks to Stephen Chin <steveonjava@gmail.com>
+ * thanks to Stephen Chin - steveonjava@gmail.com
  */
 public class NromMapper extends Mapper {
 

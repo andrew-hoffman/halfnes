@@ -100,7 +100,6 @@ public class PPU {
      * Performs a read from a PPU register, as well as causes any side effects
      * of reading that specific register.
      *
-     * @param regnum
      * @return the data in the PPU register, or open bus (the last value written
      * to a PPU register) if the register is read only
      */
@@ -333,8 +332,6 @@ public class PPU {
 
     /**
      * Runs the PPU emulation for one NES scan line.
-     *
-     * @param scanline
      */
     public final void clockLine(int scanline) {
         //skip a PPU clock on line 0 of odd frames when rendering is on
@@ -797,7 +794,6 @@ public class PPU {
      * Fetches 8x8 NES tile stored at the given offset. This is an artifact of
      * the first renderer I wrote which drew 8 scanlines at a time.
      *
-     * @param offset
      * @return an 8x8 array with colors stored as RGB packed in int
      */
     private int[] debugGetTile(final int offset) {
