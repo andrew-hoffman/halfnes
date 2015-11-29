@@ -3,6 +3,8 @@ package com.grapeshot.halfnes;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Created by KlausH on 29.11.2015.
@@ -26,11 +28,12 @@ public enum JInputHelper {
             "libjinput-osx.jnilib",
     };
 
-    public static void setupJInputNatives() {
+    public static void setupJInput() {
         try {
             File nativesDirectory = createTempDirectory();
             unpackNativeLibraries(nativesDirectory);
             setLibraryPath(nativesDirectory);
+            fixInputPluginForWindows8();
         } catch (Exception exception) {
             throw new RuntimeException("Unable to setup native libraries.");
         }
@@ -65,6 +68,38 @@ public enum JInputHelper {
         final Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
         fieldSysPath.setAccessible(true);
         fieldSysPath.set(null, null);
+    }
+
+    private static void fixInputPluginForWindows8() {
+        AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+            String os = System.getProperty("os.name", "").trim();
+            if (os.startsWith("Windows 8")) {  // 8, 8.1
+                // disable default plugin lookup
+                System.setProperty("jinput.useDefaultPlugin", "false");
+                // set to same as windows 7
+                System.setProperty("net.java.games.input.plugins", "net.java.games.input.DirectAndRawInputEnvironmentPlugin");
+            }
+            if (isWindows10()) {
+                // disable default plugin lookup
+                System.setProperty("jinput.useDefaultPlugin", "false");
+                // set fallback to AWT plugin
+                System.setProperty("net.java.games.input.plugins", "net.java.games.input.AWTEnvironmentPlugin");
+            }
+            return null;
+        });
+    }
+
+    private static boolean isWindows10() {
+        try {
+            Process process = Runtime.getRuntime().exec("cmd.exe /c ver");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            bufferedReader.readLine();
+            String line = bufferedReader.readLine();
+            process.waitFor();
+            return line.contains("10");
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
 }

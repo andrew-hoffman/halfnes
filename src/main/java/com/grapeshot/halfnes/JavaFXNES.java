@@ -19,7 +19,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**
@@ -90,7 +89,7 @@ public class JavaFXNES extends Application implements GUIInterface {
     }
 
     public static void main(String[] args) {
-        JInputHelper.setupJInputNatives();
+        JInputHelper.setupJInput();
         launch(args);
     }
 

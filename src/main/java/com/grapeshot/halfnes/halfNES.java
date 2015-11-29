@@ -7,8 +7,6 @@ package com.grapeshot.halfnes;
 import com.grapeshot.halfnes.ui.SwingUI;
 
 import java.io.*;
-import java.lang.reflect.Field;
-import java.nio.file.Files;
 import javax.swing.*;
 
 public class halfNES {
@@ -16,7 +14,7 @@ public class halfNES {
 
 
     public static void main(String[] args) throws IOException {
-        JInputHelper.setupJInputNatives();
+        JInputHelper.setupJInput();
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
