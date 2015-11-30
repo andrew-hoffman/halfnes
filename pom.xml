@@ -95,7 +95,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- TODO re-enable the native binary packaging after the Travis CI environment is correctly configured
             <plugin>
                 <groupId>com.akathist.maven.plugins.launch4j</groupId>
                 <artifactId>launch4j-maven-plugin</artifactId>
@@ -119,7 +118,6 @@
                     </execution>
                 </executions>
             </plugin>
-            -->
         </plugins>
     </build>
 
