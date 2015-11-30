@@ -51,10 +51,12 @@ public enum JInputHelper {
         nativeLibraryTempFile.deleteOnExit();
         BufferedOutputStream nativeLibraryTempFileOutputStream = new BufferedOutputStream(new FileOutputStream(nativeLibraryTempFile));
         byte[] buffer = new byte[4096];
-        while (nativeLibraryInputStream.read(buffer) != -1) {
-            nativeLibraryTempFileOutputStream.write(buffer);
+        int length;
+        while ((length = nativeLibraryInputStream.read(buffer)) > 0) {
+            nativeLibraryTempFileOutputStream.write(buffer, 0, length);
         }
         nativeLibraryTempFileOutputStream.close();
+        nativeLibraryInputStream.close();
     }
 
     private static File createTempDirectory() throws IOException {
@@ -74,17 +76,17 @@ public enum JInputHelper {
         AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
             String os = System.getProperty("os.name", "").trim();
             if (os.startsWith("Windows")) {
-                if (os.startsWith("Windows 8")) {  // 8, 8.1
+                if (os.startsWith("Windows 8")) {
                     // disable default plugin lookup
                     System.setProperty("jinput.useDefaultPlugin", "false");
                     // set to same as windows 7
                     System.setProperty("net.java.games.input.plugins", "net.java.games.input.DirectAndRawInputEnvironmentPlugin");
                 }
-                if (isWindows10()) {
+                if (os.startsWith("Windows 10") || isWindows10()) {
                     // disable default plugin lookup
                     System.setProperty("jinput.useDefaultPlugin", "false");
                     // set fallback to AWT plugin
-                    System.setProperty("net.java.games.input.plugins", "net.java.games.input.AWTEnvironmentPlugin");
+                    System.setProperty("net.java.games.input.plugins", "net.java.games.input.DirectAndRawInputEnvironmentPlugin");
                 }
             }
             return null;
