@@ -110,7 +110,7 @@
                             <outfile>target/halfNES.exe</outfile>
                             <jar>target/${project.build.finalName}-jar-with-dependencies.jar</jar>
                             <jre>
-                                <minVersion>1.5.0</minVersion>
+                                <minVersion>1.8.0</minVersion>
                                 <initialHeapSize>128</initialHeapSize>
                                 <maxHeapSize>1024</maxHeapSize>
                             </jre>
@@ -125,7 +125,7 @@
     <name>halfNES</name>
     <description>An accurate NES/Famicom emulator</description>
     <url>https://github.com/andrew-hoffman/halfnes</url>
-    <inceptionYear>2014</inceptionYear>
+    <inceptionYear>2010</inceptionYear>
     <!--<licenses>...</licenses>-->
     <developers>
         <developer>
@@ -136,6 +136,18 @@
     <contributors>
         <contributor>
             <name>Klaus Hauschild</name>
+        </contributor>
+		<contributor>
+            <name>Stephen Chin</name>
+        </contributor>
+        <contributor>
+            <name>Thomas Lorblanches</name>
+        </contributor>	
+        <contributor>
+            <name>Nawrot Kryzystof</name>
+        </contributor>
+		<contributor>
+            <name>zlika_ese</name>
         </contributor>
     </contributors>
 

@@ -30,10 +30,10 @@ Running HalfNES
 ---------------
 
 Download the latest version from https://github.com/andrew-hoffman/halfnes/releases .
-There are three versions of HalfNES included in this package: a Windows
-executable, a Mac .app package, and a JAR file for other platforms.
+There are two versions of HalfNES included in this package: a Windows
+executable and a JAR file for other platforms.
 Use whichever one works best on your platform, but you will need
-Java installed no matter what file is to be used.
+Java 8 or newer installed no matter what file is to be used.
 Linux users will need to set execute permissions on the JAR.
 
 # Default Controls (See Preferences dialog to remap them)
@@ -72,10 +72,15 @@ Please change the system type to PAL in preferences to run these.
 Building instructions
 ---------------------
 
-The project requires two libraries to build: JInput (gamepad support) and The Happy Java Library 1.3 (parallel for loops). 
-Sorry there's no decent build script included with the source, just the
-Netbeans auto-generated one. You might want to create a new Netbeans project,
-import all the src files, and add those two libraries in the project properties.
+The project requires JInput library to build.  
+The project comes with a Maven build script that will automatically download
+that and package the natives as a library. To use it you will need to 
+install Maven, change to the project directory and run
+
+    mvn install
+
+and that should produce an exe and a JAR with all the natives in the
+/target/ directory under the project root. 
 
 Do NOT ask me where to find ROM files of commercial games. Some public 
 domain homebrew ROMs are available at www.pdroms.de for testing 
