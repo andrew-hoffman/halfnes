@@ -825,7 +825,9 @@ public class PPU {
         if (PPUDEBUG) {
             debugDraw();
         }
-        gui.setFrame(bitmap, bgcolors, dotcrawl);
+        if (gui != null) {
+            gui.setFrame(bitmap, bgcolors, dotcrawl);
+        }
 
     }
 }
