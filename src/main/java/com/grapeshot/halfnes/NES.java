@@ -4,12 +4,13 @@
  */
 package com.grapeshot.halfnes;
 
-import com.grapeshot.halfnes.ui.*;
 import com.grapeshot.halfnes.cheats.ActionReplay;
 import com.grapeshot.halfnes.mappers.BadMapperException;
 import com.grapeshot.halfnes.mappers.Mapper;
-
-import java.util.prefs.Preferences;
+import com.grapeshot.halfnes.ui.ControllerInterface;
+import com.grapeshot.halfnes.ui.FrameLimiterImpl;
+import com.grapeshot.halfnes.ui.FrameLimiterInterface;
+import com.grapeshot.halfnes.ui.GUIInterface;
 
 public class NES {
 
@@ -262,7 +263,9 @@ public class NES {
     }
 
     public void messageBox(final String string) {
-        gui.messageBox(string);
+        if (gui != null) {
+            gui.messageBox(string);
+        }
     }
 
     public ControllerInterface getcontroller1() {
