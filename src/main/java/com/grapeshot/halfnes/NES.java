@@ -4,12 +4,13 @@
  */
 package com.grapeshot.halfnes;
 
-import com.grapeshot.halfnes.ui.*;
 import com.grapeshot.halfnes.cheats.ActionReplay;
 import com.grapeshot.halfnes.mappers.BadMapperException;
 import com.grapeshot.halfnes.mappers.Mapper;
-
-import java.util.prefs.Preferences;
+import com.grapeshot.halfnes.ui.ControllerInterface;
+import com.grapeshot.halfnes.ui.FrameLimiterImpl;
+import com.grapeshot.halfnes.ui.FrameLimiterInterface;
+import com.grapeshot.halfnes.ui.GUIInterface;
 
 public class NES {
 
@@ -32,9 +33,11 @@ public class NES {
 
 
     public NES(GUIInterface gui) {
-        this.gui = gui;
-        gui.setNES(this);
-        gui.run();
+        if (gui != null) {
+            this.gui = gui;
+            gui.setNES(this);
+            gui.run();
+        }
     }
 
     public void run(final String romtoload) {
@@ -107,6 +110,10 @@ public class NES {
     }
 
     public synchronized void loadROM(final String filename) {
+        loadROM(filename, null);
+    }
+
+    public synchronized void loadROM(final String filename, Integer initialPC) {
         runEmulation = false;
         if (FileUtils.exists(filename)
                 && (FileUtils.getExtension(filename).equalsIgnoreCase(".nes")
@@ -156,7 +163,7 @@ public class NES {
                 loadSRAM();
             }
             //and start emulation
-            cpu.init();
+            cpu.init(initialPC);
             mapper.init();
             setParameters();
             runEmulation = true;
@@ -256,7 +263,9 @@ public class NES {
     }
 
     public void messageBox(final String string) {
-        gui.messageBox(string);
+        if (gui != null) {
+            gui.messageBox(string);
+        }
     }
 
     public ControllerInterface getcontroller1() {

@@ -21,7 +21,7 @@ public class JInputTest {
         Controller[] controllers = controllerEnvironment.getControllers();
         System.out.println(String.format("%s controllers found.", controllers.length));
         Arrays.asList(controllers).forEach(controller -> {
-            System.out.println(String.format("  %s", controller));
+            System.out.println(String.format("  %s (%s)", controller, controller.getType()));
         });
     }
 

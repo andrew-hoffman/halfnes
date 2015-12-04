@@ -65,7 +65,11 @@ public final class CPU {
         flushLog();
     }
 
-    public void init() {// different than reset
+    public void init() {
+        init(null);
+    }
+
+    public void init(Integer initialPC) {// different than reset
         // puts RAM in NES poweron state
         for (int i = 0; i < 0x800; ++i) {
             ram.write(i, 0xFF);
@@ -88,7 +92,11 @@ public final class CPU {
         X = 0;
         Y = 0;
         S = 0xFD;
-        PC = ram.read(0xFFFD) * 256 + ram.read(0xFFFC);
+        if (initialPC == null) {
+            PC = ram.read(0xFFFD) * 256 + ram.read(0xFFFC);
+        } else {
+            PC = initialPC;
+        }
     }
 
     public void reset() {
