@@ -40,6 +40,10 @@ public class NES {
         }
     }
 
+    public CPURAM getCPURAM() {
+        return this.cpuram;
+    }
+
     public void run(final String romtoload) {
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
         //set thread priority higher than the interface thread
