@@ -8,7 +8,7 @@ import com.grapeshot.halfnes.video.Renderer;
 import java.awt.image.BufferedImage;
 
 /**
- * Created by Mitchell on 12/4/2015.
+ * @author Mitchell Skaggs
  */
 public class HeadlessUI implements GUIInterface {
 
