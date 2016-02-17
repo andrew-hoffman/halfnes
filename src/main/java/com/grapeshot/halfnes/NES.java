@@ -43,6 +43,10 @@ public class NES {
     public CPURAM getCPURAM() {
         return this.cpuram;
     }
+    
+        public CPU getCPU() {
+        return this.cpu;
+    }
 
     public void run(final String romtoload) {
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);

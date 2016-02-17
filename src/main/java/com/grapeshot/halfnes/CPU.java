@@ -60,6 +60,15 @@ public final class CPU {
         }
     }
 
+    public void startLog(String path) {
+        logging = true;
+        try {
+            w = new FileWriter(new File(path));
+        } catch (IOException e) {
+            System.err.println("Cannot create debug log" + e.getLocalizedMessage());
+        }
+    }
+
     public void stopLog() {
         logging = false;
         flushLog();
@@ -1747,7 +1756,7 @@ public final class CPU {
         final int readloc = abs();
         return ram.read(readloc)
                 + (ram.read(((readloc & 0xff) == 0xff) ? readloc - 0xff
-                                : readloc + 1) << 8);
+                        : readloc + 1) << 8);
         //if reading from the last byte in a page, high bit of address
         //is taken from first byte on the page, not first byte on NEXT page.
     }
@@ -2035,6 +2044,7 @@ public final class CPU {
         op[0xD8] = "CLD";
         op[0xD9] = "CMP $%2$02X%1$02X,y";
         op[0xDA] = "NOP";
+        op[0xDB] = "DCP $%2$02X%1$02X,y"; //did i delete this line somehow?
         op[0xDC] = "NOP $%2$02X%1$02X,x";
         op[0xDD] = "CMP $%2$02X%1$02X,x";
         op[0xDE] = "DEC $%2$02X%1$02X,x";
