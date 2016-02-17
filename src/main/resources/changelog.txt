@@ -1,4 +1,12 @@
 HalfNES Version Notes:
+061 (2/16/2016)
+-Minor speed improvements and code cleanups
+-Improved VRC7 Envelopes again with values properly calculated from docs
+-Audio output is done in stereo now (though no interface to pan channels)
+-Build system changed to Maven
+-Framework for unit tests is begun (incl work on headless mode)
+-JavaFX UI for the RetroPi is included but not used by default. 
+ (It needs more work for desktop use.)
 060 (8/29/2015)
 -Fixed Battletoads and Battletoads: Double Dragon freezes on certain levels
 -Reduced jerkiness of scrolling in 50 fps games
