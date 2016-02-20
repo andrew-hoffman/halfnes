@@ -13,7 +13,7 @@ import java.util.Arrays;
  * @author Andrew
  */
 public class NSFMapper extends Mapper {
-    //a nsf playing mapper. this is an embarrassing hack still, really.
+    //a nsf playing mapper
     //TODO: add the extra bankswitches required when playing FDS
 
     private int load, init, play, song, numSongs;
@@ -146,6 +146,9 @@ public class NSFMapper extends Mapper {
         cpu.setRegX(0x00);//ntsc only
 
         //copy titles to ppu nametable
+        for (int i = 0; i < 32 * 26; ++i) {
+            pput0[i] = (Math.random() > 0.5) ? 0x2f : 0x5c;
+        }
         for (int i = 0; i < 96; ++i) {
             pput0[i + (32 * 25)] = loader.header[i + 0xe];
         }
@@ -300,34 +303,6 @@ public class NSFMapper extends Mapper {
     }
 
     @Override
-    public int ppuRead(int addr
-    ) {
-        if (addr < 0x2000) {
-            return chr[chr_map[addr >> 10] + (addr & 1023)];
-        } else {
-            switch (addr & 0xc00) {
-                case 0:
-                    return nt0[addr & 0x3ff];
-                case 0x400:
-                    return nt1[addr & 0x3ff];
-                case 0x800:
-                    return nt2[addr & 0x3ff];
-                case 0xc00:
-                default:
-                    if (addr >= 0x3f00) {
-                        addr &= 0x1f;
-                        if (addr >= 0x10 && ((addr & 3) == 0)) {
-                            addr -= 0x10;
-                        }
-                        return ppu.pal[addr];
-                    } else {
-                        return nt3[addr & 0x3ff];
-                    }
-            }
-        }
-    }
-
-    @Override
     public void ppuWrite(int addr, final int data) {
     }
 
@@ -336,8 +311,7 @@ public class NSFMapper extends Mapper {
     int time = 4;
 
     @Override
-    public void notifyscanline(final int scanline
-    ) {
+    public void notifyscanline(final int scanline) {
         if (scanline == 240) {
             //make sure init isn't still running
             if (cpu.PC != 0xFFFB) {
@@ -365,9 +339,10 @@ public class NSFMapper extends Mapper {
             ppu.write(0, 0);
             ppu.write(1, utils.BIT1 | utils.BIT3 | utils.BIT4);
 
-            //write track number
+            //write track number to screen
             writeTracks();
 
+            //todo: visualization effects
             //read the controller
             prevcontrol = control;
             control = 0;
@@ -393,15 +368,13 @@ public class NSFMapper extends Mapper {
                 }
                 //System.err.println("previous song");
                 init();
-            } else {
-                //fake a jsr to the play address from wherever 
-                //unless this is a supernsf
-                if (unfinishedcounter <= time) {
+            } else //fake a jsr to the play address from wherever 
+            //unless this is a supernsf
+             if (unfinishedcounter <= time) {
                     cpu.push((cpu.PC - 1) >> 8);
                     cpu.push((cpu.PC - 1) & 0xff);
                     cpu.setPC(play);
                 }
-            }
         }
     }
 
