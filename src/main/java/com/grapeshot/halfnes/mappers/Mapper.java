@@ -244,6 +244,8 @@ public abstract class Mapper {
             case 24:
             case 26:
                 return new VRC6Mapper(type);
+            case 31:
+                return new Mapper31();
             case 33:
                 return new Mapper33();
             case 34:

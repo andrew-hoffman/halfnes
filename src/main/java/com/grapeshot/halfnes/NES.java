@@ -21,7 +21,7 @@ public class NES {
     private PPU ppu;
     private GUIInterface gui;
     private ControllerInterface controller1, controller2;
-    final public static String VERSION = "061";
+    final public static String VERSION = "062-dev";
     public boolean runEmulation = false;
     private boolean dontSleep = false;
     public long frameStartTime, framecount, frameDoneTime;
