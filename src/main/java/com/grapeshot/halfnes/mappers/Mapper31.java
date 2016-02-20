@@ -50,8 +50,8 @@ public class Mapper31 extends Mapper {
         } else if (addr >= 0x6000 && hasprgram) {
 
             return prgram[addr & 0x1fff];
-        } else if ((addr >= 0x5ff8)) {
-            return nsfBanks[addr - 0x5ff8];
+        } else if ((addr >= 0x5000)) {
+            return nsfBanks[addr & 7];
         }
         System.err.println("reading open bus " + utils.hex(addr));
         return addr >> 8; //open bus
@@ -60,9 +60,9 @@ public class Mapper31 extends Mapper {
     private void setBanks() {
         for (int i = 0; i < prg_map.length; ++i) {
             prg_map[i] = (4096 * nsfBanks[i / 4]) + (1024 * (i % 4));
-            if ((prg_map[i]) > prg.length) {
-                System.err.println("broken banks");
-                prg_map[i] %= prg.length; //probably a bad idea in general though
+            if ((prg_map[i]) >= prg.length) {
+//                System.err.println("broken banks");
+                prg_map[i] &= ((this.prgsize) - 1);
             }
         }
     }

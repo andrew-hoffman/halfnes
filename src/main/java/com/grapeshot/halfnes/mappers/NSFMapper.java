@@ -418,7 +418,7 @@ public class NSFMapper extends Mapper {
     private void setBanks() {
         for (int i = 0; i < prg_map.length; ++i) {
             prg_map[i] = (4096 * nsfBanks[i / 4]) + (1024 * (i % 4));
-            if ((prg_map[i]) > prg.length) {
+            if ((prg_map[i]) >= prg.length) {
                 System.err.println("broken banks");
                 prg_map[i] %= prg.length; //probably a bad idea in general though
                 //but who knows what a NSF wants when it tries
