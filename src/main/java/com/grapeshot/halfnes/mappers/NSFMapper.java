@@ -18,7 +18,7 @@ public class NSFMapper extends Mapper {
 
     private int load, init, play, song, numSongs;
     public boolean nsfBanking;
-    public int[] nsfBanks = new int[10];
+    public int[] nsfStartBanks = new int[10], nsfBanks = new int[10];
     private int sndchip;
     boolean vrc6 = false, vrc7 = false, mmc5 = false,
             n163 = false, s5b = false, hasInitSound = false, fds = false;
@@ -44,7 +44,7 @@ public class NSFMapper extends Mapper {
         for (int i = 0x70; i < 0x78; ++i) {
             if (loader.header[i] != 0) {
                 nsfBanking = true;
-                nsfBanks[i - 0x70] = loader.header[i];
+                nsfStartBanks[i - 0x70] = loader.header[i];
             }
         }
         prgoff = 0;
@@ -88,17 +88,18 @@ public class NSFMapper extends Mapper {
         if (!nsfBanking) {
             //identity mapping from 1st loaded bank
             for (int i = 0; i < 8; ++i) {
-                nsfBanks[i] = i;
+                nsfStartBanks[i] = i;
             }
 
         }
         //additional headache for NSFs with FDS:
         if (((sndchip & (utils.BIT2)) != 0)) {
             //got to copy some stuff into 6000 - 7fff just because
-            nsfBanks[8] = nsfBanks[6];
-            nsfBanks[9] = nsfBanks[7];
+            nsfStartBanks[8] = nsfStartBanks[6];
+            nsfStartBanks[9] = nsfStartBanks[7];
 
         }
+        nsfBanks = nsfStartBanks.clone();
         setBanks();
         chr_map = new int[8];
         for (int i = 0; i < 8; ++i) {
@@ -125,6 +126,10 @@ public class NSFMapper extends Mapper {
     public void init() {
         //now that we've set up the initial CPU state, do it all over again
         //in order to match the NSF spec.
+        
+        //set banks back to the way they were originally
+        nsfBanks = nsfStartBanks.clone();
+        setBanks();
         //clear all ram to 0
         for (int i = 0; i <= 0x7ff; ++i) {
             cpuram.write(i, 0);
@@ -143,10 +148,15 @@ public class NSFMapper extends Mapper {
         cpu.setPC(init);
         cpu.interrupt = -99999; //no interrupts for you
         cpu.setRegA(song);
-        cpu.setRegX(0x00);//ntsc only
+        if (this.region == TVType.PAL) {
+            cpu.setRegX(0x01);
+        } else {
+            cpu.setRegX(0x00);
+        }
 
         //copy titles to ppu nametable
-        for (int i = 0; i < 32 * 26; ++i) {
+        for (int i = 0; i < 32 * 24; ++i) {
+            //random pattern from basic one liner
             pput0[i] = (Math.random() > 0.5) ? 0x2f : 0x5c;
         }
         for (int i = 0; i < 96; ++i) {
@@ -370,11 +380,13 @@ public class NSFMapper extends Mapper {
                 init();
             } else //fake a jsr to the play address from wherever 
             //unless this is a supernsf
-             if (unfinishedcounter <= time) {
+            {
+                if (unfinishedcounter <= time) {
                     cpu.push((cpu.PC - 1) >> 8);
                     cpu.push((cpu.PC - 1) & 0xff);
                     cpu.setPC(play);
                 }
+            }
         }
     }
 
@@ -419,7 +431,7 @@ public class NSFMapper extends Mapper {
         for (int i = 0; i < prg_map.length; ++i) {
             prg_map[i] = (4096 * nsfBanks[i / 4]) + (1024 * (i % 4));
             if ((prg_map[i]) >= prg.length) {
-                System.err.println("broken banks");
+                //System.err.println("broken banks");
                 prg_map[i] %= prg.length; //probably a bad idea in general though
                 //but who knows what a NSF wants when it tries
                 //to switch a bank not in the file?
@@ -429,7 +441,7 @@ public class NSFMapper extends Mapper {
             }
         }
         //utils.printarray(prg_map);
-        //utils.printarray(nsfBanks);
+        //utils.printarray(nsfStartBanks);
     }
 
     private void setSoundChip() {

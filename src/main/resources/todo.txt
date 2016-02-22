@@ -12,6 +12,11 @@ Todo List For HalfNES:
  Real NES uses very simple RC lowpass and highpass filters, that's mostly
  what I do now but the amt of filtering is sample rate dependent/other problems etc.
 
+-If run on my laptop while it's having the sound problem, the audio buffer write
+ call blocks forever and nothing will run. Is there anything I can do about that?
+ actually it looks like the bug is not in my own code
+ See https://community.oracle.com/thread/2381571
+
  - Fix occasional single scanline errors, random horizontal
  glitches in Slalom, Rad Racer, 3D World Runner etc.
  I did move to a pixel based renderer but the CPU is still only cycle accurate
@@ -39,28 +44,21 @@ Todo List For HalfNES:
  - Some games freeze when reset with Ctrl+R (missing mapper reset function)
  Action 52 needed this. What else?
 
- - Use better synchronization with less method calls (options?), and fix the fact 
- that frames are 1/3 of a cpu cycle too short.
+ - Use better synchronization with less method calls (options?)
 
  - Add a different key listener for some of the menu options (like Pause and Fast 
  Forward) and also the toggles so they don't toggle on and off really quickly
  when I hold the key down. (why did you think fast forward was control - space?)
  Also fix inability to pause/single step in fullscreen nowadays
 
- - Fix whatever is wrong with frame interrupts not happening at the right time or
- at all that breaks a lot of games in the B's. (I think it's when the program is
- spinning waiting for the APU frame IRQ during the frame, because if nothing tries
- to write to the APU currently, it won't "catch up" to where the interrupt is 
- until the end of the frame.
- e: That's not actually it... most of the broken games are waiting on the DMC 
- interrupt, which does actually fire but not always at the correct time.
- e2: It's definitely the DMC interrupt... even when I force a sync with the APU
- before every CPU cycle it's still not happening at the right time. 
- e3: Now fixed DMC interrupt and a CPU bug, some still broken.
+ - Fix DMC interrupt timing for Bee 52, Big Nose Freaks Out
 
- - Find out if the StarsSE demo ever worked on real hardware or not.
+ - Find out if the original ver StarsSE demo ever really worked on real hardware
+Maybe make a version of Chris Covell's Stars SE demo that uses the
+sweep workaround to change the high bits of the pitch during the arpeggios
+to get rid of the unwanted phasing effects?
 
- - Check scanline counters interrupt in exactly the right spot
+ - Change all scanline counters to go off PPU clocks so i can deprecate NotifyScanline
 
  - Make the NTSC filter run on the GPU!
 
@@ -78,6 +76,7 @@ Things I can't do without adding a CRC database:
 
  - Sorting out the mappers that are really multiple mappers in one number
  (codemasters one especially!)
+
  - Need to add iNES 2.0 submapper support
 
  - UNIF
@@ -117,12 +116,6 @@ but I still can't get it working correctly.
  - Just Breed freezes during intro (fine if you skip it)
  - Metal Slader Glory is all iknds of messed up.
  - Huge Insect depends on obscure behavior of modifying OAM address during rendering
-Fix remaining MMC3 derivatives to use more accurate scan line counters 
-(should be able to remove NotifyScanline entirely including the NSF player)
-Occasional jittery line in VRC scanline ctr. games
-Maybe make a version of Chris Covell's Stars SE demo that uses the
-sweep workaround to change the high bits of the pitch during the arpeggios
-to get rid of the unwanted phasing effects?
 
  - Region autodetect is not going to work on most iNES 1.0 ROMs unless I have a database
 
