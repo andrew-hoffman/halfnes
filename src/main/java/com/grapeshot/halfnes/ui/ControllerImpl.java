@@ -45,12 +45,8 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
 
     public ControllerImpl(final Scene scene, final int controllernum) {
         this(controllernum);
-        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
-            pressKey(e.getCode().impl_getCode());
-        });
-        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_RELEASED, e -> {
-            releaseKey(e.getCode().impl_getCode());
-        });
+        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> pressKey(e.getCode().impl_getCode()));
+        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_RELEASED, e -> releaseKey(e.getCode().impl_getCode()));
     }
 
     public ControllerImpl(final int controllernum) {

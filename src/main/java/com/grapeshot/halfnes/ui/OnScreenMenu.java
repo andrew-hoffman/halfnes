@@ -90,9 +90,7 @@ public class OnScreenMenu extends StackPane {
         if (games.size() == 2) {
             games.get(1).run();
         } else if (games.size() > 2) {
-            Platform.runLater(() -> {
-                loadGame();
-            });
+            Platform.runLater(() -> loadGame());
         }
     }
 
