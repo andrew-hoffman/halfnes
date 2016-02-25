@@ -449,49 +449,37 @@ public class NSFMapper extends Mapper {
             //VRC6 audio
             vrc6 = true;
             vrc6Audio = new VRC6SoundChip();
-            if (vrc6Audio != null) {
-                cpuram.apu.addExpnSound(vrc6Audio);
-            }
+            cpuram.apu.addExpnSound(vrc6Audio);
         }
         if (((sndchip & (utils.BIT1)) != 0)) {
             //VRC7 audio
             vrc7 = true;
             vrc7Audio = new VRC7SoundChip();
-            if (vrc7Audio != null) {
-                cpuram.apu.addExpnSound(vrc7Audio);
-            }
+            cpuram.apu.addExpnSound(vrc7Audio);
         }
         if (((sndchip & (utils.BIT2)) != 0)) {
             //FDS audio, not yet implemented
             fds = true;
             fdsAudio = new FDSSoundChip();
-            if (fdsAudio != null) {
-                cpuram.apu.addExpnSound(fdsAudio);
-            }
+            cpuram.apu.addExpnSound(fdsAudio);
         }
         if (((sndchip & (utils.BIT3)) != 0)) {
             //MMC5 audio
             mmc5 = true;
             mmc5Audio = new MMC5SoundChip();
-            if (mmc5Audio != null) {
-                cpuram.apu.addExpnSound(mmc5Audio);
-            }
+            cpuram.apu.addExpnSound(mmc5Audio);
         }
         if (((sndchip & (utils.BIT4)) != 0)) {
             //Namco 163 audio
             n163 = true;
             n163Audio = new Namco163SoundChip();
-            if (n163Audio != null) {
-                cpuram.apu.addExpnSound(n163Audio);
-            }
+            cpuram.apu.addExpnSound(n163Audio);
         }
         if (((sndchip & (utils.BIT5)) != 0)) {
             //Sunsoft 5B audio
             s5b = true;
             s5bAudio = new Sunsoft5BSoundChip();
-            if (s5bAudio != null) {
-                cpuram.apu.addExpnSound(s5bAudio);
-            }
+            cpuram.apu.addExpnSound(s5bAudio);
         }
     }
 

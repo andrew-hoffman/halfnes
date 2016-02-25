@@ -428,7 +428,7 @@ public class MMC5Mapper extends Mapper {
         } else {
             // System.err.print("n");
             //nametable read
-            if (prevfetch == prevprevfetch && prevprevfetch == addr && prevfetch == addr) {
+            if (prevfetch == prevprevfetch && prevprevfetch == addr) {
                 //last 3 fetches are the same and that's the signal
                 //to increment the scan line counter
                 //unfortunately I don't know how the MMC5 resets the counter when PPU is off yet           
