@@ -74,8 +74,7 @@ public class Namco163SoundChip implements ExpansionSoundChip {
 
     private int getWavefromRAM(final int addr) {
         final int b = registers[(addr) >> 1];
-        int r = ((addr & (utils.BIT0)) != 0) ? b >> 4 : b & 0xf;
-        return r;
+        return ((addr & (utils.BIT0)) != 0) ? b >> 4 : b & 0xf;
     }
 
     @Override
