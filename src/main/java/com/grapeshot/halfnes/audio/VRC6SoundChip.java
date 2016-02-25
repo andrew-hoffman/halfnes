@@ -14,7 +14,7 @@ public class VRC6SoundChip implements ExpansionSoundChip {
     //to access sound test in Castlevania 3(J) - 
     //Hold down A+B while resetting, push Start twice
 
-    private final Timer[] timers = {new SquareTimer(16), new SquareTimer(16)};
+    private static final Timer[] timers = {new SquareTimer(16), new SquareTimer(16)};
     private boolean[] enable = {true, true, true};
     private int[] volume = {0, 0, 0};
     private int sawdivider = 15;

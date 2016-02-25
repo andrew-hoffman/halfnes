@@ -12,7 +12,7 @@ import java.util.ArrayList;
 public class APU {
 
     public int samplerate = 1;
-    private final Timer[] timers = {new SquareTimer(8, 2), new SquareTimer(8, 2),
+    private static final Timer[] timers = {new SquareTimer(8, 2), new SquareTimer(8, 2),
         new TriangleTimer(), new NoiseTimer()};
     private double cyclespersample;
     public final NES nes;
@@ -23,7 +23,7 @@ public class APU {
     private int[] noiseperiod;
     // different for PAL
     private long accum = 0;
-    private final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<ExpansionSoundChip>();
+    private static final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<ExpansionSoundChip>();
     private boolean soundFiltering;
     private final int[] tnd_lookup, square_lookup;
     private int framectrreload;
@@ -32,7 +32,7 @@ public class APU {
     private int lpaccum = 0;
     private boolean apuintflag = true, statusdmcint = false, statusframeint = false;
     private int framectr = 0, ctrmode = 4;
-    private final boolean[] lenCtrEnable = {true, true, true, true};
+    private static final boolean[] lenCtrEnable = {true, true, true, true};
     private final int[] volume = new int[4];
     //dmc instance variables
     private int[] dmcperiods;
@@ -41,27 +41,27 @@ public class APU {
             dmcstartaddr = 0xc000, dmcaddr = 0xc000, dmcbitsleft = 8;
     private boolean dmcsilence = true, dmcirq = false, dmcloop = false, dmcBufferEmpty = true;
     //length ctr instance variables
-    private final int[] lengthctr = {0, 0, 0, 0};
+    private static final int[] lengthctr = {0, 0, 0, 0};
     private final static int[] lenctrload = {10, 254, 20, 2, 40, 4, 80, 6,
         160, 8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22,
         192, 24, 72, 26, 16, 28, 32, 30};
-    private final boolean[] lenctrHalt = {true, true, true, true};
+    private static final boolean[] lenctrHalt = {true, true, true, true};
     //linear counter instance vars
     private int linearctr = 0;
     private int linctrreload = 0;
     private boolean linctrflag = false;
     //instance variables for envelope units
-    private final int[] envelopeValue = {15, 15, 15, 15};
-    private final int[] envelopeCounter = {0, 0, 0, 0};
-    private final int[] envelopePos = {0, 0, 0, 0};
-    private final boolean[] envConstVolume = {true, true, true, true};
-    private final boolean[] envelopeStartFlag = {false, false, false, false};
+    private static final int[] envelopeValue = {15, 15, 15, 15};
+    private static final int[] envelopeCounter = {0, 0, 0, 0};
+    private static final int[] envelopePos = {0, 0, 0, 0};
+    private static final boolean[] envConstVolume = {true, true, true, true};
+    private static final boolean[] envelopeStartFlag = {false, false, false, false};
     //instance variables for sweep unit
-    private final boolean[] sweepenable = {false, false},
+    private static final boolean[] sweepenable = {false, false},
             sweepnegate = {false, false},
             sweepsilence = {false, false},
             sweepreload = {false, false};
-    private final int[] sweepperiod = {15, 15}, sweepshift = {0, 0}, sweeppos = {0, 0};
+    private static final int[] sweepperiod = {15, 15}, sweepshift = {0, 0}, sweeppos = {0, 0};
     private int cyclesperframe;
     private AudioOutInterface ai;
 

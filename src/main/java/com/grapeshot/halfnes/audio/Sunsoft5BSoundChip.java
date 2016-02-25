@@ -16,7 +16,7 @@ public class Sunsoft5BSoundChip implements ExpansionSoundChip {
     //not complete... missing volume envelopes and noise channel at the moment.
     //sound test for Gimmick - Hold Select, push Start on title screen
 
-    private final Timer[] timers = {new SquareTimer(32), new SquareTimer(32), new SquareTimer(32)};
+    private static final Timer[] timers = {new SquareTimer(32), new SquareTimer(32), new SquareTimer(32)};
     private boolean[] enable = {false, false, false};
     private boolean[] useenvelope = {false, false, false};
     private int[] volume = {0, 0, 0};

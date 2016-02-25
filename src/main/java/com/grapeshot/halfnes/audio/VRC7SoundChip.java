@@ -31,8 +31,8 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     private final boolean[] key = new boolean[6], chSust = new boolean[6];
     private int fmctr = 0, amctr = 0; //free running counter for indices
     private final double[] phase = new double[6];
-    private final int[] usertone = new int[8], modenv_vol = new int[6], carenv_vol = new int[6];
-    private final int[][] instdata = { //instrument parameters
+    private static final int[] usertone = new int[8], modenv_vol = new int[6], carenv_vol = new int[6];
+    private static final int[][] instdata = { //instrument parameters
         usertone, //user tone register
         //i'm surprised no one's bothered to decap it and take a look
         //here's the latest one from rainwarrior aug.2012
