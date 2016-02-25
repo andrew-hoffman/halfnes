@@ -29,12 +29,10 @@ public class CaltronMapper extends Mapper {
             }
 
             setmirroring(((addr & (utils.BIT5)) != 0) ? MirrorType.H_MIRROR : MirrorType.V_MIRROR);
-        } else if (addr >= 0x8000 && addr <= 0xFFFF) {
-            if ((reg & 4) != 0) {
-                //remap CHR bank
-                for (int i = 0; i < 8; ++i) {
-                    chr_map[i] = (1024 * (i + 8 * ((reg >> 1 & 0xC) | (data & 3)))) & (chrsize - 1);
-                }
+        } else if (addr >= 0x8000 && addr <= 0xFFFF && (reg & 4) != 0) {
+            //remap CHR bank
+            for (int i = 0; i < 8; ++i) {
+                chr_map[i] = (1024 * (i + 8 * ((reg >> 1 & 0xC) | (data & 3)))) & (chrsize - 1);
             }
         }
     }

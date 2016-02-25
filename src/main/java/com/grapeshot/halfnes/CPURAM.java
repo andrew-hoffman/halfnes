@@ -33,10 +33,8 @@ public class CPURAM {
         if (!patches.isEmpty()) {
             int retval = _read(addr);
             Patch p = patches.get(addr);
-            if (p != null) {
-                if (p.getAddress() == addr && p.matchesData(retval)) {
-                    return p.getData();
-                }
+            if (p != null && p.getAddress() == addr && p.matchesData(retval)) {
+                return p.getData();
             }
             return retval;
         } else {

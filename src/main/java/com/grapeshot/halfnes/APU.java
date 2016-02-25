@@ -507,12 +507,10 @@ public class APU {
             setlength();
             setsweep();
         }
-        if (!apuintflag && (framectr == 3) && (ctrmode == 4)) {
-            if (!statusframeint) {
-                ++cpu.interrupt;
-                //System.err.println("frame interrupt set at " + cpu.cycles);
-                statusframeint = true;
-            }
+        if (!apuintflag && (framectr == 3) && (ctrmode == 4) && !statusframeint) {
+            ++cpu.interrupt;
+            //System.err.println("frame interrupt set at " + cpu.cycles);
+            statusframeint = true;
 
         }
         ++framectr;
