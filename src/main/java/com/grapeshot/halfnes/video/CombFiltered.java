@@ -208,7 +208,6 @@ public class CombFiltered extends Renderer {
         return (a != (a & 0xff)) ? ((a < 0) ? 0 : 255) : a;
     }
     public final static int frame_w = 704;
-    int[] out = new int[frame_w];
     int[] frame = new int[frame_w * 240];
 
     @Override
