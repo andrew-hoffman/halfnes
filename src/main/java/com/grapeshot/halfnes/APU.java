@@ -23,7 +23,7 @@ public class APU {
     private int[] noiseperiod;
     // different for PAL
     private long accum = 0;
-    private final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<ExpansionSoundChip>();
+    private final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<>();
     private boolean soundFiltering;
     private final int[] tnd_lookup, square_lookup;
     private int framectrreload;

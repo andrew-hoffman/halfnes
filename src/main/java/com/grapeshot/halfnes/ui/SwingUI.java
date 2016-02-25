@@ -298,7 +298,7 @@ public class SwingUI extends JFrame implements GUIInterface {
     private List<String> listRomsInZip(String zipName) throws IOException {
         final ZipFile zipFile = new ZipFile(zipName);
         final Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
-        final List<String> romNames = new ArrayList<String>();
+        final List<String> romNames = new ArrayList<>();
         while (zipEntries.hasMoreElements()) {
             final ZipEntry entry = zipEntries.nextElement();
             if (!entry.isDirectory() && (entry.getName().endsWith(".nes")

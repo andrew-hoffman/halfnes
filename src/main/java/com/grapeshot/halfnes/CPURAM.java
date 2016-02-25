@@ -21,7 +21,7 @@ public class CPURAM {
     Mapper mapper;
     public APU apu;
     PPU ppu; //need these to call their write handlers from here.
-    private HashMap<Integer, Patch> patches = new HashMap<Integer, Patch>();
+    private HashMap<Integer, Patch> patches = new HashMap<>();
 
     public CPURAM(final Mapper mappy) {
         mapper = mappy;
