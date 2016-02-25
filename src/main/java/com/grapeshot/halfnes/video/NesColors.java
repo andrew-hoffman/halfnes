@@ -10,6 +10,8 @@ package com.grapeshot.halfnes.video;
  */
 public class NesColors {
 
+    private NesColors() {}
+    
     private final static double att = 0.7;
     public final static int[][] col = GetNESColors();
     public final static byte[][][] colbytes = NESColorsToBytes(col);
