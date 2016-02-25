@@ -5,8 +5,11 @@
 package com.grapeshot.halfnes;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 public final class CPU {
 
@@ -41,7 +44,7 @@ public final class CPU {
 
         ONCARRY, ALWAYS; //type of dummy read
     }
-    FileWriter w; //debug log writer
+    OutputStreamWriter w; //debug log writer
 
     public CPU(final CPURAM cpuram) {
         ram = cpuram;
@@ -54,7 +57,7 @@ public final class CPU {
     public void startLog() {
         logging = true;
         try {
-            w = new FileWriter(new File("nesdebug.txt"));
+            w = new OutputStreamWriter(new FileOutputStream(new File("nesdebug.txt")), StandardCharsets.UTF_8); 
         } catch (IOException e) {
             System.err.println("Cannot create debug log" + e.getLocalizedMessage());
         }
@@ -63,7 +66,7 @@ public final class CPU {
     public void startLog(String path) {
         logging = true;
         try {
-            w = new FileWriter(new File(path));
+            w = new OutputStreamWriter(new FileOutputStream(new File(path)), StandardCharsets.UTF_8); 
         } catch (IOException e) {
             System.err.println("Cannot create debug log" + e.getLocalizedMessage());
         }
