@@ -34,7 +34,7 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
     private Component[] buttons;
     private final ScheduledExecutorService thread = Executors.newSingleThreadScheduledExecutor();
     private int latchbyte = 0, controllerbyte = 0, prevbyte = 0, outbyte = 0, gamepadbyte = 0;
-    private final HashMap<Integer, Integer> m = new HashMap<Integer, Integer>(10);
+    private final HashMap<Integer, Integer> m = new HashMap<>(10);
     private final int controllernum;
 
     public ControllerImpl(final java.awt.Component parent, final int controllernum) {
@@ -45,12 +45,8 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
 
     public ControllerImpl(final Scene scene, final int controllernum) {
         this(controllernum);
-        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
-            pressKey(e.getCode().impl_getCode());
-        });
-        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_RELEASED, e -> {
-            releaseKey(e.getCode().impl_getCode());
-        });
+        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> pressKey(e.getCode().impl_getCode()));
+        scene.addEventHandler(javafx.scene.input.KeyEvent.KEY_RELEASED, e -> releaseKey(e.getCode().impl_getCode()));
     }
 
     public ControllerImpl(final int controllernum) {
@@ -237,7 +233,7 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
      * @return List of available joysticks / gamepads connected to the computer
      */
     private static Controller[] getAvailablePadControllers() {
-        List<Controller> gameControllers = new ArrayList<Controller>();
+        List<Controller> gameControllers = new ArrayList<>();
         // Get a list of the controllers JInput knows about and can interact
         // with
         Controller[] controllers = ControllerEnvironment.getDefaultEnvironment().getControllers();
@@ -269,7 +265,7 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
      * Return the available buttons on this controller (by priority order).
      */
     private static Component[] getButtons(Controller controller) {
-        List<Component> buttons = new ArrayList<Component>();
+        List<Component> buttons = new ArrayList<>();
         // Get this controllers components (buttons and axis)
         Component[] components = controller.getComponents();
         for (Component component : components) {

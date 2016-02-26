@@ -208,7 +208,6 @@ public class CombFiltered extends Renderer {
         return (a != (a & 0xff)) ? ((a < 0) ? 0 : 255) : a;
     }
     public final static int frame_w = 704;
-    int[] out = new int[frame_w];
     int[] frame = new int[frame_w * 240];
 
     @Override
@@ -217,9 +216,7 @@ public class CombFiltered extends Renderer {
         for (int line = 0; line < 240; ++line) {
             ntsc_decode(ntsc_encode(nespixels, line * 256, bgcolor[line], dotcrawl), frame, line * frame_w);
         }
-        BufferedImage i = getImageFromArray(frame, frame_w * 8, frame_w, 224);
-
-        return i;
+        return getImageFromArray(frame, frame_w * 8, frame_w, 224);
     }
 
     public final void cap_filter(final double[] in, final double[] out, final double rc) {

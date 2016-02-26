@@ -23,7 +23,7 @@ public class APU {
     private int[] noiseperiod;
     // different for PAL
     private long accum = 0;
-    private static final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<ExpansionSoundChip>();
+    private static final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<>();
     private boolean soundFiltering;
     private final int[] tnd_lookup, square_lookup;
     private int framectrreload;
@@ -507,12 +507,10 @@ public class APU {
             setlength();
             setsweep();
         }
-        if (!apuintflag && (framectr == 3) && (ctrmode == 4)) {
-            if (!statusframeint) {
-                ++cpu.interrupt;
-                //System.err.println("frame interrupt set at " + cpu.cycles);
-                statusframeint = true;
-            }
+        if (!apuintflag && (framectr == 3) && (ctrmode == 4) && !statusframeint) {
+            ++cpu.interrupt;
+            //System.err.println("frame interrupt set at " + cpu.cycles);
+            statusframeint = true;
 
         }
         ++framectr;

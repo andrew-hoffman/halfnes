@@ -86,7 +86,7 @@ public class ActionReplayGui extends javax.swing.JDialog {
     }
 
     private void updateListPossibleCodes() {
-        List<String> adrStr = new ArrayList<String>();
+        List<String> adrStr = new ArrayList<>();
         for (Integer adr : actionReplay.getFoundAddresses()) {
             String str = Integer.toHexString(adr).toUpperCase();
             while (str.length() < ADDRESS_LENGTH) {

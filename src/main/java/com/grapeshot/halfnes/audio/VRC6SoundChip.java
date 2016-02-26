@@ -22,7 +22,6 @@ public class VRC6SoundChip implements ExpansionSoundChip {
     private int sawaccum = 0;
     private int sawseq = 0;
     private boolean clocknow = false;
-    int currentval = 0;
 
     public final void write(final int register, final int data) {
         switch (register) {
@@ -74,10 +73,9 @@ public class VRC6SoundChip implements ExpansionSoundChip {
     }
 
     public final int getval() {
-        final int mixvol = 320 * (((enable[0] ? volume[0] : 0) * timers[0].getval()
+        return 320 * (((enable[0] ? volume[0] : 0) * timers[0].getval()
                 + (enable[1] ? volume[1] : 0) * timers[1].getval())
                 + (enable[2] ? ((volume[2] & 0xff) >> 3) : 0));
-        return mixvol;
     }
 
     private void clocksaw() {

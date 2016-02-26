@@ -52,7 +52,7 @@ public class DummyController implements ControllerInterface {
             + "000000000000000000000000000000000000000000000000000000000000000000"
             + "000000000000000000000000000000000000000000000000000000000000000000"
             + "00000000000000000000000000000SSSSSSSSSSSSSS00000000000000000000000").toCharArray();
-    HashMap<Character, Integer> m = new HashMap<Character, Integer>();
+    HashMap<Character, Integer> m = new HashMap<>();
     int frame = 0;
 
     public DummyController(int controllernum) {

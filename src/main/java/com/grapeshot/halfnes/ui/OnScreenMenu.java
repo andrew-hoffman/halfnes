@@ -90,9 +90,7 @@ public class OnScreenMenu extends StackPane {
         if (games.size() == 2) {
             games.get(1).run();
         } else if (games.size() > 2) {
-            Platform.runLater(() -> {
-                loadGame();
-            });
+            Platform.runLater(() -> loadGame());
         }
     }
 
@@ -134,12 +132,10 @@ public class OnScreenMenu extends StackPane {
             outputFile = new File(new File(zipName).getCanonicalFile().getParent()
                 + File.separator + FileUtils.stripExtension(new File(zipName).getName())
                 + " - " + romName);
-            if (outputFile.exists()) {
-                if (!outputFile.delete()) {
-                    gui.messageBox("Cannot extract file. File " + outputFile.getCanonicalPath() + " already exists.");
-                    zipStream.close();
-                    return null;
-                }
+            if (outputFile.exists() && !outputFile.delete()) {
+                gui.messageBox("Cannot extract file. File " + outputFile.getCanonicalPath() + " already exists.");
+                zipStream.close();
+                return null;
             }
             final byte[] buf = new byte[4096];
             fos = new FileOutputStream(outputFile);

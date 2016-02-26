@@ -25,7 +25,6 @@ public class MMC5Mapper extends Mapper {
     private final int[] prgregs = new int[4];
     private final int[] chrmapB = new int[4];
     private final boolean[] romHere = new boolean[3];
-    private int prevaddr;
     private int scanctrLine, irqCounter = 20;
     private final int[] fillnt = new int[1024];
     private MMC5SoundChip soundchip;
@@ -406,12 +405,10 @@ public class MMC5Mapper extends Mapper {
                 //System.err.println(" sprites");
             }
             if (spritemode) {
-                prevaddr = addr;
                 return chr[chr_map[addr >> 10] + (addr & 1023)];
             } else {
                 //bg mode
                 //System.err.print("t");
-                prevaddr = addr;
                 if (exramMode == 1) {
                     if (exlatch == 2) {
                         //fetch 3: tile bitmap a
@@ -428,7 +425,7 @@ public class MMC5Mapper extends Mapper {
         } else {
             // System.err.print("n");
             //nametable read
-            if (prevfetch == prevprevfetch && prevprevfetch == addr && prevfetch == addr) {
+            if (prevfetch == prevprevfetch && prevprevfetch == addr) {
                 //last 3 fetches are the same and that's the signal
                 //to increment the scan line counter
                 //unfortunately I don't know how the MMC5 resets the counter when PPU is off yet           

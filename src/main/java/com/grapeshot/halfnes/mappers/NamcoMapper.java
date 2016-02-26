@@ -166,11 +166,9 @@ public class NamcoMapper extends Mapper {
         if (irqcounter > 0x7fff) {
             irqcounter = 0x7fff;
         }
-        if (irqcounter == 0x7fff && irqenable) {
-            if (!interrupted) {
-                ++cpu.interrupt;
-                interrupted = true;
-            }
+        if (irqcounter == 0x7fff && irqenable && !interrupted) {
+            ++cpu.interrupt;
+            interrupted = true;
         }
     }
 

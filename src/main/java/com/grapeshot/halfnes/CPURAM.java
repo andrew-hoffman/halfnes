@@ -21,7 +21,7 @@ public class CPURAM {
     Mapper mapper;
     public APU apu;
     PPU ppu; //need these to call their write handlers from here.
-    private HashMap<Integer, Patch> patches = new HashMap<Integer, Patch>();
+    private HashMap<Integer, Patch> patches = new HashMap<>();
 
     public CPURAM(final Mapper mappy) {
         mapper = mappy;
@@ -33,10 +33,8 @@ public class CPURAM {
         if (!patches.isEmpty()) {
             int retval = _read(addr);
             Patch p = patches.get(addr);
-            if (p != null) {
-                if (p.getAddress() == addr && p.matchesData(retval)) {
-                    return p.getData();
-                }
+            if (p != null && p.getAddress() == addr && p.matchesData(retval)) {
+                return p.getData();
             }
             return retval;
         } else {

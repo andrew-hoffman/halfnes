@@ -86,7 +86,6 @@ public class SwingAudioImpl implements AudioOutInterface {
         bufptr = 0;
 
     }
-    int dckiller = 0;
 
     @Override
     public final void outputSample(int sample) {

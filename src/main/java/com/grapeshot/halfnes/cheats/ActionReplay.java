@@ -16,9 +16,9 @@ public class ActionReplay {
     private static final int RAM_SIZE = 0x07FF;
     private final CPURAM cpuram;
     // Memory patches for Pro Action Replay codes
-    private final HashMap<Integer, Patch> patches = new HashMap<Integer, Patch>();
+    private final HashMap<Integer, Patch> patches = new HashMap<>();
     // List of addresses for the "find code" feature
-    private final List<Integer> foundAddresses = new ArrayList<Integer>();
+    private final List<Integer> foundAddresses = new ArrayList<>();
 
     /**
      * Creates a new Pro Action Replay device which will act on the given
@@ -93,7 +93,7 @@ public class ActionReplay {
      * @return the list of addresses where the value were found.
      */
     public List<Integer> continueSearch(byte value) {
-        List<Integer> addressesToRemove = new ArrayList<Integer>();
+        List<Integer> addressesToRemove = new ArrayList<>();
         for (int address : foundAddresses) {
             if ((cpuram.read(address) & 0xFF) != (value & 0xFF)) {
                 addressesToRemove.add(address);

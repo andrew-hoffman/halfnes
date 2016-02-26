@@ -417,34 +417,32 @@ public class PPU {
             //needed to pass Blargg's mmc3 tests
             mapper.checkA12(loopyV & 0x3fff);
         }
-        if (scanline < 240) {
-            if (cycles >= 1 && cycles <= 256) {
-                int bufferoffset = (scanline << 8) + (cycles - 1);
-                //bg drawing
-                if (bgOn) { //if background is on, draw a line of that
-                    final boolean isBG = drawBGPixel(bufferoffset);
-                    //sprite drawing
-                    drawSprites(scanline << 8, cycles - 1, isBG);
+        if (scanline < 240 && cycles >= 1 && cycles <= 256) {
+            int bufferoffset = (scanline << 8) + (cycles - 1);
+            //bg drawing
+            if (bgOn) { //if background is on, draw a line of that
+                final boolean isBG = drawBGPixel(bufferoffset);
+                //sprite drawing
+                drawSprites(scanline << 8, cycles - 1, isBG);
 
-                } else if (spritesOn) {
-                    //just the sprites then
-                    int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
-                    bitmap[bufferoffset] = bgcolor;
-                    drawSprites(scanline << 8, cycles - 1, true);
-                } else {
-                    //rendering is off, so draw either the background color OR
-                    //if the PPU address points to the palette, draw that color instead.
-                    int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
-                    bitmap[bufferoffset] = bgcolor;
-                }
-                //deal with the grayscale flag
-                if (grayscale) {
-                    bitmap[bufferoffset] &= 0x30;
-                }
-                //handle color emphasis
-                bitmap[bufferoffset] = (bitmap[bufferoffset] & 0x3f) | emph;
-
+            } else if (spritesOn) {
+                //just the sprites then
+                int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
+                bitmap[bufferoffset] = bgcolor;
+                drawSprites(scanline << 8, cycles - 1, true);
+            } else {
+                //rendering is off, so draw either the background color OR
+                //if the PPU address points to the palette, draw that color instead.
+                int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
+                bitmap[bufferoffset] = bgcolor;
             }
+            //deal with the grayscale flag
+            if (grayscale) {
+                bitmap[bufferoffset] &= 0x30;
+            }
+            //handle color emphasis
+            bitmap[bufferoffset] = (bitmap[bufferoffset] & 0x3f) | emph;
+
         }
         //handle nmi
         if (vblankflag && nmicontrol) {

@@ -164,7 +164,6 @@ public class MMC3Mapper extends Mapper {
     }
 
     int a12timer = 0;
-    int prevcpuclocks = 0;
 
     @Override
     public void checkA12(int addr) {
@@ -195,12 +194,10 @@ public class MMC3Mapper extends Mapper {
         } else {
             --irqctr;
         }
-        if ((irqctr == 0) && irqenable) {
-            if (!interrupted) {
-                ++cpu.interrupt;
-                interrupted = true;
-                //System.err.println("interrupt line " + ppu.scanline + " reload " + irqctrreload);
-            }
+        if ((irqctr == 0) && irqenable && !interrupted) {
+            ++cpu.interrupt;
+            interrupted = true;
+            //System.err.println("interrupt line " + ppu.scanline + " reload " + irqctrreload);
         }
 
     }

@@ -12,6 +12,8 @@ import java.io.*;
  * @author Andrew
  */
 public class FileUtils {
+    
+    private FileUtils() {}
 
     public static String getExtension(final File f) {
         return getExtension(f.getName());

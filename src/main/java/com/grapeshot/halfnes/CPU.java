@@ -1739,10 +1739,8 @@ public final class CPU {
             pb = 1;
         }
 
-        if ((addr & 0xFF00) != ((addr + reg) & 0xFF00)) {
-            if (dummy == dummy.ONCARRY) {
-                ram.read((addr & 0xFF00) | ((addr + reg) & 0xFF));
-            }
+        if ((addr & 0xFF00) != ((addr + reg) & 0xFF00) && dummy == dummy.ONCARRY) {
+            ram.read((addr & 0xFF00) | ((addr + reg) & 0xFF));
         }
         if (dummy == dummy.ALWAYS) {
             ram.read((addr & 0xFF00) | ((addr + reg) & 0xFF));
@@ -1777,10 +1775,8 @@ public final class CPU {
             pb = 1;
         }
 
-        if ((addr & 0xFF00) != ((addr + Y) & 0xFF00)) {
-            if (dummy == dummy.ONCARRY) {
-                ram.read((addr & 0xFF00) | ((addr + Y) & 0xFF));
-            }
+        if ((addr & 0xFF00) != ((addr + Y) & 0xFF00) && dummy == dummy.ONCARRY) {
+            ram.read((addr & 0xFF00) | ((addr + Y) & 0xFF));
         }
         if (dummy == dummy.ALWAYS) {
             ram.read((addr & 0xFF00) | ((addr + Y) & 0xFF));

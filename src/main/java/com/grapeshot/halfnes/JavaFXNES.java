@@ -50,9 +50,7 @@ public class JavaFXNES extends Application implements GUIInterface {
         //Rectangle2D bounds = Screen.getPrimary().getBounds();
         Rectangle2D bounds = new Rectangle2D(0,0,640,480);
         gameCanvas = new Canvas(256, 240);
-        stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-            nes.quit();
-        });
+        stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> nes.quit());
         menu = new OnScreenMenu(this);
         //menu.setPadding(extraOverscan);
         menu.setPrefWidth(256);

@@ -155,11 +155,9 @@ public class FME7Mapper extends Mapper {
         if (irqclock) {
             if (irqcounter == 0) {
                 irqcounter = 0xffff;
-                if (irqenabled) {
-                    if (!interrupted) {
-                        interrupted = true;
-                        ++cpu.interrupt;
-                    }
+                if (irqenabled && !interrupted) {
+                    interrupted = true;
+                    ++cpu.interrupt;
                     //System.err.println("FME7 Interrupt");
                 }
             } else {
