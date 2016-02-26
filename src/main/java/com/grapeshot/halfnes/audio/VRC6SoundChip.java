@@ -22,7 +22,6 @@ public class VRC6SoundChip implements ExpansionSoundChip {
     private int sawaccum = 0;
     private int sawseq = 0;
     private boolean clocknow = false;
-    int currentval = 0;
 
     public final void write(final int register, final int data) {
         switch (register) {
