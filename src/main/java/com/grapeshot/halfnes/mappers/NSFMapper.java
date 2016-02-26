@@ -99,8 +99,6 @@ public class NSFMapper extends Mapper {
             nsfStartBanks[9] = nsfStartBanks[7];
 
         }
-        nsfBanks = nsfStartBanks.clone();
-        setBanks();
         chr_map = new int[8];
         for (int i = 0; i < 8; ++i) {
             chr_map[i] = (1024 * i) & (chrsize - 1);
@@ -126,7 +124,7 @@ public class NSFMapper extends Mapper {
     public void init() {
         //now that we've set up the initial CPU state, do it all over again
         //in order to match the NSF spec.
-        
+
         //set banks back to the way they were originally
         nsfBanks = nsfStartBanks.clone();
         setBanks();
@@ -256,8 +254,7 @@ public class NSFMapper extends Mapper {
     }
 
     @Override
-    public int cartRead(final int addr
-    ) {
+    public int cartRead(final int addr) {
         // by default has wram at 0x6000 and cartridge at 0x8000-0xfff
         // but some mappers have different so override for those
         if (addr >= 0x8000) {
@@ -265,14 +262,15 @@ public class NSFMapper extends Mapper {
                 //reads of last part of RAM should always
                 //give the reset vectors here, no matter what
                 //NSF bank is mapped there.
-                if (addr == 0xfffb) {
-                    return 0x4c;
-                } else if (addr == 0xfffc) {
-                    return 0xfb;
-                } else if (addr == 0xfffd) {
-                    return 0xff;
-                } else {
-                    return 0x00;
+                switch (addr) {
+                    case 0xfffb:
+                        return 0x4c;
+                    case 0xfffc:
+                        return 0xfb;
+                    case 0xfffd:
+                        return 0xff;
+                    default:
+                        return 0x00;
                 }
             }
             int fuuu = prg_map[((addr & 0x7fff)) >> 10] + (addr & 1023);
@@ -380,13 +378,11 @@ public class NSFMapper extends Mapper {
                 init();
             } else //fake a jsr to the play address from wherever 
             //unless this is a supernsf
-            {
-                if (unfinishedcounter <= time) {
+             if (unfinishedcounter <= time) {
                     cpu.push((cpu.PC - 1) >> 8);
                     cpu.push((cpu.PC - 1) & 0xff);
                     cpu.setPC(play);
                 }
-            }
         }
     }
 
