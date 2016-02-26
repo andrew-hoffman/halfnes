@@ -65,12 +65,10 @@ public class NSFMapper extends Mapper {
         scrolltype = MirrorType.V_MIRROR;
         sndchip = loader.header[0x7B];
 
-        if (!nsfBanking) {
+        if (!nsfBanking && load < 0x8000) {
             //no banking
-            if (load < 0x8000) {
-                System.err.println("What do I do with this???");
-                throw new BadMapperException("NSF with no banking loading low");
-            }
+            System.err.println("What do I do with this???");
+            throw new BadMapperException("NSF with no banking loading low");
         }
         // pad to 4k bank size and copy in starting
         //from where the load addr is in a 4k bank

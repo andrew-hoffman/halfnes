@@ -177,11 +177,9 @@ public class Mapper182 extends Mapper {
                 return;
                 //irqs stop being generated if reload set to zero
             }
-            if (irqenable) {
-                if (!interrupted) {
-                    ++cpu.interrupt;
-                    interrupted = true;
-                }
+            if (irqenable && !interrupted) {
+                ++cpu.interrupt;
+                interrupted = true;
             }
             irqctr = irqctrreload;
         }
