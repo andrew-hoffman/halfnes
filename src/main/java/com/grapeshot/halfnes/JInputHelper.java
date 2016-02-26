@@ -2,6 +2,7 @@ package com.grapeshot.halfnes;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -96,7 +97,7 @@ public enum JInputHelper {
     private static boolean isWindows10() {
         try {
             Process process = Runtime.getRuntime().exec("cmd.exe /c ver");
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
             bufferedReader.readLine();
             String line = bufferedReader.readLine();
             process.waitFor();
