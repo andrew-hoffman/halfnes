@@ -13,7 +13,7 @@ import com.grapeshot.halfnes.utils;
 public class MMC5SoundChip implements ExpansionSoundChip {
     //really quickly hacked together. Need better interfaces for this kind of thing.
 
-    private final Timer[] timers = {new SquareTimer(8, 2), new SquareTimer(8, 2)};
+    private static final Timer[] timers = {new SquareTimer(8, 2), new SquareTimer(8, 2)};
     final private static int[] dutylookup = {1, 2, 4, 6};
     int[] volume = new int[2];
     private boolean[] lenCtrEnable = {true, true, true, true};
