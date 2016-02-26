@@ -9,6 +9,8 @@ package com.grapeshot.halfnes.mappers;
  * @author Andrew
  */
 public class NSFPlayerFont {
+    
+    private NSFPlayerFont() {}
 
     //file auto-generated from Dwedit's ascii.chr by bin2h.exe
 

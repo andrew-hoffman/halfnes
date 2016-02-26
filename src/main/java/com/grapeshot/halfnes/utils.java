@@ -8,6 +8,8 @@ import java.util.Locale;
 
 public class utils {
 
+    private utils() {}
+    
     public final static int BIT0 = 1, BIT1 = 2, BIT2 = 4, BIT3 = 8, BIT4 = 16,
             BIT5 = 32, BIT6 = 64, BIT7 = 128, BIT8 = 256, BIT9 = 512,
             BIT10 = 1024, BIT11 = 2048, BIT12 = 4096, BIT13 = 8192,

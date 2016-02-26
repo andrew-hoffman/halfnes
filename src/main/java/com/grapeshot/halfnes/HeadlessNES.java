@@ -11,6 +11,9 @@ import java.awt.image.BufferedImage;
  * @author Mitchell Skaggs
  */
 public class HeadlessNES {
+    
+    private HeadlessNES() {}
+    
     public static final int scale = 4;
     public static void main(String[] args) {
         BufferedImage bufferedImage = new BufferedImage(100, 100, BufferedImage.TYPE_INT_ARGB_PRE);
