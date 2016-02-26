@@ -311,8 +311,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         int mantissa = exp[(-val & 0xff)];
         int exponent = (-val) >> 8;
 //        int a = (int) Math.scalb(mantissa + 1024, exponent) * s; //correct but slow
-        int b = ((((mantissa + 1024) >> (-exponent)))) * s; //not correct for negative #s
-        return b;
+        return ((((mantissa + 1024) >> (-exponent)))) * s; //not correct for negative #s
     }
     private int s; // ugly hackish sign flag
 

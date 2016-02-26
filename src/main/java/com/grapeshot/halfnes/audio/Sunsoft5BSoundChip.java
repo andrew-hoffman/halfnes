@@ -79,10 +79,9 @@ public class Sunsoft5BSoundChip implements ExpansionSoundChip {
     }
 
     public final int getval() {
-        final int mixvol = (enable[0] ? ((useenvelope[0] ? enval : volumetbl[volume[0]]) * timers[0].getval()) : 0)
+        return (enable[0] ? ((useenvelope[0] ? enval : volumetbl[volume[0]]) * timers[0].getval()) : 0)
                 + (enable[1] ? ((useenvelope[1] ? enval : volumetbl[volume[1]]) * timers[1].getval()) : 0)
                 + (enable[2] ? ((useenvelope[2] ? enval : volumetbl[volume[2]]) * timers[2].getval()) : 0);
-        return mixvol;
     }
 
     public static int[] getvoltbl() {

@@ -216,9 +216,7 @@ public class CombFiltered extends Renderer {
         for (int line = 0; line < 240; ++line) {
             ntsc_decode(ntsc_encode(nespixels, line * 256, bgcolor[line], dotcrawl), frame, line * frame_w);
         }
-        BufferedImage i = getImageFromArray(frame, frame_w * 8, frame_w, 224);
-
-        return i;
+        return getImageFromArray(frame, frame_w * 8, frame_w, 224);
     }
 
     public final void cap_filter(final double[] in, final double[] out, final double rc) {
