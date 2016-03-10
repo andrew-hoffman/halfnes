@@ -120,7 +120,7 @@ public class SwingUI extends JFrame implements GUIInterface {
         this.setLocation(PrefsSingleton.get().getInt("windowX", 0),
                 PrefsSingleton.get().getInt("windowY", 0));
         this.addWindowListener(listener);
-        this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
         this.setVisible(true);
         // Create BackBuffer
@@ -517,7 +517,7 @@ public class SwingUI extends JFrame implements GUIInterface {
         public void actionPerformed(final ActionEvent arg0) {
             // placeholder for more robust handler
             if (arg0.getActionCommand().equals("Quit")) {
-                nes.quit();
+                close();
             } else if (arg0.getActionCommand().equals("Reset")) {
                 nes.reset();
             } else if (arg0.getActionCommand().equals("Hard Reset")) {
@@ -553,7 +553,7 @@ public class SwingUI extends JFrame implements GUIInterface {
                 if (inFullScreen) {
                     toggleFullScreen();
                 } else {
-                    nes.quit();
+                    close();
                 }
             } else if (arg0.getActionCommand().equals("Controller Settings")) {
                 showControlsDialog();
@@ -568,11 +568,15 @@ public class SwingUI extends JFrame implements GUIInterface {
 
         @Override
         public void windowClosing(WindowEvent e) {
+            close();
+        }
+
+        private void close() {
+            dispose();
             savewindowposition();
             padController1.stopEventQueue();
             padController2.stopEventQueue();
             nes.quit();
-
         }
 
         @Override

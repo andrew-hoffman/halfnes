@@ -25,7 +25,7 @@ public final class CPU {
     private int pb = 0;// set to 1 if access crosses page boundary
     public int interrupt = 0;
     public boolean nmiNext = false, idle = false;
-    private static boolean decimalModeEnable = false,
+    private final static boolean decimalModeEnable = false,
             idleLoopSkip = true;
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;

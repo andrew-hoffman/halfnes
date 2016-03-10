@@ -11,6 +11,7 @@ import com.grapeshot.halfnes.ui.ControllerInterface;
 import com.grapeshot.halfnes.ui.FrameLimiterImpl;
 import com.grapeshot.halfnes.ui.FrameLimiterInterface;
 import com.grapeshot.halfnes.ui.GUIInterface;
+import javafx.application.Platform;
 
 public class NES {
 
@@ -24,13 +25,13 @@ public class NES {
     final public static String VERSION = "062-dev";
     public boolean runEmulation = false;
     private boolean dontSleep = false;
+    private boolean shutdown = false;
     public long frameStartTime, framecount, frameDoneTime;
     private boolean frameLimiterOn = true;
     private String curRomPath, curRomName;
     private final FrameLimiterInterface limiter = new FrameLimiterImpl(this, 16639267);
     // Pro Action Replay device
     private ActionReplay actionReplay;
-
 
     public NES(GUIInterface gui) {
         if (gui != null) {
@@ -43,8 +44,8 @@ public class NES {
     public CPURAM getCPURAM() {
         return this.cpuram;
     }
-    
-        public CPU getCPU() {
+
+    public CPU getCPU() {
         return this.cpu;
     }
 
@@ -57,7 +58,7 @@ public class NES {
     }
 
     public void run() {
-        while (true) {
+        while (!shutdown) {
             if (runEmulation) {
                 frameStartTime = System.nanoTime();
                 actionReplay.applyPatches();
@@ -201,13 +202,18 @@ public class NES {
 
     public void quit() {
         //save SRAM and quit
+        //should wait for any save sram workers to be done before here
         if (cpu != null && curRomPath != null) {
             runEmulation = false;
             saveSRAM(false);
         }
         //there might be some subtle threading bug with saving?
-        //System.Exit is very dirty but werks
-        System.exit(0);
+        //System.Exit is very dirty and does NOT let the delete on exit handler
+        //fire so the natives stick around...
+        //i wish i knew how to quit you
+        //System.exit(0);
+        shutdown = true;
+        Platform.exit(); //doesn't catch it all like this
     }
 
     public synchronized void reset() {

@@ -20,7 +20,7 @@ public class FrameLimiterImpl implements FrameLimiterInterface {
     public FrameLimiterImpl(NES nes, long framens) {
         this.nes = nes;
         FRAME_NS = framens;
-        forceHighResolutionTimer();
+        //forceHighResolutionTimer();
     }
 
     public void setInterval(long ns) {

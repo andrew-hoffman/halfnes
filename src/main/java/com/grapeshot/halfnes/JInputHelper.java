@@ -47,17 +47,17 @@ public enum JInputHelper {
     }
 
     private static void unpackNativeLibrary(File nativesDirectory, String nativeLibrary) throws IOException {
-        InputStream nativeLibraryInputStream = ClassLoader.getSystemResourceAsStream(nativeLibrary);
-        File nativeLibraryTempFile = new File(nativesDirectory, nativeLibrary);
-        nativeLibraryTempFile.deleteOnExit();
-        BufferedOutputStream nativeLibraryTempFileOutputStream = new BufferedOutputStream(new FileOutputStream(nativeLibraryTempFile));
-        byte[] buffer = new byte[4096];
-        int length;
-        while ((length = nativeLibraryInputStream.read(buffer)) > 0) {
-            nativeLibraryTempFileOutputStream.write(buffer, 0, length);
+        try (InputStream nativeLibraryInputStream = ClassLoader.getSystemResourceAsStream(nativeLibrary)) {
+            File nativeLibraryTempFile = new File(nativesDirectory, nativeLibrary);
+            nativeLibraryTempFile.deleteOnExit();
+            try (BufferedOutputStream nativeLibraryTempFileOutputStream = new BufferedOutputStream(new FileOutputStream(nativeLibraryTempFile))) {
+                byte[] buffer = new byte[4096];
+                int length;
+                while ((length = nativeLibraryInputStream.read(buffer)) > 0) {
+                    nativeLibraryTempFileOutputStream.write(buffer, 0, length);
+                }
+            }
         }
-        nativeLibraryTempFileOutputStream.close();
-        nativeLibraryInputStream.close();
     }
 
     private static File createTempDirectory() throws IOException {
