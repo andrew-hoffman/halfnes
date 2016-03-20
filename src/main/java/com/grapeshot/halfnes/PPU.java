@@ -35,14 +35,7 @@ public class PPU {
             grayscale, bgClip, spriteClip, bgOn, spritesOn,
             vblankflag, sprite0hit, spriteoverflow;
     private int emph;
-    public static final int[] pal = {0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D,
-        0x08, 0x10, 0x08, 0x24, 0x00, 0x00, 0x04, 0x2C, 0x09, 0x01, 0x34, 0x03,
-        0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, 0x00, 0x20, 0x2C, 0x08};
-    /*
-     power-up pallette checked by Blargg's power_up_palette test. Different
-     revs of NES PPU might give different initial results but there's a test
-     expecting this set of values and nesemu1, BizHawk, RockNES, MyNes use it
-     */
+    public final int[] pal;
     private DebugUI debuggui;
     private int vraminc = 1;
     private final static boolean PPUDEBUG = get().getBoolean("ntView", false);
@@ -58,6 +51,15 @@ public class PPU {
     private int[] cpudivider;
 
     public PPU(final Mapper mapper) {
+        this.pal = new int[]{0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D,
+            0x08, 0x10, 0x08, 0x24, 0x00, 0x00, 0x04, 0x2C, 0x09, 0x01, 0x34,
+            0x03, 0x00, 0x04, 0x00, 0x14, 0x08, 0x3A, 0x00, 0x02, 0x00, 0x20,
+            0x2C, 0x08};
+        /*
+     power-up pallette checked by Blargg's power_up_palette test. Different
+     revs of NES PPU might give different initial results but there's a test
+     expecting this set of values and nesemu1, BizHawk, RockNES, MyNes use it
+         */
         this.mapper = mapper;
         fill(OAM, 0xff);
         if (PPUDEBUG) {
@@ -91,8 +93,8 @@ public class PPU {
     }
 
     public void runFrame() {
-        for (int scanline = 0; scanline < numscanlines; ++scanline) {
-            clockLine(scanline);
+        for (int line = 0; line < numscanlines; ++line) {
+            clockLine(line);
         }
     }
 
@@ -100,6 +102,7 @@ public class PPU {
      * Performs a read from a PPU register, as well as causes any side effects
      * of reading that specific register.
      *
+     * @param regnum register to read (address with 0x2000 already subtracted)
      * @return the data in the PPU register, or open bus (the last value written
      * to a PPU register) if the register is read only
      */
@@ -288,21 +291,23 @@ public class PPU {
                 mapper.ppuWrite((loopyV & 0x3fff), data);
                 if (!renderingOn() || (scanline > 240 && scanline < (numscanlines - 1))) {
                     loopyV += vraminc;
-                } else {
-                    // while rendering, it seems to drop by 1 scanline, regardless of increment mode
-                    if ((loopyV & 0x7000) == 0x7000) {
-                        int YScroll = loopyV & 0x3E0;
-                        loopyV &= 0xFFF;
-                        if (YScroll == 0x3A0) {
+                } else if ((loopyV & 0x7000) == 0x7000) {
+                    int YScroll = loopyV & 0x3E0;
+                    loopyV &= 0xFFF;
+                    switch (YScroll) {
+                        case 0x3A0:
                             loopyV ^= 0xBA0;
-                        } else if (YScroll == 0x3E0) {
+                            break;
+                        case 0x3E0:
                             loopyV ^= 0x3E0;
-                        } else {
+                            break;
+                        default:
                             loopyV += 0x20;
-                        }
-                    } else {
-                        loopyV += 0x1000;
+                            break;
                     }
+                } else {
+                    // while rendering, it seems to drop by 1 line, regardless of increment mode
+                    loopyV += 0x1000;
                 }
                 break;
             default:
@@ -390,7 +395,7 @@ public class PPU {
             }
             if (cycles == 260 && renderingOn()) {
                 //evaluate sprites for NEXT scanline (as long as either background or sprites are enabled)
-                //this does in fact happen on scanine 261 but it doesn't do anything useful
+                //this does in fact happen on scanline 261 but it doesn't do anything useful
                 //it's cycle 260 because that's when the first important sprite byte is read
                 //actually sprite overflow should be set by sprite eval somewhat before
                 //so this needs to be split into 2 parts, the eval and the data fetches
@@ -519,14 +524,13 @@ public class PPU {
             loopyV &= ~0x7000;
             int y = (loopyV & 0x03E0) >> 5;
             if (y == 29) {
-                //if row is 29 zero it and bump to next nametable
+                //if row is 29 zero fine scroll and bump to next nametable
                 y = 0;
                 loopyV ^= 0x0800;
-            } else if (y == 31) {
-                //if row is already over 29 then don't bunp to next nt
-                y = 0;
             } else {
-                y += 1;
+                //increment (wrap to 5 bits) but if row is already over 29
+                //we don't bump loopyV to next nt.
+                y = (y + 1) & 31;
             }
             loopyV = (loopyV & ~0x03E0) | (y << 5);
         } else {
@@ -726,12 +730,10 @@ public class PPU {
             } else {
                 return (base >> 4) & 3;
             }
+        } else if (((tileX & (utils.BIT1)) != 0)) {
+            return (base >> 2) & 3;
         } else {
-            if (((tileX & (utils.BIT1)) != 0)) {
-                return (base >> 2) & 3;
-            } else {
-                return base & 3;
-            }
+            return base & 3;
         }
     }
 
@@ -804,9 +806,9 @@ public class PPU {
                 //per pixel(1 bit)
                 dat[8 * i + j]
                         = ((((mapper.ppuRead(i + offset) & (utils.BIT7 - j)) != 0))
-                                ? 0x555555 : 0)
+                        ? 0x555555 : 0)
                         + ((((mapper.ppuRead(i + offset + 8) & (utils.BIT7 - j)) != 0))
-                                ? 0xaaaaaa : 0);
+                        ? 0xaaaaaa : 0);
             }
         }
         return dat;
