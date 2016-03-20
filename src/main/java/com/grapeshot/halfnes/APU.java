@@ -11,8 +11,8 @@ import java.util.ArrayList;
 
 public class APU {
 
-    public int samplerate = 1;
-    private static final Timer[] timers = {new SquareTimer(8, 2), new SquareTimer(8, 2),
+    public int samplerate;
+    private final Timer[] timers = {new SquareTimer(8, 2), new SquareTimer(8, 2),
         new TriangleTimer(), new NoiseTimer()};
     private double cyclespersample;
     public final NES nes;
@@ -23,7 +23,7 @@ public class APU {
     private int[] noiseperiod;
     // different for PAL
     private long accum = 0;
-    private static final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<>();
+    private final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<>();
     private boolean soundFiltering;
     private final int[] tnd_lookup, square_lookup;
     private int framectrreload;
@@ -32,7 +32,7 @@ public class APU {
     private int lpaccum = 0;
     private boolean apuintflag = true, statusdmcint = false, statusframeint = false;
     private int framectr = 0, ctrmode = 4;
-    private static final boolean[] lenCtrEnable = {true, true, true, true};
+    private final boolean[] lenCtrEnable = {true, true, true, true};
     private final int[] volume = new int[4];
     //dmc instance variables
     private int[] dmcperiods;
@@ -41,31 +41,32 @@ public class APU {
             dmcstartaddr = 0xc000, dmcaddr = 0xc000, dmcbitsleft = 8;
     private boolean dmcsilence = true, dmcirq = false, dmcloop = false, dmcBufferEmpty = true;
     //length ctr instance variables
-    private static final int[] lengthctr = {0, 0, 0, 0};
+    private final int[] lengthctr = {0, 0, 0, 0};
     private final static int[] lenctrload = {10, 254, 20, 2, 40, 4, 80, 6,
         160, 8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22,
         192, 24, 72, 26, 16, 28, 32, 30};
-    private static final boolean[] lenctrHalt = {true, true, true, true};
+    private final boolean[] lenctrHalt = {true, true, true, true};
     //linear counter instance vars
     private int linearctr = 0;
     private int linctrreload = 0;
     private boolean linctrflag = false;
     //instance variables for envelope units
-    private static final int[] envelopeValue = {15, 15, 15, 15};
-    private static final int[] envelopeCounter = {0, 0, 0, 0};
-    private static final int[] envelopePos = {0, 0, 0, 0};
-    private static final boolean[] envConstVolume = {true, true, true, true};
-    private static final boolean[] envelopeStartFlag = {false, false, false, false};
+    private final int[] envelopeValue = {15, 15, 15, 15};
+    private final int[] envelopeCounter = {0, 0, 0, 0};
+    private final int[] envelopePos = {0, 0, 0, 0};
+    private final boolean[] envConstVolume = {true, true, true, true};
+    private final boolean[] envelopeStartFlag = {false, false, false, false};
     //instance variables for sweep unit
-    private static final boolean[] sweepenable = {false, false},
+    private final boolean[] sweepenable = {false, false},
             sweepnegate = {false, false},
             sweepsilence = {false, false},
             sweepreload = {false, false};
-    private static final int[] sweepperiod = {15, 15}, sweepshift = {0, 0}, sweeppos = {0, 0};
+    private final int[] sweepperiod = {15, 15}, sweepshift = {0, 0}, sweeppos = {0, 0};
     private int cyclesperframe;
     private AudioOutInterface ai;
 
     public APU(final NES nes, final CPU cpu, final CPURAM cpuram) {
+        this.samplerate = 1; //just in case we can't init audio
         //fill square, triangle volume lookup tables
         square_lookup = new int[31];
         for (int i = 0; i < square_lookup.length; ++i) {
@@ -161,8 +162,7 @@ public class APU {
                 return 0x40; //open bus
         }
     }
-    //final private static int[] dutylookup = {1, 2, 4, 6};
-    final private static int[][] dutylookup = {
+    final private static int[][] DUTYLOOKUP = {
         {0, 1, 0, 0, 0, 0, 0, 0},
         {0, 1, 1, 0, 0, 0, 0, 0},
         {0, 1, 1, 1, 1, 0, 0, 0},
@@ -195,7 +195,7 @@ public class APU {
                 //length counter 1 halt
                 lenctrHalt[0] = ((data & (utils.BIT5)) != 0);
                 // pulse 1 duty cycle
-                timers[0].setduty(dutylookup[data >> 6]);
+                timers[0].setduty(DUTYLOOKUP[data >> 6]);
                 // and envelope
                 envConstVolume[0] = ((data & (utils.BIT4)) != 0);
                 envelopeValue[0] = data & 15;
@@ -232,7 +232,7 @@ public class APU {
                 //length counter 2 halt
                 lenctrHalt[1] = ((data & (utils.BIT5)) != 0);
                 // pulse 2 duty cycle
-                timers[1].setduty(dutylookup[data >> 6]);
+                timers[1].setduty(DUTYLOOKUP[data >> 6]);
                 // and envelope
                 envConstVolume[1] = ((data & (utils.BIT4)) != 0);
                 envelopeValue[1] = data & 15;

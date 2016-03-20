@@ -203,17 +203,15 @@ public class NES {
     public void quit() {
         //save SRAM and quit
         //should wait for any save sram workers to be done before here
-        if (cpu != null && curRomPath != null) {
+       if (cpu != null && curRomPath != null) {
             runEmulation = false;
             saveSRAM(false);
         }
         //there might be some subtle threading bug with saving?
         //System.Exit is very dirty and does NOT let the delete on exit handler
         //fire so the natives stick around...
-        //i wish i knew how to quit you
-        //System.exit(0);
         shutdown = true;
-        Platform.exit(); //doesn't catch it all like this
+        Platform.exit();
     }
 
     public synchronized void reset() {

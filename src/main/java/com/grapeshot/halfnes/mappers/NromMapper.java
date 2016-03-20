@@ -3,6 +3,7 @@
  * Licensed under the GNU GPL Version 3. See LICENSE file
  */
 package com.grapeshot.halfnes.mappers;
+
 /**
  * Speed optimization for NROM games: copy everything to linear mapping and
  * don't use the bankswitching capability at all
@@ -63,4 +64,3 @@ public class NromMapper extends Mapper {
         }
     }
 }
-

@@ -6,8 +6,6 @@ package com.grapeshot.halfnes.audio;
 
 import com.grapeshot.halfnes.utils;
 
-import javax.sound.sampled.*;
-
 /**
  *
  * @author Andrew
@@ -16,12 +14,12 @@ public class Sunsoft5BSoundChip implements ExpansionSoundChip {
     //not complete... missing volume envelopes and noise channel at the moment.
     //sound test for Gimmick - Hold Select, push Start on title screen
 
-    private static final Timer[] timers = {new SquareTimer(32), new SquareTimer(32), new SquareTimer(32)};
-    private boolean[] enable = {false, false, false};
-    private boolean[] useenvelope = {false, false, false};
-    private int[] volume = {0, 0, 0};
+    private final Timer[] timers = {new SquareTimer(32), new SquareTimer(32), new SquareTimer(32)};
+    private final boolean[] enable = {false, false, false};
+    private final boolean[] useenvelope = {false, false, false};
+    private final int[] volume = {0, 0, 0};
     int enval = 0;
-    private int[] volumetbl = getvoltbl();
+    private static final int[] VOLTBL = getvoltbl();
 
     @Override
     public final void write(final int register, final int data) {
@@ -78,10 +76,11 @@ public class Sunsoft5BSoundChip implements ExpansionSoundChip {
         timers[2].clock(cycle);
     }
 
+    @Override
     public final int getval() {
-        return (enable[0] ? ((useenvelope[0] ? enval : volumetbl[volume[0]]) * timers[0].getval()) : 0)
-                + (enable[1] ? ((useenvelope[1] ? enval : volumetbl[volume[1]]) * timers[1].getval()) : 0)
-                + (enable[2] ? ((useenvelope[2] ? enval : volumetbl[volume[2]]) * timers[2].getval()) : 0);
+        return (enable[0] ? ((useenvelope[0] ? enval : VOLTBL[volume[0]]) * timers[0].getval()) : 0)
+                + (enable[1] ? ((useenvelope[1] ? enval : VOLTBL[volume[1]]) * timers[1].getval()) : 0)
+                + (enable[2] ? ((useenvelope[2] ? enval : VOLTBL[volume[2]]) * timers[2].getval()) : 0);
     }
 
     public static int[] getvoltbl() {

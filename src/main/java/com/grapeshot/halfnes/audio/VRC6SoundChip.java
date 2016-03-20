@@ -14,15 +14,16 @@ public class VRC6SoundChip implements ExpansionSoundChip {
     //to access sound test in Castlevania 3(J) - 
     //Hold down A+B while resetting, push Start twice
 
-    private static final Timer[] timers = {new SquareTimer(16), new SquareTimer(16)};
-    private boolean[] enable = {true, true, true};
-    private int[] volume = {0, 0, 0};
+    private final Timer[] timers = {new SquareTimer(16), new SquareTimer(16)};
+    private final boolean[] enable = {true, true, true};
+    private final int[] volume = {0, 0, 0};
     private int sawdivider = 15;
     private int sawctr = 0;
     private int sawaccum = 0;
     private int sawseq = 0;
     private boolean clocknow = false;
 
+    @Override
     public final void write(final int register, final int data) {
         switch (register) {
             case 0x9000:
@@ -64,6 +65,7 @@ public class VRC6SoundChip implements ExpansionSoundChip {
         }
     }
 
+    @Override
     public final void clock(final int cycle) {
         timers[0].clock(cycle);
         timers[1].clock(cycle);
@@ -72,6 +74,7 @@ public class VRC6SoundChip implements ExpansionSoundChip {
         }
     }
 
+    @Override
     public final int getval() {
         return 320 * (((enable[0] ? volume[0] : 0) * timers[0].getval()
                 + (enable[1] ? volume[1] : 0) * timers[1].getval())

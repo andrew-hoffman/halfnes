@@ -13,10 +13,10 @@ import com.grapeshot.halfnes.utils;
 public class MMC5SoundChip implements ExpansionSoundChip {
     //really quickly hacked together. Need better interfaces for this kind of thing.
 
-    private static final Timer[] timers = {new SquareTimer(8, 2), new SquareTimer(8, 2)};
-    final private static int[] dutylookup = {1, 2, 4, 6};
-    int[] volume = new int[2];
-    private boolean[] lenCtrEnable = {true, true, true, true};
+    private final Timer[] timers = {new SquareTimer(8, 2), new SquareTimer(8, 2)};
+    final private static int[] DUTYLOOKUP = {1, 2, 4, 6};
+    private final int[] volume = new int[2];
+    private final boolean[] lenCtrEnable = {true, true, true, true};
     private boolean pcmMode, pcmIRQen;
     private int cycles, pcmOut;
 
@@ -38,7 +38,7 @@ public class MMC5SoundChip implements ExpansionSoundChip {
                 //length counter 1 halt
                 lenctrHalt[0] = ((data & (utils.BIT5)) != 0);
                 // pulse 1 duty cycle
-                timers[0].setduty(dutylookup[data >> 6]);
+                timers[0].setduty(DUTYLOOKUP[data >> 6]);
                 // and envelope
                 envConstVolume[0] = ((data & (utils.BIT4)) != 0);
                 envelopeValue[0] = data & 15;
@@ -55,7 +55,7 @@ public class MMC5SoundChip implements ExpansionSoundChip {
             case 0x3:
                 // length counter load, timer 1 high bits
                 if (lenCtrEnable[0]) {
-                    lengthctr[0] = lenctrload[data >> 3];
+                    lengthctr[0] = LENCTRLOAD[data >> 3];
                 }
                 timers[0].setperiod((timers[0].getperiod() & 0x1ff) + ((data & 7) << 9));
                 // sequencer restarted
@@ -67,7 +67,7 @@ public class MMC5SoundChip implements ExpansionSoundChip {
                 //length counter 2 halt
                 lenctrHalt[1] = ((data & (utils.BIT5)) != 0);
                 // pulse 2 duty cycle
-                timers[1].setduty(dutylookup[data >> 6]);
+                timers[1].setduty(DUTYLOOKUP[data >> 6]);
                 // and envelope
                 envConstVolume[1] = ((data & (utils.BIT4)) != 0);
                 envelopeValue[1] = data & 15;
@@ -82,7 +82,7 @@ public class MMC5SoundChip implements ExpansionSoundChip {
                 break;
             case 0x7:
                 if (lenCtrEnable[1]) {
-                    lengthctr[1] = lenctrload[data >> 3];
+                    lengthctr[1] = LENCTRLOAD[data >> 3];
                 }
                 timers[1].setperiod((timers[1].getperiod() & 0x1ff) + ((data & 7) << 9));
                 // sequencer restarted
@@ -129,10 +129,10 @@ public class MMC5SoundChip implements ExpansionSoundChip {
         return (lengthctr[0] == 0 ? 0 : 1) + (lengthctr[1] == 0 ? 0 : 2);
     }
     private int[] lengthctr = {0, 0, 0, 0};
-    private final static int[] lenctrload = {10, 254, 20, 2, 40, 4, 80, 6,
+    private final static int[] LENCTRLOAD = {10, 254, 20, 2, 40, 4, 80, 6,
         160, 8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22,
         192, 24, 72, 26, 16, 28, 32, 30};
-    private boolean[] lenctrHalt = {true, true, true, true};
+    private final boolean[] lenctrHalt = {true, true, true, true};
 
     private void setlength() {
         for (int i = 0; i < 4; ++i) {
@@ -145,11 +145,11 @@ public class MMC5SoundChip implements ExpansionSoundChip {
         }
     }
     //instance variables for envelope units
-    private int[] envelopeValue = {15, 15, 15, 15};
-    private int[] envelopeCounter = {0, 0, 0, 0};
-    private int[] envelopePos = {0, 0, 0, 0};
-    private boolean[] envConstVolume = {true, true, true, true};
-    private boolean[] envelopeStartFlag = {false, false, false, false};
+    private final int[] envelopeValue = {15, 15, 15, 15};
+    private final int[] envelopeCounter = {0, 0, 0, 0};
+    private final int[] envelopePos = {0, 0, 0, 0};
+    private final boolean[] envConstVolume = {true, true, true, true};
+    private final boolean[] envelopeStartFlag = {false, false, false, false};
 
     private void setenvelope() {
         for (int i = 0; i < 2; ++i) {
@@ -177,7 +177,7 @@ public class MMC5SoundChip implements ExpansionSoundChip {
         //System.err.println("setvolumes " + volume[1]);
     }
     private int framectr = 0;
-    private int ctrmode = 4;
+    private final int ctrmode = 4;
 
     private void clockframecounter() {
         //System.err.println("frame ctr clock " + framectr);

@@ -259,7 +259,7 @@ public class FDSSoundChip implements ExpansionSoundChip {
                 modEnvAccum = 0;
             } else if (register == 0x4085) {
                 //set modulator counter directly
-                //Bio Miracle Bokutte Opa uses this but i don't get it right
+                //Bio Miracle Bokutte Opa uses this, requires very tight timing
                 //sign extend    
                 modCtr = ((data & 0x7f) << 25) >> 25;
                 //modTableAddr = 0;
