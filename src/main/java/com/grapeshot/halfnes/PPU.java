@@ -29,7 +29,7 @@ public class PPU {
             spriteshiftregH = new int[8],
             spriteshiftregL = new int[8], spriteXlatch = new int[8],
             spritepals = new int[8], bitmap = new int[240 * 256];
-    int bgShiftRegH, bgShiftRegL, bgAttrShiftRegH, bgAttrShiftRegL;
+    private int found, bgShiftRegH, bgShiftRegL, bgAttrShiftRegH, bgAttrShiftRegL;
     private final boolean[] spritebgflags = new boolean[8];
     private boolean even = true, bgpattern = true, sprpattern, spritesize, nmicontrol,
             grayscale, bgClip, spriteClip, bgOn, spritesOn,
@@ -586,7 +586,6 @@ public class PPU {
     }
 
     boolean dotcrawl = true;
-    private int off, y, index, sprpxl, found;
     private boolean sprite0here = false;
 
     /**
@@ -682,11 +681,11 @@ public class PPU {
      */
     private void drawSprites(int bufferoffset, int x, boolean bgflag) {
         final int startdraw = !spriteClip ? 0 : 8;//sprite left 8 pixels clip
-        sprpxl = 0;
-        index = 7;
+        int sprpxl = 0;
+        int index = 7;
         //per pixel in de line that could have a sprite
-        for (y = found - 1; y >= 0; --y) {
-            off = x - spriteXlatch[y];
+        for (int y = found - 1; y >= 0; --y) {
+            int off = x - spriteXlatch[y];
             if (off >= 0 && off <= 8) {
                 if ((spriteshiftregH[y] & 1) + (spriteshiftregL[y] & 1) != 0) {
                     index = y;
