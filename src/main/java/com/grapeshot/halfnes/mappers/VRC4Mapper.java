@@ -16,6 +16,7 @@ public class VRC4Mapper extends Mapper {
     int[] chrbank = {0, 0, 0, 0, 0, 0, 0, 0};
     boolean prgmode, irqmode, irqenable, irqack, firedinterrupt = false;
     int irqreload, irqcounter = 22;
+    boolean vrc2mirror;
 
     public VRC4Mapper(int mappernum) {
         super();
@@ -47,6 +48,15 @@ public class VRC4Mapper extends Mapper {
         for (int i = 0; i < 8; ++i) {
             chr_map[i] = (1024 * i) & (chrsize - 1);
         }
+        //detect Konami Wai Wai World on VRC2
+        System.err.println(utils.hex(crc));
+        vrc2mirror = 
+                  ((crc == 0xB790FF4CL) //ZnO trans (remember why it's a long...)
+                || (crc == 0x2D953C3DL) //demiforce 3
+                || (crc == 0x64818FC5L) //(J)
+                || (crc == 0x1E12AF8AL) //french trans
+                || (crc == 0x3480F7DBL)); //demiforce 1?
+        System.err.println(vrc2mirror);
     }
 
     @Override
@@ -64,19 +74,32 @@ public class VRC4Mapper extends Mapper {
                 break;
             case 0x9:
                 if (!bit1) {
-                    switch (data & 3) {
-                        case 0:
-                            setmirroring(MirrorType.V_MIRROR);
-                            break;
-                        case 1:
-                            setmirroring(MirrorType.H_MIRROR);
-                            break;
-                        case 2:
-                            setmirroring(MirrorType.SS_MIRROR0);
-                            break;
-                        case 3:
-                            setmirroring(MirrorType.SS_MIRROR1);
-                            break;
+                    //mirroring select
+                    if (vrc2mirror) {
+                        //vrc2 doesn't have single screen mirroring option
+                        switch (data & 1) {
+                            case 0:
+                                setmirroring(Mapper.MirrorType.V_MIRROR);
+                                break;
+                            case 1:
+                                setmirroring(Mapper.MirrorType.H_MIRROR);
+                                break;
+                        }
+                    } else {
+                        switch (data & 3) {
+                            case 0:
+                                setmirroring(MirrorType.V_MIRROR);
+                                break;
+                            case 1:
+                                setmirroring(MirrorType.H_MIRROR);
+                                break;
+                            case 2:
+                                setmirroring(MirrorType.SS_MIRROR0);
+                                break;
+                            case 3:
+                                setmirroring(MirrorType.SS_MIRROR1);
+                                break;
+                        }
                     }
                 } else {
                     prgmode = ((data & (utils.BIT1)) != 0);
@@ -113,27 +136,25 @@ public class VRC4Mapper extends Mapper {
                         irqreload |= (data & 0xf) << 4;
                     }
                     // System.err.println("reload set to " + irqreload);
-                } else {
-                    if (!bit0) {
-                        irqack = ((data & (utils.BIT0)) != 0);
-                        irqenable = ((data & (utils.BIT1)) != 0);
-                        irqmode = ((data & (utils.BIT2)) != 0);
-                        if (irqenable) {
-                            irqcounter = irqreload;
-                            prescaler = 341;
-                        }
-                        if (firedinterrupt) {
-                            --cpu.interrupt;
-                        }
-                        firedinterrupt = false;
-
-                    } else {
-                        irqenable = irqack;
-                        if (firedinterrupt) {
-                            --cpu.interrupt;
-                        }
-                        firedinterrupt = false;
+                } else if (!bit0) {
+                    irqack = ((data & (utils.BIT0)) != 0);
+                    irqenable = ((data & (utils.BIT1)) != 0);
+                    irqmode = ((data & (utils.BIT2)) != 0);
+                    if (irqenable) {
+                        irqcounter = irqreload;
+                        prescaler = 341;
                     }
+                    if (firedinterrupt) {
+                        --cpu.interrupt;
+                    }
+                    firedinterrupt = false;
+
+                } else {
+                    irqenable = irqack;
+                    if (firedinterrupt) {
+                        --cpu.interrupt;
+                    }
+                    firedinterrupt = false;
                 }
         }
         if (addr < 0xf000) {

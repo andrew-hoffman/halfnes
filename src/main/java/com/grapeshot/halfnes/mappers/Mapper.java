@@ -13,7 +13,7 @@ import java.util.zip.CRC32;
 public abstract class Mapper {
 
     protected ROMLoader loader;
-    protected int mappertype = 0, prgsize = 0, prgoff = 0, chroff = 0, chrsize = 0;
+    protected int mappertype, submapper, prgsize, prgoff, chroff, chrsize;
     public CPU cpu;
     public CPURAM cpuram;
     public PPU ppu;
@@ -73,6 +73,7 @@ public abstract class Mapper {
         savesram = loader.savesram;
         prg = loader.load(prgsize, prgoff);
         region = loader.tvtype;
+        submapper = loader.submapper;
         crc = crc32(prg);
         //System.err.println(utils.hex(crc));
         //crc "database" for certain impossible-to-recognize games
@@ -237,7 +238,9 @@ public abstract class Mapper {
             case 23:
             case 25:
                 //VRC4 has three different mapper numbers for six different address line layouts
+                //some of which really should be VRC2
                 //but they're all handled in the same file
+                //there's a proposal for submapper #s in iNES 2.0
                 return new VRC4Mapper(type);
             case 22:
                 return new VRC2Mapper();

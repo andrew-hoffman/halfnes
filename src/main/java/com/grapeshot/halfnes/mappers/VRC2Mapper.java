@@ -39,24 +39,15 @@ public class VRC2Mapper extends Mapper {
                 break;
             case 0x9:
                 //mirroring
-                switch (data & 3) {
+                switch (data & 1) {
                     case 0:
                         setmirroring(Mapper.MirrorType.V_MIRROR);
                         break;
                     case 1:
                         setmirroring(Mapper.MirrorType.H_MIRROR);
-                        break;
-                    case 2:
-                        setmirroring(Mapper.MirrorType.SS_MIRROR0);
-                        break;
-                    case 3:
-                        setmirroring(Mapper.MirrorType.SS_MIRROR1);
-                        break;
+                        break; 
                 }
-                //Seems to be wrong in vertically scrolling stage of Konami
-                //Wai Wai World.
-                //See http://forums.nesdev.com/viewtopic.php?f=3&t=13473
-                //maybe someone's figured it out
+                //4-4-2016: seems VRC2 only has 1 mirroring bit
                 break;
             case 0xa:
                 prgbank1 = data & 0xf;
