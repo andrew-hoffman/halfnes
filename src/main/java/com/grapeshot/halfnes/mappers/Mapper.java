@@ -77,8 +77,8 @@ public abstract class Mapper {
         crc = crc32(prg);
         //System.err.println(utils.hex(crc));
         //crc "database" for certain impossible-to-recognize games
-        if ((crc == 0x41243492) //low g man (u)
-                || (crc == 0x98CCD385)//low g man (e)
+        if ((crc == 0x41243492L) //low g man (u)
+                || (crc == 0x98CCD385L)//low g man (e)
                 ) {
             hasprgram = false;
         }
