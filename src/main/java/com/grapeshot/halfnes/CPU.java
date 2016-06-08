@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 
 public final class CPU {
 
-    private CPURAM ram;
+    private final CPURAM ram;
     private int cycles; //increment to steal cycles from cpu
     public int clocks; //use for synchronizing with cpu
     private int A, X, Y, S; // registers
@@ -29,7 +29,7 @@ public final class CPU {
             idleLoopSkip = true;
     //NES 6502 is missing decimal mode, but most other 6502s have it
     private boolean interruptDelay = false;
-    private static String[] opcodes = opcodes();
+    private final static String[] opcodes = opcodes();
 
     //Battletoads Hack until I get around to making a truly cycle accurate CPU core.
     //Delays the write of a STA, STX, or STY until the first cycle of the NEXT instruction
@@ -168,6 +168,8 @@ public final class CPU {
         if (cycles-- > 0) { //count down cycles until there is work to do again
             return;
         }
+        
+        //now we're at the start of a new instruction
 
         //handle nmi requests (NMI line is edge sensitive not level sensitive)
         if (nmiNext) {

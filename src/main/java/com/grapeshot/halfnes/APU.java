@@ -25,7 +25,7 @@ public class APU {
     private long accum = 0;
     private final ArrayList<ExpansionSoundChip> expnSound = new ArrayList<>();
     private boolean soundFiltering;
-    private final int[] tnd_lookup, square_lookup;
+    private final static int[] TNDLOOKUP = initTndLookup(), SQUARELOOKUP = initSquareLookup();
     private int framectrreload;
     private int framectrdiv = 7456;
     private int dckiller = 0;
@@ -67,20 +67,28 @@ public class APU {
 
     public APU(final NES nes, final CPU cpu, final CPURAM cpuram) {
         this.samplerate = 1; //just in case we can't init audio
-        //fill square, triangle volume lookup tables
-        square_lookup = new int[31];
-        for (int i = 0; i < square_lookup.length; ++i) {
-            square_lookup[i] = (int) ((95.52 / (8128.0 / i + 100)) * 49151);
-        }
-        tnd_lookup = new int[203];
-        for (int i = 0; i < tnd_lookup.length; ++i) {
-            tnd_lookup[i] = (int) ((163.67 / (24329.0 / i + 100)) * 49151);
-        }
         //then init the audio stream
         this.nes = nes;
         this.cpu = cpu;
         this.cpuram = cpuram;
         setParameters();
+    }
+
+    private static int[] initTndLookup() {
+        int[] lookup = new int[203];
+        for (int i = 0; i < lookup.length; ++i) {
+            lookup[i] = (int) ((163.67 / (24329.0 / i + 100)) * 49151);
+        }
+        return lookup;
+    }
+
+    private static int[] initSquareLookup() {
+        //fill square, triangle volume lookup tables
+        int[] lookup = new int[31];
+        for (int i = 0; i < lookup.length; ++i) {
+            lookup[i] = (int) ((95.52 / (8128.0 / i + 100)) * 49151);
+        }
+        return lookup;
     }
 
     public final synchronized void setParameters() {
@@ -387,7 +395,7 @@ public class APU {
         }
     }
 
-    public final synchronized void updateto(final int cpucycle) {
+    public final void updateto(final int cpucycle) {
         //still have to run this even if sound is disabled, some games rely on DMC IRQ etc.
         if (soundFiltering) {
             //linear sampling code
@@ -456,9 +464,9 @@ public class APU {
 
     private int getOutputLevel() {
         int vol;
-        vol = square_lookup[volume[0] * timers[0].getval()
+        vol = SQUARELOOKUP[volume[0] * timers[0].getval()
                 + volume[1] * timers[1].getval()];
-        vol += tnd_lookup[3 * timers[2].getval()
+        vol += TNDLOOKUP[3 * timers[2].getval()
                 + 2 * volume[3] * timers[3].getval()
                 + dmcvalue];
         if (!expnSound.isEmpty()) {

@@ -14,7 +14,7 @@ public class TriangleTimer extends Timer {
     private final static int periodadd = 1;
     private final static int[] triangle = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
         12, 13, 14, 15, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6,
-        5, 4, 3, 2, 1, 0,};
+        5, 4, 3, 2, 1, 0};
 
     public TriangleTimer() {
         period = 0;
@@ -31,26 +31,29 @@ public class TriangleTimer extends Timer {
         if (period == 0) {
             return;
         }
-        --divider;
-        while (divider <= 0) {
-            divider += period + periodadd;
-            position = (++position & 31);
+        ++divider;
+        // note: stay away from negative division to avoid rounding problems
+        int periods = (divider + period + periodadd) / (period + periodadd);
+        if (periods < 0) {
+            periods = 0; // can happen if period or periodadd were made smaller
         }
+        position = (position + periods) & 0x1F;
+        divider -= (period + periodadd) * periods;
     }
 
+    @Override
     public final void clock(final int cycles) {
         if (period == 0) {
             return;
         }
-        divider -= cycles;
-        while (divider <= 0) {
-            divider += period + periodadd;
-            ++position;
-            position &= 31;
-            if (position > 31) {
-                System.err.println("how");
-            }
+        divider += cycles;
+        // note: stay away from negative division to avoid rounding problems
+        int periods = (divider + period + periodadd) / (period + periodadd);
+        if (periods < 0) {
+            periods = 0; // can happen if period or periodadd were made smaller
         }
+        position = (position + periods) & 0x1F;
+        divider -= (period + periodadd) * periods;
     }
 
     @Override
@@ -59,6 +62,7 @@ public class TriangleTimer extends Timer {
         //needed to avoid screech when period is zero
     }
 
+    @Override
     public final void setperiod(final int newperiod) {
         period = newperiod;
         if (period == 0) {
