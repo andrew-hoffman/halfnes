@@ -15,19 +15,18 @@ public enum JInputHelper {
     ;
 
     private static final String[] NATIVE_LIBRARIES = new String[]{
-            // Windows
-            "jinput-dx8.dll",
-            "jinput-dx8_64.dll",
-            "jinput-raw.dll",
-            "jinput-raw_64.dll",
-            "jinput-wintab.dll",
-            "jinput-wintab.dll",
-            // Linux
-            "libjinput-linux.so",
-            "libjinput-linux64.so",
-            // OsX (Mac)
-            "libjinput-osx.jnilib",
-    };
+        // Windows
+        "jinput-dx8.dll",
+        "jinput-dx8_64.dll",
+        "jinput-raw.dll",
+        "jinput-raw_64.dll",
+        "jinput-wintab.dll",
+        "jinput-wintab.dll",
+        // Linux
+        "libjinput-linux.so",
+        "libjinput-linux64.so",
+        // OsX (Mac)
+        "libjinput-osx.jnilib",};
 
     public static void setupJInput() {
         try {
@@ -50,20 +49,31 @@ public enum JInputHelper {
         try (InputStream nativeLibraryInputStream = ClassLoader.getSystemResourceAsStream(nativeLibrary)) {
             File nativeLibraryTempFile = new File(nativesDirectory, nativeLibrary);
             nativeLibraryTempFile.deleteOnExit();
-            try (BufferedOutputStream nativeLibraryTempFileOutputStream = new BufferedOutputStream(new FileOutputStream(nativeLibraryTempFile))) {
-                byte[] buffer = new byte[4096];
-                int length;
-                while ((length = nativeLibraryInputStream.read(buffer)) > 0) {
-                    nativeLibraryTempFileOutputStream.write(buffer, 0, length);
+            if (!nativeLibraryTempFile.exists()) {
+                try (BufferedOutputStream nativeLibraryTempFileOutputStream 
+                        = new BufferedOutputStream(new FileOutputStream(nativeLibraryTempFile))) {
+                    byte[] buffer = new byte[4096];
+                    int length;
+                    while ((length = nativeLibraryInputStream.read(buffer)) > 0) {
+                        nativeLibraryTempFileOutputStream.write(buffer, 0, length);
+                    }
                 }
             }
         }
     }
 
     private static File createTempDirectory() throws IOException {
-        File nativeDirectory = Files.createTempDirectory("halfNES-natives").toFile();
-        nativeDirectory.deleteOnExit();
-        return nativeDirectory;
+
+        String tmpdir = System.getProperty("java.io.tmpdir") + "/halfnes-" + NES.VERSION;
+        System.err.println(tmpdir);
+        File f = new File(tmpdir);
+        if (!f.exists()) {
+            f.mkdir();
+        }
+
+        //File nativeDirectory = Files.createTempDirectory("halfNES-natives").toFile();
+        f.deleteOnExit();
+        return f;
     }
 
     private static void setLibraryPath(final File nativesDirectory) throws NoSuchFieldException, IllegalAccessException {
