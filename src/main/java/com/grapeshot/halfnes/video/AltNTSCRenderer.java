@@ -18,6 +18,10 @@ import com.grapeshot.halfnes.utils;
 public class AltNTSCRenderer extends Renderer {
 
     public AltNTSCRenderer() {
+        frame_width = 604;
+        for (int i = 0; i < imgs.length; ++i) {
+            imgs[i] = new BufferedImage(frame_width, height, BufferedImage.TYPE_INT_ARGB_PRE);
+        }
 //        for (int i = 0; i < 12; ++i) {
 //            System.err.println(inColorPhase( 3, i));
 //        };
@@ -51,7 +55,7 @@ public class AltNTSCRenderer extends Renderer {
             ntsc_buf_ptr = 0;
         }
         frame_ptr = 0;
-        return getImageFromArray(frame, width * 8, width, 224);
+        return getBufferedImage(frame);
     }
 
     private void ntsc_render(int pixel) {
@@ -84,7 +88,7 @@ public class AltNTSCRenderer extends Renderer {
     private static boolean inColorPhase(final int color, final int phase) {
         return (color + phase) % 12 < 6;
     }
-    private double[] signal_levels = new double[256 * SAMPLESPERPIXEL];
+    private final double[] signal_levels = new double[256 * SAMPLESPERPIXEL];
     private int ntsc_buf_ptr = 0;
     private final static int width = 604;
 

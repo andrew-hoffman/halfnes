@@ -60,6 +60,10 @@ public class NTSCRenderer extends Renderer {
     private final static int[] colortbl = genColorCorrectTbl();
 
     public NTSCRenderer() {
+        frame_width = 704 * 3;
+        for(int i = 0; i < imgs.length; ++i){
+            imgs[i] = new BufferedImage(frame_width, height, BufferedImage.TYPE_INT_ARGB_PRE);
+        }
         int hue = -512;
         double col_adjust = 1.2 / .707;
         for (int j = 0; j < 12; ++j) {
@@ -222,7 +226,7 @@ public class NTSCRenderer extends Renderer {
         // multithreaded filter
         lines.parallelStream().forEach(line -> cacheRender(nespixels, line, bgcolors, dotcrawl));
 
-        BufferedImage i = getImageFromArray(frame, frame_w * clip, frame_w, 240 - 2 * clip);
+        BufferedImage i = getBufferedImage(frame);
         ++frames;
         //i = op.filter(i, null); //sharpen
         return i;

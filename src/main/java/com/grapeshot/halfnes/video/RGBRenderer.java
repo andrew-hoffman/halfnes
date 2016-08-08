@@ -14,13 +14,19 @@ import java.awt.image.BufferedImage;
  */
 public class RGBRenderer extends Renderer {
 
+    public RGBRenderer() {
+        frame_width = 256;
+        for (int i = 0; i < imgs.length; ++i) {
+            imgs[i] = new BufferedImage(frame_width, height, BufferedImage.TYPE_INT_ARGB_PRE);
+        }
+    }
+
     @Override
     public BufferedImage render(int[] nespixels, int[] bgcolors, boolean dotcrawl) {
         //and now replace the nes color numbers with rgb colors (respecting color emph bits)
-        nespixels = nespixels.clone();
         for (int i = 0; i < nespixels.length; ++i) {
             nespixels[i] = NesColors.col[(nespixels[i] & 0x1c0) >> 6][nespixels[i] & 0x3f];
         }
-        return getImageFromArray(nespixels, 256 * clip, 256, 240 - 2 * clip);
+        return getBufferedImage(nespixels);
     }
 }
