@@ -61,9 +61,7 @@ public class NTSCRenderer extends Renderer {
 
     public NTSCRenderer() {
         frame_width = 704 * 3;
-        for(int i = 0; i < imgs.length; ++i){
-            imgs[i] = new BufferedImage(frame_width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-        }
+        init_images();
         int hue = -512;
         double col_adjust = 1.2 / .707;
         for (int j = 0; j < 12; ++j) {

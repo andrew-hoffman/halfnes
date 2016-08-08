@@ -19,9 +19,7 @@ public class AltNTSCRenderer extends Renderer {
 
     public AltNTSCRenderer() {
         frame_width = 604;
-        for (int i = 0; i < imgs.length; ++i) {
-            imgs[i] = new BufferedImage(frame_width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-        }
+        init_images();
 //        for (int i = 0; i < 12; ++i) {
 //            System.err.println(inColorPhase( 3, i));
 //        };

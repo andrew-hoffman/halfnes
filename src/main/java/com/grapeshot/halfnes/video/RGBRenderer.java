@@ -16,9 +16,7 @@ public class RGBRenderer extends Renderer {
 
     public RGBRenderer() {
         frame_width = 256;
-        for (int i = 0; i < imgs.length; ++i) {
-            imgs[i] = new BufferedImage(frame_width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-        }
+        init_images();
     }
 
     @Override
