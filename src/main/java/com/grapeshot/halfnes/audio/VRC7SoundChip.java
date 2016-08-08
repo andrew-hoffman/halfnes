@@ -32,7 +32,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     private final double[] phase = new double[6];
     private final int[] usertone = new int[8], modenv_vol = new int[6], carenv_vol = new int[6];
     private final int[][] instdata = { //instrument parameters
-        usertone, //user tone register
+        usertone, //modifiable user tone register is instrument 0
         //i'm surprised no one's bothered to decap it and take a look
         //here's the latest one from rainwarrior aug.2012
         {0x03, 0x21, 0x05, 0x06, 0xB8, 0x82, 0x42, 0x27},
@@ -51,8 +51,6 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         {0x61, 0x63, 0x0C, 0x00, 0x94, 0xAF, 0x34, 0x06},
         {0x21, 0x62, 0x0D, 0x00, 0xB1, 0xA0, 0x54, 0x17}
     };
-    //TODO: make instrument data a properly parsed static enum of some kind 
-    //that will clean up 90% of this confusing bit shifting everywhere!
     private final static int[] LOGSIN = genlogsintbl(), EXP = genexptbl(),
             AM = genamtbl();
     private final static double[] MULTIPLIER = {0.5, 1, 2, 3, 4, 5,
@@ -62,28 +60,6 @@ public class VRC7SoundChip implements ExpansionSoundChip {
     };
 
     public VRC7SoundChip() {
-//        t.setVisible(true);
-////        some debug code to make a scope view:
-//        DebugUI d = new DebugUI(512,480);
-//        BufferedImage b = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
-//        d.run();
-////        EnvState[] est = {EnvState.ATTACK};
-////        double[] evl = {511};
-//
-//
-//        for (int i = 0; i < 1024; ++i) {
-////            setenvelope(instdata[2], est, evl, 0, false);
-////            setenvelope(instdata[2], est, evl, 0, false);
-////            setenvelope(instdata[2], est, evl, 0, false);
-////            setenvelope(instdata[2], est, evl, 0, false);
-//            double j = tri(i/50.);
-//            //int k = (int) evl[0];
-//            b.setRGB(i / 4, clamp((int)((-j)*90) + 128), 0xFF0000);
-//           // b.setRGB(i / 4, clamp((k) / 4), 0x00FFFF);
-//            //b.setRGB(i / 4, clamp(-i + 128), 0x00FF00);
-//            b.setRGB(i / 4, clamp(128), 0xffffff);
-//        }
-//        d.setFrame(b);
         Arrays.fill(modenv_state, EnvState.CUTOFF);
         Arrays.fill(carenv_state, EnvState.CUTOFF);
         Arrays.fill(modenv_vol, 511);
@@ -245,8 +221,6 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         phase[ch] %= 1024;
         int[] inst = instdata[instrument[ch]];
         //envelopes
-        //TODO: rewrite the whole envelope code
-        //to match rate chip is actually running envelope updates at
         int modEnvelope = setenvelope(inst, modenv_state, modenv_vol, ch, false)
                 << 2;
         int carEnvelope = setenvelope(inst, carenv_state, carenv_vol, ch, true)
@@ -306,13 +280,13 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         if (val > (BIT13) - 1) {
             val = (BIT13) - 1;
         }
-        //val &= (BIT12); //wrong, but it makes all the waves into square waves!
+        //val &= (BIT12); //uncomment for sega smash pack vol. 1 for dreamcast
         int mantissa = EXP[(-val & 0xff)];
         int exponent = (-val) >> 8;
 //        int a = (int) Math.scalb(mantissa + 1024, exponent) * s; //correct but slow
         return ((((mantissa + 1024) >> (-exponent)))) * s; //not correct for negative #s
     }
-    private int s; // ugly hackish sign flag
+    private int s; // sign flag: positive (1), negative (-1) or muted (0)
 
     private int logsin(final int x, final boolean rectify) {
         //s stores sign of the output, in actual hw the sign bit bypasses 
@@ -365,8 +339,7 @@ public class VRC7SoundChip implements ExpansionSoundChip {
          Most of these constants were computed backwards from a
          table in a badly translated YM2413 technical manual 
          (that was given in ms to decay 40db) and are thus only approximate.       
-         The key scaling stuff is similarly just a best guess.       
-         Of course the real hardware isn't using floating point here either.
+         The key scaling stuff is similarly just a best guess.
          I suspect it's a 23 bit int value and each envelope update changes
          at least 1 LSB
          */
@@ -543,9 +516,9 @@ public class VRC7SoundChip implements ExpansionSoundChip {
         132859, 132859, 132859, 132859,
         132859, 132859, 132859, 132859,};
 }
-//these 2 tables calculated from excel based on the envelope table
-//in the programming guide.
+//these 2 tables calculated with excel based on the envelope length table
+//in the YM2413 programming guide.
 
 //decay table is SO CLOSE to neat powers of 2
-//and it really has to be anyway since there isn't any table
-//of envelope values on the real chip.
+//and it really has to be created with simple logic
+//on the real chip where there is no table of envelope values. 

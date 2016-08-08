@@ -13,6 +13,7 @@ import java.awt.image.BufferedImage;
 import static java.awt.image.BufferedImage.TYPE_INT_BGR;
 import java.util.Arrays;
 import static java.util.Arrays.fill;
+import static java.util.Arrays.fill;
 
 public class PPU {
 
@@ -48,7 +49,7 @@ public class PPU {
     private int penultimateattr;
     private int numscanlines;
     private int vblankline;
-    private int[] cpudivider;
+    private final int[] cpudivider = {3, 3, 3, 3, 3};
 
     public PPU(final Mapper mapper) {
         this.pal = new int[]{0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D,
@@ -77,17 +78,17 @@ public class PPU {
             default:
                 numscanlines = 262;
                 vblankline = 241;
-                cpudivider = new int[]{3, 3, 3, 3, 3};
+                cpudivider[0] = 3;
                 break;
             case PAL:
                 numscanlines = 312;
                 vblankline = 241;
-                cpudivider = new int[]{4, 3, 3, 3, 3};
+                cpudivider[0] = 4;
                 break;
             case DENDY:
                 numscanlines = 312;
                 vblankline = 291;
-                cpudivider = new int[]{3, 3, 3, 3, 3};
+                cpudivider[0] = 3;
                 break;
         }
     }
@@ -425,16 +426,16 @@ public class PPU {
         if (scanline < 240 && cycles >= 1 && cycles <= 256) {
             int bufferoffset = (scanline << 8) + (cycles - 1);
             //bg drawing
-            if (bgOn) { //if background is on, draw a line of that
+            if (bgOn) { //if background is on, draw a dot of that first
                 final boolean isBG = drawBGPixel(bufferoffset);
                 //sprite drawing
-                drawSprites(scanline << 8, cycles - 1, isBG);
+                drawSprites(scanline, cycles - 1, isBG);
 
             } else if (spritesOn) {
                 //just the sprites then
                 int bgcolor = ((loopyV > 0x3f00 && loopyV < 0x3fff) ? mapper.ppuRead(loopyV) : pal[0]);
                 bitmap[bufferoffset] = bgcolor;
-                drawSprites(scanline << 8, cycles - 1, true);
+                drawSprites(scanline, cycles - 1, true);
             } else {
                 //rendering is off, so draw either the background color OR
                 //if the PPU address points to the palette, draw that color instead.
@@ -679,11 +680,11 @@ public class PPU {
     /**
      * draws appropriate pixel of the sprites selected by sprite evaluation
      */
-    private void drawSprites(int bufferoffset, int x, boolean bgflag) {
+    private void drawSprites(int line, int x, boolean bgflag) {
         final int startdraw = !spriteClip ? 0 : 8;//sprite left 8 pixels clip
         int sprpxl = 0;
         int index = 7;
-        //per pixel in de line that could have a sprite
+        //check all the used sprite slots to see if any sprite covers this pixel
         for (int y = found - 1; y >= 0; --y) {
             int off = x - spriteXlatch[y];
             if (off >= 0 && off <= 8) {
@@ -707,7 +708,7 @@ public class PPU {
         }
         //now, FINALLY, drawing.
         if (!spritebgflags[index] || bgflag) {
-            bitmap[bufferoffset + x] = pal[spritepals[index] + sprpxl];
+            bitmap[(line << 8) + x] = pal[spritepals[index] + sprpxl];
         }
     }
 

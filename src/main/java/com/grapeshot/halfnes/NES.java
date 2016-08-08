@@ -70,19 +70,14 @@ public class NES {
             } else {
                 limiter.sleepFixed();
                 if (ppu != null && framecount > 1) {
-                    java.awt.EventQueue.invokeLater(render);
+                    gui.render();
                 }
             }
         }
     }
-    Runnable render = new Runnable() {
-        @Override
-        public void run() {
-            gui.render();
-        }
-    };
 
     private synchronized void runframe() {
+        //run cpu, ppu for a whole frame
         ppu.runFrame();
 
         //do end of frame stuff
@@ -98,7 +93,6 @@ public class NES {
 //            cpu.startLog();
 //            System.err.println("log on");
 //        }
-        //run cpu, ppu for active drawing time
         //render the frame
         ppu.renderFrame(gui);
         if ((framecount & 2047) == 0) {
