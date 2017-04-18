@@ -53,13 +53,13 @@ Controller 1:
 
 The keys mapped to the A and B buttons are used to change tracks in the NSF player.
 
-#Note on joystick support
+# Note on joystick support
 
 The first detected gamepad will be used as Controller 1, and the second 
 will be Controller 2. Currently the buttons used are not configurable. 
 (the controller needs to be plugged in before a game is loaded in order to be detected.)
 
-#Compatibility
+# Compatibility
 
 At this point in 
 development, almost all US released games will start, but certain games 
