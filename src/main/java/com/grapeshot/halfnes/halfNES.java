@@ -20,7 +20,7 @@ public class halfNES {
         } catch (Exception e) {
             System.err.println("Could not set system look and feel. Meh.");
         }
-        new SwingUI(args);
+        new SwingUI().start(args);
     }
 
 }
