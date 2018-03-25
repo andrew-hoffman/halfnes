@@ -1,4 +1,9 @@
 HalfNES Version Notes:
+062 (3/25/2018)
+-first release in 2 years
+-fixed temp file creation issue
+-fixed Micro Machines
+-NSF and APU improvements
 061 (2/16/2016)
 -Minor speed improvements and code cleanups
 -Improved VRC7 Envelopes again with values properly calculated from docs

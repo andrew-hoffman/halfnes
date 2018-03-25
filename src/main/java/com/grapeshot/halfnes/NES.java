@@ -22,7 +22,7 @@ public class NES {
     private PPU ppu;
     private GUIInterface gui;
     private ControllerInterface controller1, controller2;
-    final public static String VERSION = "062-dev";
+    final public static String VERSION = "062";
     public boolean runEmulation = false;
     private boolean dontSleep = false;
     private boolean shutdown = false;
