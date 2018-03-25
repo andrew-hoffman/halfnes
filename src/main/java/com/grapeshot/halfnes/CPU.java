@@ -87,6 +87,7 @@ public final class CPU {
             ram.write(i, 0xFF);
         }
 
+        //poweron RAM values from one specific console (nesdev wiki pre-2015)
         ram.write(0x0008, 0xF7);
         ram.write(0x0009, 0xEF);
         ram.write(0x000A, 0xDF);
