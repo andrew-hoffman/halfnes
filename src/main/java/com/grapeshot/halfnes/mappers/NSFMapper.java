@@ -56,7 +56,7 @@ public class NSFMapper extends Mapper {
         if (loader.header[0x7a] == 1) {
             //pal only tune
             this.region = TVType.PAL;
-            System.err.println("pal only tune");
+            //System.err.println("pal only tune");
         } else {
             this.region = TVType.NTSC;
         }
@@ -67,7 +67,7 @@ public class NSFMapper extends Mapper {
 
         if (!nsfBanking && load < 0x8000) {
             //no banking
-            System.err.println("What do I do with this???");
+            //System.err.println("What do I do with this???");
             throw new BadMapperException("NSF with no banking loading low");
         }
         // pad to 4k bank size and copy in starting
@@ -247,7 +247,7 @@ public class NSFMapper extends Mapper {
         } else if (fds && (addr >= 0x4040) && (addr <= 0x4092)) {
             fdsAudio.write(addr, data);
         } else {
-            System.err.println("write to " + utils.hex(addr) + " goes nowhere");
+            //System.err.println("write to " + utils.hex(addr) + " goes nowhere");
         }
     }
 
@@ -295,7 +295,7 @@ public class NSFMapper extends Mapper {
         } else if (mmc5 && addr == 0x5015) {
             return mmc5Audio.status();
         } else if (n163 && addr == 0x4800) {
-            System.err.println("readback");
+            //System.err.println("readback");
             int retval = n163Audio.read(n163soundAddr);
             if (n163autoincrement) {
                 n163soundAddr = ++n163soundAddr & 0x7f;
@@ -304,7 +304,7 @@ public class NSFMapper extends Mapper {
         } else if (fds && (addr >= 0x4040) && (addr < 0x4093)) {
             return fdsAudio.read(addr);
         }
-        System.err.println("reading open bus " + utils.hex(addr));
+        //System.err.println("reading open bus " + utils.hex(addr));
         return addr >> 8; //open bus
     }
 
@@ -324,12 +324,13 @@ public class NSFMapper extends Mapper {
                 //if not in idle loop
                 if (unfinishedcounter < time) {
                     ++unfinishedcounter;
-                    System.err.println("Init routine hasn't returned in "
+                    /*System.err.println("Init routine hasn't returned in "
                             + unfinishedcounter + " frames");
+                     */
                     return;
                 } else if (unfinishedcounter == time) {
                     ++unfinishedcounter;
-                    System.err.println("giving up");
+                    //System.err.println("giving up");
                 }
                 //if we've given it a few frames
                 //and it still hasn't returned from init, then it probably
@@ -376,11 +377,11 @@ public class NSFMapper extends Mapper {
                 init();
             } else //fake a jsr to the play address from wherever 
             //unless this is a supernsf
-             if (unfinishedcounter <= time) {
-                    cpu.push((cpu.PC - 1) >> 8);
-                    cpu.push((cpu.PC - 1) & 0xff);
-                    cpu.setPC(play);
-                }
+            if (unfinishedcounter <= time) {
+                cpu.push((cpu.PC - 1) >> 8);
+                cpu.push((cpu.PC - 1) & 0xff);
+                cpu.setPC(play);
+            }
         }
     }
 
