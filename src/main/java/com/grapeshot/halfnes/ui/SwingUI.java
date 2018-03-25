@@ -47,7 +47,7 @@ public class SwingUI extends JFrame implements GUIInterface {
     private Renderer renderer;
     private final ControllerImpl padController1, padController2;
 
-    public SwingUI(String[] args) {
+    public SwingUI() {
         nes = new NES(this);
         screenScaleFactor = PrefsSingleton.get().getInt("screenScaling", 2);
         padController1 = new ControllerImpl(this, 0);
@@ -55,11 +55,6 @@ public class SwingUI extends JFrame implements GUIInterface {
         nes.setControllers(padController1, padController2);
         padController1.startEventQueue();
         padController2.startEventQueue();
-        if (args == null || args.length < 1 || args[0] == null) {
-            nes.run();
-        } else {
-            nes.run(args[0]);
-        }
     }
 
     @Override
@@ -103,6 +98,14 @@ public class SwingUI extends JFrame implements GUIInterface {
         canvas.createBufferStrategy(2);
         buffer = canvas.getBufferStrategy();
     }
+    
+	public void start(String[] args) {
+        if (args == null || args.length < 1 || args[0] == null) {
+            nes.run();
+        } else {
+            nes.run(args[0]);
+        }
+	}
 
     @Override
     public synchronized void run() {
@@ -360,7 +363,7 @@ public class SwingUI extends JFrame implements GUIInterface {
     }
 
     public synchronized void toggleFullScreen() {
-        if (inFullScreen) {
+        if (inFullScreen) { // disable
             this.dispose();
             gd.setFullScreenWindow(null);
             canvas.setSize(NES_HEIGHT * screenScaleFactor, NES_WIDTH * screenScaleFactor);
@@ -369,18 +372,22 @@ public class SwingUI extends JFrame implements GUIInterface {
             inFullScreen = false;
             buildMenus();
             // nes.resume();
-        } else {
+        } else { // enable
             setJMenuBar(null);
             gd = getGraphicsConfiguration().getDevice();
             if (!gd.isFullScreenSupported()) {
                 //then fullscreen will give a window the size of the screen instead
                 messageBox("Fullscreen is not supported by your OS or version of Java.");
+                return;
             }
             this.dispose();
             this.setUndecorated(true);
 
             gd.setFullScreenWindow(this);
             this.setVisible(true);
+            
+            DisplayMode dm = gd.getDisplayMode();
+            canvas.setSize(dm.getWidth(), dm.getHeight());
 
             inFullScreen = true;
         }
@@ -436,9 +443,6 @@ public class SwingUI extends JFrame implements GUIInterface {
             DisplayMode dm = gd.getDisplayMode();
             int scrnheight = dm.getHeight();
             int scrnwidth = dm.getWidth();
-            //don't ask why this needs to be done every frame,
-            //but it does b/c the canvas keeps resizing itself
-            canvas.setSize(scrnwidth, scrnheight);
             graphics.fillRect(0, 0, scrnwidth, scrnheight);
             if (PrefsSingleton.get().getBoolean("maintainAspect", true)) {
                 double scalefactor = getmaxscale(scrnwidth, scrnheight);
