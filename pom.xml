@@ -7,7 +7,7 @@
     <!-- The Basics -->
     <groupId>com.grapeshot</groupId>
     <artifactId>halfnes</artifactId>
-    <version>062</version>
+    <version>0.6.3-SNAPSHOT</version>
     <dependencies>
         <!-- Controller input -->
         <dependency>
@@ -75,6 +75,19 @@
                             <failOnError>false</failOnError>
                             <verbose>false</verbose>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>templating-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                        <id>filter-src</id>
+                        <goals>
+                            <goal>filter-sources</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -173,5 +186,4 @@
             </build>
         </profile>
     </profiles>
-
 </project>

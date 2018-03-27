@@ -13,7 +13,7 @@ import com.grapeshot.halfnes.ui.FrameLimiterInterface;
 import com.grapeshot.halfnes.ui.GUIInterface;
 import javafx.application.Platform;
 
-public class NES {
+public class NES implements ProjectInfo {
 
     private Mapper mapper;
     private APU apu;
@@ -22,7 +22,6 @@ public class NES {
     private PPU ppu;
     private GUIInterface gui;
     private ControllerInterface controller1, controller2;
-    final public static String VERSION = "062";
     public boolean runEmulation = false;
     private boolean dontSleep = false;
     private boolean shutdown = false;
