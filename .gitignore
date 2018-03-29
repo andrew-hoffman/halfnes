@@ -36,3 +36,6 @@ proguard4.7
 /.idea
 /*.iml
 /target
+/.settings/
+.classpath
+.project

@@ -537,7 +537,7 @@ public class SwingUI extends JFrame implements GUIInterface {
             } else if (arg0.getActionCommand().equals("About")) {
                 messageBox("HalfNES " + NES.VERSION
                         + "\n"
-                        + "Get the latest version and report any bugs at https://github.com/andrew-hoffman/halfnes \n"
+                        + "Get the latest version and report any bugs at " + NES.URL + " \n"
                         + "\n"
                         + "This program is free software licensed under the GPL version 3, and comes with \n"
                         + "NO WARRANTY of any kind. (but if something's broken, please report it). \n"
