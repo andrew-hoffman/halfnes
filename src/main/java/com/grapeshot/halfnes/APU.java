@@ -28,7 +28,7 @@ public class APU {
     private final static int[] TNDLOOKUP = initTndLookup(), SQUARELOOKUP = initSquareLookup();
     private int framectrreload;
     private int framectrdiv = 7456;
-    private int dckiller = 0;
+    private int dckiller = -6392; //removes icky power on thump
     private int lpaccum = 0;
     private boolean apuintflag = true, statusdmcint = false, statusframeint = false;
     private int framectr = 0, ctrmode = 4;
@@ -480,16 +480,14 @@ public class APU {
 
     private int highpass_filter(int sample) {
         //for killing the dc in the signal
-        sample += dckiller;
-        dckiller -= sample >> 8;//the actual high pass part
-        dckiller += (sample > 0 ? -1 : 1);//guarantees the signal decays to exactly zero
+        sample -= dckiller;
+        dckiller += sample >> 8;//the actual high pass part
+        dckiller += (sample > 0 ? 1 : -1);//guarantees the signal decays to exactly zero
         return sample;
     }
 
     private int lowpass_filter(int sample) {
-        sample += lpaccum;
-        lpaccum -= sample * 0.9;
-        return lpaccum;
+        return lpaccum += 0.5 * (sample - lpaccum); //y = y + a * (x - y)
     }
 
     public final void finishframe() {
